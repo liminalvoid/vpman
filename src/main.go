@@ -5,28 +5,13 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"sync"
+
+	"github.com/liminalvoid/vpn-manager/internal/handlers"
 
 	"github.com/joho/godotenv"
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
-	tu "github.com/mymmrac/telego/telegoutil"
 )
-
-type State int
-
-const (
-	StateDefault State = iota
-	StateEnterKeyName
-	StateSelectProtocol
-	StateConfirm
-)
-
-type Key struct {
-	State    State
-	Name     string
-	Protocol string
-}
 
 func main() {
 	err := godotenv.Load()
@@ -51,19 +36,7 @@ func main() {
 	updates, _ := bot.UpdatesViaLongPolling(context.Background(), nil)
 
 	bh, _ := th.NewBotHandler(bot, updates)
-
-	startKb := tu.InlineKeyboard(
-		tu.InlineKeyboardRow(
-			tu.
-				InlineKeyboardButton("Сгенерировать ключ").
-				WithCallbackData("wizard:generate_key"),
-		),
-		tu.InlineKeyboardRow(
-			tu.
-				InlineKeyboardButton("Управление ключами").
-				WithCallbackData("wizard:manage_keys"),
-		),
-	)
+	h := handlers.NewHandlers(bot)
 
 	bh.Use(th.PanicRecovery())
 	bh.Use(
@@ -101,95 +74,12 @@ func main() {
 		},
 	)
 
-	keys := make(map[int64]Key)
-	mutexLock := sync.RWMutex{}
-
 	bh.Handle(
-		func(ctx *th.Context, update telego.Update) error {
-			bot.SendMessage(
-				ctx,
-				tu.Messagef(
-					tu.ID(update.Message.Chat.ID),
-					"Привет, %s\n\nКоличество ключей: 5/5\n\nДоступные локации:\n\n🇩🇪 Германия\n🇫🇷 Франция\n🇳🇱 Нидерланды",
-					update.Message.From.FirstName,
-				).
-					WithReplyMarkup(startKb),
-			)
-
-			return nil
-		},
+		h.HandleStart,
 		th.CommandEqual("start"),
 	)
 	bh.Handle(
-		func(ctx *th.Context, update telego.Update) error {
-			userId := int64(0)
-
-			switch {
-			case update.CallbackQuery != nil:
-				userId = update.CallbackQuery.From.ID
-			case update.Message != nil:
-				userId = update.Message.From.ID
-			}
-
-			if userId == 0 {
-				return nil
-			}
-
-			mutexLock.RLock()
-			key := keys[userId]
-			mutexLock.RUnlock()
-
-			switch {
-			case update.CallbackQuery != nil:
-				bot.AnswerCallbackQuery(
-					ctx,
-					tu.CallbackQuery(update.CallbackQuery.ID),
-				)
-
-				text := "Введи название ключа"
-				key.State = StateEnterKeyName
-
-				bot.SendMessage(
-					ctx,
-					tu.Message(
-						update.
-							CallbackQuery.
-							Message.
-							GetChat().
-							ChatID(),
-						text,
-					),
-				)
-			case update.Message != nil:
-				text := ""
-
-				switch key.State {
-				case StateDefault:
-				case StateEnterKeyName:
-					key.Name = update.Message.Text
-					key.State = StateSelectProtocol
-					text = "Выбери протокол"
-				case StateSelectProtocol:
-					key.Protocol = update.Message.Text
-					key.State = StateConfirm
-					text = "Создать ключ?"
-				case StateConfirm:
-					if update.Message.Text == "Да" {
-						text = "Ключ успешно создан"
-					} else {
-						key.State = StateDefault
-					}
-				}
-
-				bot.SendMessage(ctx, tu.Message(update.Message.Chat.ChatID(), text))
-			}
-
-			mutexLock.Lock()
-			keys[userId] = key
-			mutexLock.Unlock()
-
-			return nil
-		},
+		h.HandleNewConfig,
 		th.Or(
 			th.CallbackDataEqual("wizard:generate_key"),
 			th.AnyMessage(),
