@@ -15,10 +15,8 @@ const (
 	StateConfirm
 )
 
-
 func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error {
 	userId := int64(0)
-
 	switch {
 	case update.CallbackQuery != nil:
 		userId = update.CallbackQuery.From.ID
