@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
@@ -11,6 +12,7 @@ import (
 type Response struct {
 	Text        string
 	ReplyMarkup telego.ReplyMarkup
+	ChatID      telego.ChatID
 }
 
 type State int
@@ -23,7 +25,13 @@ const (
 	StateConfirm
 )
 
-var onSubmitActionKb = tu.InlineKeyboard(
+var locationMap = map[string]string{
+	"ge": "🇩🇪 Германия",
+	"fr": "🇫🇷 Франция",
+	"nl": "🇳🇱 Нидерланды",
+}
+
+var submitActionKb = tu.InlineKeyboard(
 	tu.InlineKeyboardRow(
 		tu.
 			InlineKeyboardButton("Да").
@@ -33,6 +41,24 @@ var onSubmitActionKb = tu.InlineKeyboard(
 		tu.
 			InlineKeyboardButton("Изменить").
 			WithCallbackData("generate_key:edit"),
+	),
+)
+
+var selectLocationKb = tu.InlineKeyboard(
+	tu.InlineKeyboardRow(
+		tu.
+			InlineKeyboardButton("🇩🇪 Германия").
+			WithCallbackData("generate_key:location-ge"),
+	),
+	tu.InlineKeyboardRow(
+		tu.
+			InlineKeyboardButton("🇫🇷 Франция").
+			WithCallbackData("generate_key:location-fr"),
+	),
+	tu.InlineKeyboardRow(
+		tu.
+			InlineKeyboardButton("🇳🇱 Нидерланды").
+			WithCallbackData("generate_key:location-nl"),
 	),
 )
 
@@ -53,33 +79,40 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 	key := h.keys[userId]
 	h.mutex.RUnlock()
 
+	response := Response{}
+
 	switch {
 	case update.CallbackQuery != nil:
+		response.ChatID = update.CallbackQuery.Message.GetChat().ChatID()
+
 		h.bot.AnswerCallbackQuery(
 			ctx,
 			tu.CallbackQuery(update.CallbackQuery.ID),
 		)
 
-		text := ""
-
-		switch update.CallbackQuery.Data {
-		case "wizard:generate_key":
-			text = "Введи название ключа"
+		switch {
+		case update.CallbackQuery.Data == "wizard:generate_key":
+			response.Text = "Введи название ключа"
 			key.State = StateEnterKeyName
-		case "generate_key:yes":
-			text = "Ключ успешно создан"
+		case update.CallbackQuery.Data == "generate_key:yes":
+			response.Text = "Ключ успешно создан"
 			key.State = StateDefault
-		}
+		case strings.Contains(update.CallbackQuery.Data, "location"):
+			key.Location = strings.Replace(update.CallbackQuery.Data, "generate_key:location-", "", 1)
+			key.State = StateConfirm
 
-		h.bot.SendMessage(
-			ctx,
-			tu.Message(
-				update.CallbackQuery.Message.GetChat().ChatID(),
-				text,
-			),
-		)
+			location := locationMap[key.Location]
+
+			response.Text = fmt.Sprintf(
+				"Название: %s\nПротокол: %s\nЛокация: %s\n\nСоздать ключ?",
+				key.Name,
+				key.Protocol,
+				location,
+			)
+			response.ReplyMarkup = submitActionKb
+		}
 	case update.Message != nil:
-		response := Response{}
+		response.ChatID = update.Message.Chat.ChatID()
 
 		switch key.State {
 		case StateEnterKeyName:
@@ -90,29 +123,20 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			key.Protocol = update.Message.Text
 			key.State = StateSelectLocation
 			response.Text = "Выбери локацию"
-		case StateSelectLocation:
-			key.Location = update.Message.Text
-			key.State = StateConfirm
-			response.Text = fmt.Sprintf(
-				"Название: %s\nПротокол: %s\nЛокация: %s\n\nСоздать ключ?",
-				key.Name,
-				key.Protocol,
-				key.Location,
-			)
-			response.ReplyMarkup = onSubmitActionKb
+			response.ReplyMarkup = selectLocationKb
 		}
-
-		message := tu.Message(update.Message.Chat.ChatID(), response.Text)
-
-		if response.ReplyMarkup != nil {
-			message = message.WithReplyMarkup(response.ReplyMarkup)
-		}
-
-		h.bot.SendMessage(
-			ctx,
-			message,
-		)
 	}
+
+	message := tu.Message(response.ChatID, response.Text)
+
+	if response.ReplyMarkup != nil {
+		message = message.WithReplyMarkup(response.ReplyMarkup)
+	}
+
+	h.bot.SendMessage(
+		ctx,
+		message,
+	)
 
 	h.mutex.Lock()
 	h.keys[userId] = key
