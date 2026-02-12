@@ -9,6 +9,7 @@ import (
 type Key struct {
 	State    State
 	Name     string
+	Location string
 	Protocol string
 }
 

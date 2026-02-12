@@ -1,18 +1,39 @@
 package handlers
 
 import (
+	"fmt"
+
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
 	tu "github.com/mymmrac/telego/telegoutil"
 )
+
+type Response struct {
+	Text        string
+	ReplyMarkup telego.ReplyMarkup
+}
 
 type State int
 
 const (
 	StateDefault State = iota
 	StateEnterKeyName
+	StateSelectLocation
 	StateSelectProtocol
 	StateConfirm
+)
+
+var onSubmitActionKb = tu.InlineKeyboard(
+	tu.InlineKeyboardRow(
+		tu.
+			InlineKeyboardButton("Да").
+			WithCallbackData("generate_key:yes"),
+	),
+	tu.InlineKeyboardRow(
+		tu.
+			InlineKeyboardButton("Изменить").
+			WithCallbackData("generate_key:edit"),
+	),
 )
 
 func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error {
@@ -39,42 +60,61 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			tu.CallbackQuery(update.CallbackQuery.ID),
 		)
 
-		text := "Введи название ключа"
-		key.State = StateEnterKeyName
+		text := ""
+		h.bot.Logger().Debugf("ballllllllllllllls")
+
+		switch update.CallbackQuery.Data {
+		case "wizard:generate_key":
+			text = "Введи название ключа"
+			key.State = StateEnterKeyName
+		case "generate_key:yes":
+			text = "Ключ успешно создан"
+			key.State = StateDefault
+		}
 
 		h.bot.SendMessage(
 			ctx,
 			tu.Message(
-				update.
-					CallbackQuery.
-					Message.
-					GetChat().
-					ChatID(),
+				update.CallbackQuery.Message.GetChat().ChatID(),
 				text,
 			),
 		)
 	case update.Message != nil:
-		text := ""
+		response := Response{}
 
 		switch key.State {
-		case StateDefault:
 		case StateEnterKeyName:
 			key.Name = update.Message.Text
 			key.State = StateSelectProtocol
-			text = "Выбери протокол"
+			response.Text = "Выбери протокол"
 		case StateSelectProtocol:
 			key.Protocol = update.Message.Text
+			key.State = StateSelectLocation
+			response.Text = "Выбери локацию"
+		case StateSelectLocation:
+			key.Location = update.Message.Text
 			key.State = StateConfirm
-			text = "Создать ключ?"
-		case StateConfirm:
-			if update.Message.Text == "Да" {
-				text = "Ключ успешно создан"
-			} else {
-				key.State = StateDefault
-			}
+			response.Text = fmt.Sprintf(
+				"Название: %s\nПротокол: %s\nЛокация: %s\n\nСоздать ключ?",
+				key.Name,
+				key.Protocol,
+				key.Location,
+			)
+			response.ReplyMarkup = onSubmitActionKb
 		}
 
-		h.bot.SendMessage(ctx, tu.Message(update.Message.Chat.ChatID(), text))
+		message := tu.Message(update.Message.Chat.ChatID(), response.Text)
+
+		if response.ReplyMarkup != nil {
+			message = message.WithReplyMarkup(response.ReplyMarkup)
+		}
+
+		h.bot.Logger().Debugf("%+v", message)
+
+		h.bot.SendMessage(
+			ctx,
+			message,
+		)
 	}
 
 	h.mutex.Lock()

@@ -27,6 +27,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	// FIXME: Remove this and think how to handle logs in prod
 	bot, err := telego.NewBot(botToken, telego.WithDefaultDebugLogger())
 	if err != nil {
 		fmt.Println(err)
@@ -41,31 +42,25 @@ func main() {
 	bh.Use(th.PanicRecovery())
 	bh.Use(
 		func(ctx *th.Context, update telego.Update) error {
+			userId := int64(0)
+			userName := ""
+
 			switch {
 			case update.Message != nil:
-				userId := update.Message.From.ID
-				userName := update.Message.From.FirstName
-
-				if userId != adminId {
-					bot.Logger().Debugf(
-						"%s is trying to access bot",
-						userName,
-					)
-
-					return nil
-				}
+				userId = update.Message.From.ID
+				userName = update.Message.From.FirstName
 			case update.CallbackQuery != nil:
-				userId := update.CallbackQuery.From.ID
-				userName := update.CallbackQuery.From.FirstName
+				userId = update.CallbackQuery.From.ID
+				userName = update.CallbackQuery.From.FirstName
+			}
 
-				if userId != adminId {
-					bot.Logger().Debugf(
-						"%s is trying to access bot",
-						userName,
-					)
+			if userId != adminId {
+				bot.Logger().Debugf(
+					"%s is trying to access bot",
+					userName,
+				)
 
-					return nil
-				}
+				return nil
 			}
 
 			bot.Logger().Debugf("Access granted")
@@ -81,7 +76,7 @@ func main() {
 	bh.Handle(
 		h.HandleNewConfig,
 		th.Or(
-			th.CallbackDataEqual("wizard:generate_key"),
+			th.CallbackDataContains("generate_key"),
 			th.AnyMessage(),
 		),
 	)
