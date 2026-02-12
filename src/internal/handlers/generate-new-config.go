@@ -61,7 +61,6 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 		)
 
 		text := ""
-		h.bot.Logger().Debugf("ballllllllllllllls")
 
 		switch update.CallbackQuery.Data {
 		case "wizard:generate_key":
@@ -108,8 +107,6 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 		if response.ReplyMarkup != nil {
 			message = message.WithReplyMarkup(response.ReplyMarkup)
 		}
-
-		h.bot.Logger().Debugf("%+v", message)
 
 		h.bot.SendMessage(
 			ctx,
