@@ -31,6 +31,11 @@ var locationMap = map[string]string{
 	"nl": "🇳🇱 Нидерланды",
 }
 
+var protocolMap = map[string]string{
+	"awg": "Amnezia WG",
+	"xray": "XRay",
+}
+
 var submitActionKb = tu.InlineKeyboard(
 	tu.InlineKeyboardRow(
 		tu.
@@ -59,6 +64,19 @@ var selectLocationKb = tu.InlineKeyboard(
 		tu.
 			InlineKeyboardButton("🇳🇱 Нидерланды").
 			WithCallbackData("generate_key:location-nl"),
+	),
+)
+
+var selectProtocolKb = tu.InlineKeyboard(
+	tu.InlineKeyboardRow(
+		tu.
+			InlineKeyboardButton(protocolMap["awg"]).
+			WithCallbackData("generate_key:protocol-awg"),
+	),
+	tu.InlineKeyboardRow(
+		tu.
+			InlineKeyboardButton(protocolMap["xray"]).
+			WithCallbackData("generate_key:protocol-xray"),
 	),
 )
 
@@ -94,11 +112,8 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 		case update.CallbackQuery.Data == "wizard:generate_key":
 			response.Text = "Введи название ключа"
 			key.State = StateEnterKeyName
-		case update.CallbackQuery.Data == "generate_key:yes":
-			response.Text = "Ключ успешно создан"
-			key.State = StateDefault
 		case strings.Contains(update.CallbackQuery.Data, "location"):
-			key.Location = strings.Replace(update.CallbackQuery.Data, "generate_key:location-", "", 1)
+			key.Location = strings.ReplaceAll(update.CallbackQuery.Data, "generate_key:location-", "")
 			key.State = StateConfirm
 
 			location := locationMap[key.Location]
@@ -110,6 +125,16 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 				location,
 			)
 			response.ReplyMarkup = submitActionKb
+		case strings.Contains(update.CallbackQuery.Data, "protocol"):
+			key.Protocol = strings.ReplaceAll(update.CallbackQuery.Data, "generate_key:protocol-", "")
+			key.Protocol = protocolMap[key.Protocol]
+			key.State = StateSelectProtocol
+
+			response.Text = "Выбери локацию"
+			response.ReplyMarkup = selectLocationKb
+		case update.CallbackQuery.Data == "generate_key:yes":
+			response.Text = "Ключ успешно создан"
+			key.State = StateDefault
 		}
 	case update.Message != nil:
 		response.ChatID = update.Message.Chat.ChatID()
@@ -119,11 +144,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			key.Name = update.Message.Text
 			key.State = StateSelectProtocol
 			response.Text = "Выбери протокол"
-		case StateSelectProtocol:
-			key.Protocol = update.Message.Text
-			key.State = StateSelectLocation
-			response.Text = "Выбери локацию"
-			response.ReplyMarkup = selectLocationKb
+			response.ReplyMarkup = selectProtocolKb
 		}
 	}
 
