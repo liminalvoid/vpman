@@ -52,17 +52,17 @@ var submitActionKb = tu.InlineKeyboard(
 var selectLocationKb = tu.InlineKeyboard(
 	tu.InlineKeyboardRow(
 		tu.
-			InlineKeyboardButton("🇩🇪 Германия").
+			InlineKeyboardButton(locationMap["ge"]).
 			WithCallbackData("generate_key:location-ge"),
 	),
 	tu.InlineKeyboardRow(
 		tu.
-			InlineKeyboardButton("🇫🇷 Франция").
+			InlineKeyboardButton(locationMap["fr"]).
 			WithCallbackData("generate_key:location-fr"),
 	),
 	tu.InlineKeyboardRow(
 		tu.
-			InlineKeyboardButton("🇳🇱 Нидерланды").
+			InlineKeyboardButton(locationMap["nl"]).
 			WithCallbackData("generate_key:location-nl"),
 	),
 )
@@ -109,7 +109,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 		)
 
 		switch {
-		case update.CallbackQuery.Data == "wizard:generate_key":
+		case update.CallbackQuery.Data == "wizard:generate_key" || update.CallbackQuery.Data == "generate_key:edit":
 			response.Text = "Введи название ключа"
 			key.State = StateEnterKeyName
 		case strings.Contains(update.CallbackQuery.Data, "location"):
@@ -135,6 +135,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 		case update.CallbackQuery.Data == "generate_key:yes":
 			response.Text = "Ключ успешно создан"
 			key.State = StateDefault
+			key.State = StateEnterKeyName
 		}
 	case update.Message != nil:
 		response.ChatID = update.Message.Chat.ChatID()
