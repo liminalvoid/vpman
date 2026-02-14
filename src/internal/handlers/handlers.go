@@ -7,7 +7,7 @@ import (
 )
 
 type Key struct {
-	State    State
+	State    GenerateConfigState
 	Name     string
 	Location string
 	Protocol string
@@ -26,4 +26,3 @@ func NewHandlers(bot *telego.Bot) *Handlers {
 		mutex: &sync.RWMutex{},
 	}
 }
-

@@ -80,8 +80,15 @@ func main() {
 			th.AnyMessage(),
 		),
 	)
-	defer func() { bh.Stop() }()
+	bh.Handle(
+		h.HandleManageKeys,
+		th.Or(
+			th.CallbackDataContains("manage_keys"),
+			th.AnyMessage(),
+		),
+	)
 
+	defer func() { bh.Stop() }()
 	err = bh.Start()
 	if err != nil {
 		fmt.Println(err)

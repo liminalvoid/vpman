@@ -15,14 +15,14 @@ type Response struct {
 	ChatID      telego.ChatID
 }
 
-type State int
+type GenerateConfigState int
 
 const (
-	StateDefault State = iota
-	StateEnterKeyName
-	StateSelectLocation
-	StateSelectProtocol
-	StateConfirm
+	StateCreateConfig GenerateConfigState = iota
+	StateCreateConfigEnterKeyName
+	StateCreateConfigSelectLocation
+	StateCreateConfigSelectProtocol
+	StateCreateConfigConfirm
 )
 
 var locationMap = map[string]string{
@@ -32,7 +32,7 @@ var locationMap = map[string]string{
 }
 
 var protocolMap = map[string]string{
-	"awg": "Amnezia WG",
+	"awg":  "Amnezia WG",
 	"xray": "XRay",
 }
 
@@ -89,6 +89,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 		userId = update.Message.From.ID
 	}
 
+	// FIXME: Think if this `if` is necessary
 	if userId == 0 {
 		return nil
 	}
@@ -111,10 +112,10 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 		switch {
 		case update.CallbackQuery.Data == "wizard:generate_key" || update.CallbackQuery.Data == "generate_key:edit":
 			response.Text = "Введи название ключа"
-			key.State = StateEnterKeyName
+			key.State = StateCreateConfigEnterKeyName
 		case strings.Contains(update.CallbackQuery.Data, "location"):
 			key.Location = strings.ReplaceAll(update.CallbackQuery.Data, "generate_key:location-", "")
-			key.State = StateConfirm
+			key.State = StateCreateConfigConfirm
 
 			location := locationMap[key.Location]
 
@@ -128,22 +129,22 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 		case strings.Contains(update.CallbackQuery.Data, "protocol"):
 			key.Protocol = strings.ReplaceAll(update.CallbackQuery.Data, "generate_key:protocol-", "")
 			key.Protocol = protocolMap[key.Protocol]
-			key.State = StateSelectProtocol
+			key.State = StateCreateConfigSelectProtocol
 
 			response.Text = "Выбери локацию"
 			response.ReplyMarkup = selectLocationKb
 		case update.CallbackQuery.Data == "generate_key:yes":
 			response.Text = "Ключ успешно создан"
-			key.State = StateDefault
-			key.State = StateEnterKeyName
+			key.State = StateCreateConfig
+			key.State = StateCreateConfigEnterKeyName
 		}
 	case update.Message != nil:
 		response.ChatID = update.Message.Chat.ChatID()
 
 		switch key.State {
-		case StateEnterKeyName:
+		case StateCreateConfigEnterKeyName:
 			key.Name = update.Message.Text
-			key.State = StateSelectProtocol
+			key.State = StateCreateConfigSelectProtocol
 			response.Text = "Выбери протокол"
 			response.ReplyMarkup = selectProtocolKb
 		}
