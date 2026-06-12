@@ -17,33 +17,20 @@ type Config struct {
 }
 
 func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error {
-	userId := int64(0)
-	switch {
-	case update.CallbackQuery != nil:
-		userId = update.CallbackQuery.From.ID
-	case update.Message != nil:
-		userId = update.Message.From.ID
-	}
-
-	// FIXME: Think if this `if` is necessary
-	if userId == 0 {
-		return nil
-	}
-
 	currentKeys := [...]*Config{
-		&Config{
+		{
 			Name: "VPN",
 			Location: "fr",
 			Protocol: "AWG",
 			Key: "alkdsjflkwo3283",
 		},
-		&Config{
+		{
 			Name: "VPN 2",
 			Location: "nl",
 			Protocol: "AWG",
 			Key: "alkdsjflkwo3283",
 		},
-		&Config{
+		{
 			Name: "VPN 3",
 			Location: "ge",
 			Protocol: "XRay",

@@ -87,10 +87,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 		userId = update.CallbackQuery.From.ID
 	case update.Message != nil:
 		userId = update.Message.From.ID
-	}
-
-	// FIXME: Think if this `if` is necessary
-	if userId == 0 {
+	default:
 		return nil
 	}
 
