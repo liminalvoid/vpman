@@ -21,3 +21,5 @@ ansible
 
 # Go workspace file
 go.work
+
+*.sql
