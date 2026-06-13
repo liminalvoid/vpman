@@ -1,4 +1,4 @@
-module github.com/liminalvoid/vpn-manager
+module github.com/liminalvoid/vpn-manager/bot
 
 go 1.25.6
 

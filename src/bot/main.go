@@ -6,7 +6,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/liminalvoid/vpn-manager/internal/handlers"
+	"github.com/liminalvoid/vpn-manager/bot/internal/handlers"
 
 	"github.com/joho/godotenv"
 	"github.com/mymmrac/telego"
