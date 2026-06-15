@@ -1,4 +1,4 @@
-module github.com/liminalvoid/vpn-manager/manager
+module manager
 
 go 1.26.4
 

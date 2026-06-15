@@ -1,28 +1,15 @@
 package main
 
 import (
-	"net/http"
+	"manager/internal/handler"
 
 	"github.com/gin-gonic/gin"
 )
 
-type config struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-}
-
-var configs = []config{
-	{ID: "1", Name: "conf"},
-}
-
 func main() {
 	router := gin.Default()
 
-	router.GET("/configs", getConfigs)
+	handler.RegisterRoutes(router, handler.NewConfigsHandler())
 
 	router.Run("localhost:8080")
-}
-
-func getConfigs(c *gin.Context) {
-	c.IndentedJSON(http.StatusOK, configs)
 }
