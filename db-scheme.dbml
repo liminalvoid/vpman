@@ -24,7 +24,7 @@ Table configs {
     revoked_at   timestamptz [note: "Config revocation date"]
 
     checks {
-        `status IN ('active', 'expired', 'revoked')` [name: 'chk_status_is_known']
+        `status IN ('active', 'expired', 'revoked')` [name: "chk_status_is_known"]
     }
 
     indexes {
