@@ -72,7 +72,7 @@ Table sessions {
 Table plans {
     id             int        [pk, increment]
     code           text       [not null, unique, note: "Plan's code (e.g. pro_monthly)"]
-    name           text       [not null, unique, note: "Plan's name (e.g. Super cool pro plan"]
+    name           text       [not null, note: "Plan's name (e.g. Super cool pro plan"]
     amount_cents   int        [not null, note: "Price in US cents"]
     currency       varchar(3) [not null, note: "Price currency"]
     interval       text       [not null]
