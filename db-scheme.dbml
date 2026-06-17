@@ -68,3 +68,14 @@ Table sessions {
         user_id
     }
 }
+
+Table plans {
+    id             int        [pk, increment, note: "Plan ID"]
+    code           text       [not null, unique, note: "Plan's code"]
+    name           text       [not null, unique, note: "Plan's name"]
+    amount_cents   int        [not null, note: "Plan's price in US cents"]
+    currency       varchar(3) [not null, note: "Plan's price currency"]
+    interval       text       [not null, note: "Plan's interval"]
+    interval_count int        [not null, default: 1, note: "Default count of interval"]
+    is_active      boolean    [not null, default: true, note: "Is plan active"]
+}
