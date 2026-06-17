@@ -7,11 +7,16 @@ Project VpnManager {
 }
 // #endregion
 
+Table protocols {
+    id   smallint [pk, increment, note: "Protocol ID"]
+    name text     [not null, unique, note: "Protocol name"]
+}
+
 Table configs {
     id           bigint      [pk, increment, note: "Config ID"]
     public_id    uuid        [not null, unique, default: `gen_random_uuid()`, note: "Config's public ID"]
     user_id      bigint      [not null, ref: > users.id, note: "Config's owner"]
-    protocol     text        [not null, note: "Config's protocol"]
+    protocol_id  smallint    [not null, ref: > protocols.id, note: "Config's protocol"]
     status       text        [not null, default: 'active', note: "Config's status"]
     country_code varchar(2)  [not null, note: "Config's location"]
     created_at   timestamptz [not null, default: `now()`, note: "Config creation date"]
@@ -19,8 +24,7 @@ Table configs {
     revoked_at   timestamptz [note: "Config revocation date"]
 
     checks {
-        `status IN ('active', 'expired', 'revoked')`    [name: 'chk_status_is_known']
-        `protocol IN ('awg', 'wg', 'xray', 'hysteria')` [name: 'chk_protocol_is_known'] 
+        `status IN ('active', 'expired', 'revoked')` [name: 'chk_status_is_known']
     }
 
     indexes {
@@ -35,19 +39,20 @@ Table users {
     password_hash text   [null, note: "Hash of the password"]
 }
 
-Table auth_identities {
-    id               bigint [pk, increment, note: "Auth identity entry ID"]
-    user_id          bigint [ref: > users.id, not null, note: "User ID"]
-    provider         text   [not null, note: "Third-party provider's name"]
-    provider_user_id text   [not null, note: "User ID from third-party provider"]
+Table identity_providers {
+    id   smallint [pk, increment, note: "Identity provider ID"]
+    name text     [not null, unique, note: "Identity provider name"]
+}
 
-    checks {
-        `provider IN ('telegram')` [name: 'chk_provider_is_known']
-    }
-    
+Table auth_identities {
+    id               bigint   [pk, increment, note: "Auth identity entry ID"]
+    user_id          bigint   [not null, ref: > users.id, note: "User ID"]
+    provider_id      smallint [not null, ref: > identity_providers.id, note: "Third-party provider's name"]
+    provider_user_id text     [not null, note: "User ID from third-party provider"]
+
     indexes {
-        (provider, provider_user_id) [unique]
-        (user_id, provider)          [unique]
+        (provider_id, provider_user_id) [unique]
+        (user_id, provider_id)          [unique]
         user_id
     }
 }
