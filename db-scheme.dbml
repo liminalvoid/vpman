@@ -80,7 +80,7 @@ Table plans {
     is_active      boolean    [not null, default: true, note: "Is plan active"]
 
     checks {
-        `interval IN ('second', 'minute', 'hour', 'day', 'week, 'month', 'year')` [name: "chk_interval_is_known"]
+        `interval IN ('second', 'minute', 'hour', 'day', 'week', 'month', 'year')` [name: "chk_interval_is_known"]
     }
 }
 
