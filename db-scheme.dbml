@@ -116,5 +116,5 @@ Table subscriptions {
     }
 }
 
-Ref: subscriptions.user_id > users.id [delete: restrict, update: no action]
+Ref: subscriptions.user_id > users.id [delete: cascade, update: no action]
 Ref: subscriptions.plan_id > plans.id [delete: restrict, update: no action]
