@@ -15,6 +15,7 @@ Table protocols {
 Table configs {
     id           bigint      [pk, increment]
     public_id    uuid        [not null, unique, default: `gen_random_uuid()`]
+    name         text        [not null]
     user_id      bigint      [not null, note: "Config's owner"]
     protocol_id  smallint    [not null]
     status       text        [not null, default: 'active', note: "Config's status (active, expired, or revoked)"]
