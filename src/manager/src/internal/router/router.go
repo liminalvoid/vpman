@@ -1,6 +1,8 @@
-package handler
+package router
 
 import (
+	"manager/internal/handler"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -12,7 +14,7 @@ func SetupRouter() *gin.Engine {
 	})
 
 	v1 := r.Group("/api/vi")
-	registerConfigsRoutes(v1)
+	handler.RegisterConfigsRoutes(v1)
 
 	return r
 }

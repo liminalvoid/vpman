@@ -9,7 +9,7 @@ func get(c *gin.Context) {}
 func update(c *gin.Context) {}
 func delete(c *gin.Context) {}
 
-func registerConfigsRoutes(rg *gin.RouterGroup) {
+func RegisterConfigsRoutes(rg *gin.RouterGroup) {
 	configs := rg.Group("/configs")
 	{
 		configs.POST("", create)

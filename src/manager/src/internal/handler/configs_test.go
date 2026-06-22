@@ -7,11 +7,11 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"manager/internal/handler"
+	"manager/internal/router"
 )
 
 func TestCreateRoute(t *testing.T) {
-	router := handler.SetupRouter()
+	router := router.SetupRouter()
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/configs", nil)
