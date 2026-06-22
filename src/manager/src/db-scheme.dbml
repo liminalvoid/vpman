@@ -19,7 +19,7 @@ Table configs {
     user_id      bigint      [not null, note: "Config's owner"]
     protocol_id  smallint    [not null]
     status       text        [not null, default: 'active', note: "Config's status (active, expired, or revoked)"]
-    country_code varchar(2)  [not null, note: "Location of the config"]
+    location     varchar(2)  [not null, note: "Location of the config"]
     created_at   timestamptz [not null, default: `now()`]
     expires_at   timestamptz [not null]
     revoked_at   timestamptz
