@@ -12,7 +12,7 @@ type ConfigURI struct {
 }
 
 type ListConfigQuery struct {
-	Status   string `form:"status"    binding:"omitempty,oneof=pending expired revoked"`
+	Status   string `form:"status"    binding:"omitempty,oneof=active expired revoked"`
 	Location string `form:"location"  binding:"omitempty,iso3166_1_alpha2"`
 	Page     int    `form:"page"      binding:"omitempty,gte=1"`
 	PageSize int    `form:"page_size" binding:"omitempty,gte=1,lte=100"`
