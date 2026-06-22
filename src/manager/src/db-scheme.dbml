@@ -35,10 +35,11 @@ Ref: configs.user_id     > users.id     [delete: cascade,  update: no action]
 Ref: configs.protocol_id > protocols.id [delete: restrict, update: no action]
 
 Table users {
-    id            bigint [pk, increment]
-    public_id     uuid   [not null, unique, default: `gen_random_uuid()`]
-    username      text   [not null, unique]
-    password_hash text   [null]
+    id            bigint  [pk, increment]
+    public_id     uuid    [not null, unique, default: `gen_random_uuid()`]
+    username      text    [not null, unique]
+    password_hash text    [null]
+    is_admin      boolean [not null, default: false]
 }
 
 Table identity_providers {
