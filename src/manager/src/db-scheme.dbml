@@ -21,8 +21,6 @@ Table configs {
     status       text        [not null, default: 'active', note: "Config's status (active, expired, or revoked)"]
     location     varchar(2)  [not null, note: "Location of the config"]
     created_at   timestamptz [not null, default: `now()`]
-    expires_at   timestamptz [not null]
-    revoked_at   timestamptz
 
     checks {
         `status IN ('active', 'expired', 'revoked')` [name: "chk_status_is_known"]
