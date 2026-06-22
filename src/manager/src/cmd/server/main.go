@@ -1,11 +1,11 @@
 package main
 
 import (
-	"manager/internal/handler"
+	"manager/internal/router"
 )
 
 func main() {
-	router := handler.SetupRouter()
+	router := router.SetupRouter()
 
 	router.Run("localhost:8080")
 }
