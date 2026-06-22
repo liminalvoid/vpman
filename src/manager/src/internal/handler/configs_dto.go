@@ -9,3 +9,9 @@ type CreateConfigRequest struct {
 	CountryCode string    `json:"country_code" binding:"required,iso3166_1_alpha2"`
 	ExpiresAt   time.Time `json:"expires_at"   binding:"required"`
 }
+
+type ConfigResponse struct {
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	Location string `json:"location"`
+}
