@@ -7,6 +7,10 @@ type CreateConfigRequest struct {
 	Location string `json:"location"     binding:"required,iso3166_1_alpha2"`
 }
 
+type ConfigURI struct {
+	PublicID string `uri:"id" binding:"required,uuid"`
+}
+
 type ListConfigQuery struct {
 	Status   string `form:"status"    binding:"omitempty,oneof=pending expired revoked"`
 	Location string `form:"location"  binding:"omitempty,iso3166_1_alpha2"`
@@ -23,4 +27,11 @@ type ConfigResponse struct {
 	ID       string `json:"id"`
 	Name     string `json:"name"`
 	Location string `json:"location"`
+}
+
+type ConfigListResponse struct {
+	Data       []ConfigResponse `json:"data"`
+	Page       int              `json:"page"`
+	PageSize   int              `json:"page_size"`
+	TotalCount int              `json:"total_count"`
 }
