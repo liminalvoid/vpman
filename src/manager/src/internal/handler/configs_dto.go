@@ -23,7 +23,7 @@ type UpdateConfigRequest struct {
 }
 
 type ConfigResponse struct {
-	ID       string `json:"id"`
+	PublicID string `json:"id"`
 	Name     string `json:"name"`
 	Protocol string `json:"protocol"`
 	Location string `json:"location"`
