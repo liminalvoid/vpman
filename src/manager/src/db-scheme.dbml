@@ -118,3 +118,12 @@ Table subscriptions {
 
 Ref: subscriptions.user_id > users.id [delete: cascade, update: no action]
 Ref: subscriptions.plan_id > plans.id [delete: restrict, update: no action]
+
+Table servers {
+    id               smallint   [pk, increment]
+    hostname         text       [not null]
+    internal_ip      inet       [not null]
+    location         varchar(2) [not null]
+    location_country text       [not null]
+    location_city    text       [not null]
+}
