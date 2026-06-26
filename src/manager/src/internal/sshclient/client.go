@@ -1,9 +1,12 @@
 package sshclient
 
 import (
+	"bytes"
+	"context"
 	"fmt"
-	"time"
 	"net"
+	"time"
+	"errors"
 
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/knownhosts"
@@ -22,6 +25,12 @@ type Config struct {
 	Timeout        time.Duration
 }
 
+type Result struct {
+	Stdout   string
+	Stderr   string
+	ExitCode int
+}
+
 func (c *Client) New(cfg Config) (*Client, error) {
 	signer, err := ssh.ParsePrivateKey(cfg.PrivateKey)
 	if err != nil {
@@ -34,10 +43,10 @@ func (c *Client) New(cfg Config) (*Client, error) {
 	}
 
 	conn, err := ssh.Dial("tcp", net.JoinHostPort(cfg.Host, fmt.Sprint(cfg.Port)), &ssh.ClientConfig{
-		User: cfg.User,
-		Auth: []ssh.AuthMethod{ssh.PublicKeys(signer)},
+		User:            cfg.User,
+		Auth:            []ssh.AuthMethod{ssh.PublicKeys(signer)},
 		HostKeyCallback: hostKeyCallback,
-		Timeout: cfg.Timeout,
+		Timeout:         cfg.Timeout,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("dial %s: %w", cfg.Host, err)
@@ -48,4 +57,44 @@ func (c *Client) New(cfg Config) (*Client, error) {
 
 func (c *Client) Close() error {
 	return c.conn.Close()
+}
+
+func (c *Client) Run(ctx context.Context, cmd Command) (Result, error) {
+	session, err := c.conn.NewSession()
+	if err != nil {
+		return Result{}, fmt.Errorf("new session: %w", err)
+	}
+
+	var stdout, stderr bytes.Buffer
+	session.Stdout = &stdout
+	session.Stderr = &stderr
+
+	if err := session.Start(cmd.String()); err != nil {
+		return Result{}, fmt.Errorf("start: %w", err)
+	}
+
+	done := make(chan error, 1)
+	go func() { done <- session.Wait() }()
+
+	select {
+	case <-ctx.Done():
+		session.Signal(ssh.SIGKILL)
+
+		return Result{}, ctx.Err()
+	case err := <-done:
+		res := Result{Stdout: stdout.String(), Stderr: stderr.String()}
+
+		var exitErr *ssh.ExitError
+		if errors.As(err, &exitErr) {
+			res.ExitCode = exitErr.ExitStatus()
+
+			return res, nil
+		}
+
+		if err != nil {
+			return res, fmt.Errorf("wait: %w", err)
+		}
+
+		return res, nil
+	}
 }
