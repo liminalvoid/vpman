@@ -14,6 +14,7 @@ import (
 type Awg struct{}
 
 func (l *Awg) create(ctx context.Context, ssh sshclient.Client, cg *ConfigGenerator) (string, error) {
+	// Generate keys via SSH
 	genPrivKeyCmd := sshclient.Command{
 		Name: "wg",
 		Args: []string{"genkey"},
@@ -22,7 +23,6 @@ func (l *Awg) create(ctx context.Context, ssh sshclient.Client, cg *ConfigGenera
 	if err != nil {
 		return "", fmt.Errorf("failed private key generation: %s", err)
 	}
-
 	genPubKeyCmd := sshclient.Command{
 		Name: "wg",
 		Args: []string{fmt.Sprintf("%s | awg pubkey", privKeyRes.Stdout)},
@@ -31,7 +31,6 @@ func (l *Awg) create(ctx context.Context, ssh sshclient.Client, cg *ConfigGenera
 	if err != nil {
 		return "", fmt.Errorf("failed public key generation: %s", err)
 	}
-
 	genPresharedKeyCmd := sshclient.Command{
 		Name: "wg",
 		Args: []string{"genpsk"},
@@ -41,6 +40,7 @@ func (l *Awg) create(ctx context.Context, ssh sshclient.Client, cg *ConfigGenera
 		return "", fmt.Errorf("failed preshared key generation: %s", err)
 	}
 
+	// Obtain server's credentials
 	getServerPubKeyCmd := sshclient.Command{
 		Name: "wg",
 		Args: []string{"show", "wg0", "public-key"},
@@ -49,7 +49,6 @@ func (l *Awg) create(ctx context.Context, ssh sshclient.Client, cg *ConfigGenera
 	if err != nil {
 		return "", fmt.Errorf("failed to obtain server's public key: %s", err)
 	}
-
 	getServerPortCmd := sshclient.Command{
 		Name: "wg",
 		Args: []string{"show", "wg0", "listen-port"},
@@ -59,6 +58,7 @@ func (l *Awg) create(ctx context.Context, ssh sshclient.Client, cg *ConfigGenera
 		return "", fmt.Errorf("failed to obtain server's port: %s", err)
 	}
 
+	// Get the latest added peer's IP
 	getLatestPeerAddrCmd := sshclient.Command{
 		Name: "awk",
 		Args: []string{`'/\[Peer\]/{p=""} {p=p $0 ORS} END{printf "%s", p}'`, "/etc/wireguard/wg0.conf"},
@@ -73,10 +73,18 @@ func (l *Awg) create(ctx context.Context, ssh sshclient.Client, cg *ConfigGenera
 	}
 	newPeerAddr := latestPeerAddr.Next()
 
+	// Read config template file
 	confTemplateFile, err := os.ReadFile("/manager/awg/template.conf")
 	if err != nil {
 		return "", fmt.Errorf("failed to read config template: %s", err)
 	}
+
+	// TODO: Add a peer creation in interface config
+	//
+	// here
+	//
+
+	// Create config file
 	var sb strings.Builder
 	confTemplate, err := template.New("config").Parse(string(confTemplateFile))
 	if err != nil {
