@@ -92,7 +92,7 @@ func (l *Awg) create(ctx context.Context, ssh sshclient.Client, cg *ConfigGenera
 		ClientPrivKey:      serverPubKeyRes.Stdout,
 		ServerPubKey:       serverPubKeyRes.Stdout,
 		ClientPresharedKey: presharedKeyRes.Stdout,
-		ServerAddr:         ssh.Addr,
+		ServerAddr:         ssh.Host,
 		ServerPort:         serverPortRes.Stdout,
 	}
 	if err := confTemplate.Execute(&sb, configData); err != nil {

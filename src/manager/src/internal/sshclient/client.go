@@ -13,6 +13,7 @@ import (
 )
 
 type Client struct {
+	Host string
 	conn *ssh.Client
 }
 
@@ -52,7 +53,7 @@ func New(cfg Config) (*Client, error) {
 		return nil, fmt.Errorf("dial %s: %w", cfg.Host, err)
 	}
 
-	return &Client{conn: conn}, nil
+	return &Client{conn: conn, Host: cfg.Host}, nil
 }
 
 func (c *Client) Close() error {
