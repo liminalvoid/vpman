@@ -77,9 +77,11 @@ func (l *Awg) create(ctx context.Context, ssh sshclient.Client, cg *ConfigGenera
 	if err != nil {
 		return "", fmt.Errorf("failed to read config template: %s", err)
 	}
-
 	var sb strings.Builder
-	confTemplate := template.Must(template.New("config").Parse(string(confTemplateFile)))
+	confTemplate, err := template.New("config").Parse(string(confTemplateFile))
+	if err != nil {
+		return "", fmt.Errorf("failed to create config template: %s", err)
+	}
 	configData := struct {
 		ClientAddr         string
 		ClientPrivKey      string
