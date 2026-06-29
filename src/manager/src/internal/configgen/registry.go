@@ -1,8 +1,8 @@
 package configgen
 
 type Protocol interface {
-	create(cg *ConfigGenerator)
-	revoke(cg *ConfigGenerator)
+	create()
+	revoke()
 }
 
 type ConfigGenerator struct {
@@ -14,8 +14,11 @@ func Init(p *Protocol) *ConfigGenerator {
 }
 
 func (cg *ConfigGenerator) SetProtocol(p Protocol) {
-	cg.protocol = p 
+	cg.protocol = p
 }
 
-func (cg *ConfigGenerator) Create() {}
+func (cg *ConfigGenerator) Create() {
+	cg.protocol.create()
+}
+
 func (cg *ConfigGenerator) Revoke() {}

@@ -31,7 +31,7 @@ type Result struct {
 	ExitCode int
 }
 
-func (c *Client) New(cfg Config) (*Client, error) {
+func New(cfg Config) (*Client, error) {
 	signer, err := ssh.ParsePrivateKey(cfg.PrivateKey)
 	if err != nil {
 		return nil, fmt.Errorf("parse private key: %w", err)
@@ -84,8 +84,7 @@ func (c *Client) Run(ctx context.Context, cmd Command) (Result, error) {
 	case err := <-done:
 		res := Result{Stdout: stdout.String(), Stderr: stderr.String()}
 
-		var exitErr *ssh.ExitError
-		if errors.As(err, &exitErr) {
+		if exitErr, ok := errors.AsType[*ssh.ExitError](err); ok {
 			res.ExitCode = exitErr.ExitStatus()
 
 			return res, nil
