@@ -7,6 +7,7 @@ import (
 	"net"
 	"time"
 	"errors"
+	"io"
 
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/knownhosts"
@@ -60,7 +61,7 @@ func (c *Client) Close() error {
 	return c.conn.Close()
 }
 
-func (c *Client) Run(ctx context.Context, cmd Command) (Result, error) {
+func (c *Client) Run(ctx context.Context, cmd Command, stdin io.Reader) (Result, error) {
 	session, err := c.conn.NewSession()
 	if err != nil {
 		return Result{}, fmt.Errorf("new session: %w", err)
@@ -69,6 +70,10 @@ func (c *Client) Run(ctx context.Context, cmd Command) (Result, error) {
 	var stdout, stderr bytes.Buffer
 	session.Stdout = &stdout
 	session.Stderr = &stderr
+
+	if stdin != nil {
+		session.Stdin = stdin
+	}
 
 	if err := session.Start(cmd.String()); err != nil {
 		return Result{}, fmt.Errorf("start: %w", err)

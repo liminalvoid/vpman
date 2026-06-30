@@ -15,7 +15,7 @@ func (c *Command) String() string {
 	parts := make([]string, 0, len(c.Args) + 1)
 	parts = append(parts, c.Name)
 	for _, a := range c.Args {
-		parts =append(parts, quote(a))
+		parts = append(parts, quote(a))
 	}
 
 	return strings.Join(parts, " ")
