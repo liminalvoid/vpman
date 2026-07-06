@@ -1,170 +1,136 @@
 package configgen
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"io"
+	"net/netip"
+	"os"
+	"strings"
+	"text/template"
 
-	"github.com/moby/moby/client"
-	"github.com/moby/moby/api/pkg/stdcopy"
+	"manager/internal/executor"
 )
 
 type Awg struct{}
 
-func (l *Awg) create(ctx context.Context, cli *client.Client, cg *ConfigGenerator, containerID string) (string, error) {
-	execResp, err := cli.ExecCreate(ctx, containerID, client.ExecCreateOptions{
-		Cmd: cmd,
-		AttachStdout: true,
-		AttachStderr: true,
-	})
+func (l *Awg) create(
+	ctx context.Context,
+	cli *executor.ContainerExecutor,
+	cg *ConfigGenerator,
+	containerID string,
+) (string, error) {
+	// Generate keys
+	keysGenerationCmd := []string{
+		"sh", "-c",
+		`privKey=$(wg genkey); pubKey=$(echo $privKey | wg pubkey); presKey=$(wg genpsk); echo "$privKey|$pubKey|$presKey"`,
+	}
+	output, err := cli.Run(ctx, keysGenerationCmd)
 	if err != nil {
-		return "", fmt.Errorf("failed: %s", err)
+		return "", fmt.Errorf("failed keys generation: %s", err)
 	}
 
-	attachResp, err := cli.ExecAttach(ctx, execResp.ID, client.ExecAttachOptions{})
+	keys := strings.SplitN(strings.TrimSpace(output), "|", 3)
+	if len(keys) != 3 {
+		return "", fmt.Errorf("unexpected keys generation output: %q", output)
+	}
+	privKey, pubKey, presKey := keys[0], keys[1], keys[2]
+
+	// Obtain server's credentials
+	getServerPubKeyCmd := []string{"wg", "show", "wg0", "public-key"}
+	output, err = cli.Run(ctx, getServerPubKeyCmd)
 	if err != nil {
-		return "", fmt.Errorf("failed: %s", err)
+		return "", fmt.Errorf("failed to get server's public key: %s", err)
 	}
-	defer attachResp.Close()
+	serverPubKey := output
 
-	var stdoutBuf bytes.Buffer
-	if _, err := stdcopy.StdCopy(&stdoutBuf, io.Discard, attachResp.Reader); err != nil {
-		return "", fmt.Errorf("failed: %s", err)
-	}
-
-	_, err = cli.ExecInspect(ctx, execResp.ID, client.ExecInspectOptions{})
+	getServerPortCmd := []string{"wg", "show", "wg0", "listen-port"}
+	output, err = cli.Run(ctx, getServerPortCmd)
 	if err != nil {
-		return "", fmt.Errorf("failed: %s", err)
+		return "", fmt.Errorf("failed to get server's port: %s", err)
+	}
+	serverPort := output
+
+	// Get the latest added peer's IP
+	getLatestPeerAddrCmd := []string{"awk", `'/\[Peer\]/{p=""} {p=p $0 ORS} END{printf "%s", p}'`, "/etc/wireguard/wg0.conf"}
+	output, err = cli.Run(ctx, getLatestPeerAddrCmd)
+	if err != nil {
+		return "", fmt.Errorf("failed to get latest peer's IP: %s", err)
 	}
 
-	return "", nil
-	// // Generate keys via SSH
-	// genPrivKeyCmd := sshclient.Command{
-	// 	Name: "wg",
-	// 	Args: []string{"genkey"},
-	// }
-	// privKeyRes, err := ssh.Run(ctx, genPrivKeyCmd, nil)
-	// if err != nil {
-	// 	return "", fmt.Errorf("failed private key generation: %s", err)
-	// }
-	// genPubKeyCmd := sshclient.Command{
-	// 	Name: "wg",
-	// 	Args: []string{fmt.Sprintf("%s | awg pubkey", privKeyRes.Stdout)},
-	// }
-	// pubKeyRes, err := ssh.Run(ctx, genPubKeyCmd, nil)
-	// if err != nil {
-	// 	return "", fmt.Errorf("failed public key generation: %s", err)
-	// }
-	// genPresharedKeyCmd := sshclient.Command{
-	// 	Name: "wg",
-	// 	Args: []string{"genpsk"},
-	// }
-	// presharedKeyRes, err := ssh.Run(ctx, genPresharedKeyCmd, nil)
-	// if err != nil {
-	// 	return "", fmt.Errorf("failed preshared key generation: %s", err)
-	// }
+	latestPeerAddr, err := netip.ParseAddr(output)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse latest peer's IP: %s", err)
+	}
+	newPeerAddr, err := latestPeerAddr.Next().Prefix(32)
+	if err != nil {
+		return "", fmt.Errorf("failed to add prefix to parsed IP: %s", err)
+	}
 
-	// // Obtain server's credentials
-	// getServerPubKeyCmd := sshclient.Command{
-	// 	Name: "wg",
-	// 	Args: []string{"show", "wg0", "public-key"},
-	// }
-	// serverPubKeyRes, err := ssh.Run(ctx, getServerPubKeyCmd, nil)
-	// if err != nil {
-	// 	return "", fmt.Errorf("failed to obtain server's public key: %s", err)
-	// }
-	// getServerPortCmd := sshclient.Command{
-	// 	Name: "wg",
-	// 	Args: []string{"show", "wg0", "listen-port"},
-	// }
-	// serverPortRes, err := ssh.Run(ctx, getServerPortCmd, nil)
-	// if err != nil {
-	// 	return "", fmt.Errorf("failed to obtain server's port: %s", err)
-	// }
+	// Add peer to interface config
+	createNewPeerCmd := []string{
+		"wg",
+		"set",
+		"wg0",
+		"peer",
+		pubKey,
+		"allowed-ips",
+		newPeerAddr.String(),
+		"endpoint",
+		fmt.Sprintf("%s:%s", cli.HostAddr, serverPort),
+		"persistent-keepalive 25",
+	}
+	output, err = cli.Run(ctx, createNewPeerCmd)
+	if err != nil {
+		return "", fmt.Errorf("failed to create new peer: %s", err)
+	}
 
-	// // Get the latest added peer's IP
-	// getLatestPeerAddrCmd := sshclient.Command{
-	// 	Name: "awk",
-	// 	Args: []string{`'/\[Peer\]/{p=""} {p=p $0 ORS} END{printf "%s", p}'`, "/etc/wireguard/wg0.conf"},
-	// }
-	// latestPeerAddrRes, err := ssh.Run(ctx, getLatestPeerAddrCmd, nil)
-	// if err != nil {
-	// 	return "", fmt.Errorf("failed to obtain latest peer's IP address: %s", err)
-	// }
-	// latestPeerAddr, err := netip.ParseAddr(latestPeerAddrRes.Stdout)
-	// if err != nil {
-	// 	return "", fmt.Errorf("failed to parse latest peer address: %s", err)
-	// }
-	// newPeerAddr := latestPeerAddr.Next()
-	// newPeerAddrWithMask, err := newPeerAddr.Prefix(32)
-	// if err != nil {
-	// 	return "", fmt.Errorf("failed to add prefix to new peer's IP address: %s", err)
-	// }
+	writePeerCmd := []string{"tee", "-a", "/etc/wireguard/wg0.conf"}
+	output, err = cli.Run(ctx, writePeerCmd)
+	if err != nil {
+		return "", fmt.Errorf("failed to write peer to server's config: %s", err)
+	}
 
-	// // Add peer to interface config
-	// addPeerCmd := sshclient.Command{
-	// 	Name: "wg",
-	// 	Args: []string{
-	// 		"set",
-	// 		"wg0",
-	// 		"peer",
-	// 		pubKeyRes.Stdout,
-	// 		"allowed-ips",
-	// 		newPeerAddrWithMask.String(),
-	// 		"endpoint",
-	// 		fmt.Sprintf("%s:%s", ssh.Host, serverPortRes.Stdout),
-	// 		"persistent-keepalive 25",
-	// 	},
-	// }
-	// _, err = ssh.Run(ctx, addPeerCmd, nil)
-	// if err != nil {
-	// 	return "", fmt.Errorf("failed to write new peer to the interface: %s", err)
-	// }
-	// writePeerCmd := sshclient.Command{
-	// 	Name: "tee",
-	// 	Args: []string{"-a", "/etc/wireguard/wg0.conf", ">/dev/null"},
-	// }
-	// peerConfTemplateFile, err := os.ReadFile("./peer.conf")
-	// peerConfTemplate, err := template.New("peer").Parse(string(peerConfTemplateFile))
-	// if err != nil {
-	// 	return "", fmt.Errorf("failed to parse peer config template: %s", err)
-	// }
-	// var sb strings.Builder
-	// peerData := map[string]string{
-	// 	"ClientPubKey": pubKeyRes.Stdout,
-	// 	"ClientAddr": newPeerAddrWithMask.String(),
-	// }
-	// if err := peerConfTemplate.Execute(&sb, peerData); err != nil {
-	// 	return "", fmt.Errorf("failed to build peer config from template: %s", err)
-	// }
-	// r := strings.NewReader(sb.String())
-	// _, err = ssh.Run(ctx, writePeerCmd, r)
+	// Parse peer template file
+	peerConfTemplateFile, err := os.ReadFile("./peer.conf")
+	peerConfTemplate, err := template.New("peer").Parse(string(peerConfTemplateFile))
+	if err != nil {
+		return "", fmt.Errorf("failed to parse peer config template: %s", err)
+	}
 
-	// sb.Reset()
+	var sb strings.Builder
+	peerData := map[string]string{
+		"ClientPubKey": pubKey,
+		"ClientAddr":   newPeerAddr.String(),
+	}
+	if err := peerConfTemplate.Execute(&sb, peerData); err != nil {
+		return "", fmt.Errorf("failed to build peer config from template: %s", err)
+	}
+	_, err = cli.Run(ctx, writePeerCmd)
 
-	// // Create config file
-	// confTemplateFile, err := os.ReadFile("./client.conf")
-	// if err != nil {
-	// 	return "", fmt.Errorf("failed to read config template: %s", err)
-	// }
-	// confTemplate, err := template.New("config").Parse(string(confTemplateFile))
-	// if err != nil {
-	// 	return "", fmt.Errorf("failed to create config template: %s", err)
-	// }
-	// configData := map[string]string{
-	// 	"ClientAddr":         newPeerAddr.String(),
-	// 	"ClientPrivKey":      serverPubKeyRes.Stdout,
-	// 	"ServerPubKey":       serverPubKeyRes.Stdout,
-	// 	"ClientPresharedKey": presharedKeyRes.Stdout,
-	// 	"ServerAddr":         ssh.Host,
-	// 	"ServerPort":         serverPortRes.Stdout,
-	// }
-	// if err := confTemplate.Execute(&sb, configData); err != nil {
-	// 	return "", fmt.Errorf("failed to build config from template: %s", err)
-	// }
+	sb.Reset()
 
-	// return sb.String(), nil
+	// Create config file
+	confTemplateFile, err := os.ReadFile("./client.conf")
+	if err != nil {
+		return "", fmt.Errorf("failed to read config template: %s", err)
+	}
+	confTemplate, err := template.New("config").Parse(string(confTemplateFile))
+	if err != nil {
+		return "", fmt.Errorf("failed to create config template: %s", err)
+	}
+	configData := map[string]string{
+		"ClientAddr":         newPeerAddr.String(),
+		"ClientPrivKey":      privKey,
+		"ServerPubKey":       serverPubKey,
+		"ClientPresharedKey": presKey,
+		"ServerAddr":         "192.168.0.1",
+		"ServerPort":         serverPort,
+	}
+	if err := confTemplate.Execute(&sb, configData); err != nil {
+		return "", fmt.Errorf("failed to build config from template: %s", err)
+	}
+
+	return sb.String(), nil
 }
 
 func (l *Awg) revoke(cg *ConfigGenerator) {}
