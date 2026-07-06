@@ -1,10 +1,11 @@
 package configgen
 
 import (
+	"embed"
 	"context"
 	"fmt"
 	"net/netip"
-	"os"
+	// "os"
 	"strings"
 	"text/template"
 
@@ -13,11 +14,18 @@ import (
 
 type Awg struct{}
 
-func (l *Awg) create(
+// TODO: Read configs directly from FS in runtime
+//go:embed peer.conf client.conf
+var templatesFS embed.FS
+
+var (
+	peerConfTemplate = template.Must(template.ParseFS(templatesFS, "peer.conf"))
+	confTemplate     = template.Must(template.ParseFS(templatesFS, "client.conf"))
+)
+
+func (a *Awg) create(
 	ctx context.Context,
 	cli *executor.ContainerExecutor,
-	cg *ConfigGenerator,
-	containerID string,
 ) (string, error) {
 	// Generate keys
 	keysGenerationCmd := []string{
@@ -51,7 +59,11 @@ func (l *Awg) create(
 	serverPort := output
 
 	// Get the latest added peer's IP
-	getLatestPeerAddrCmd := []string{"awk", `'/\[Peer\]/{p=""} {p=p $0 ORS} END{printf "%s", p}'`, "/etc/wireguard/wg0.conf"}
+	getLatestPeerAddrCmd := []string{
+		"awk",
+		`/\[Peer\]/{ip=""} /AllowedIPs/{ip=$0} END{sub(/.*= */,"",ip); sub(/\/.*/,"",ip); printf "%s", ip}`,
+		"/config/wg_confs/wg0.conf",
+	}
 	output, err = cli.Run(ctx, getLatestPeerAddrCmd)
 	if err != nil {
 		return "", fmt.Errorf("failed to get latest peer's IP: %s", err)
@@ -84,18 +96,21 @@ func (l *Awg) create(
 		return "", fmt.Errorf("failed to create new peer: %s", err)
 	}
 
-	writePeerCmd := []string{"tee", "-a", "/etc/wireguard/wg0.conf"}
+	writePeerCmd := []string{"tee", "-a", "/config/wg_confs/wg0.conf"}
 	output, err = cli.Run(ctx, writePeerCmd)
 	if err != nil {
 		return "", fmt.Errorf("failed to write peer to server's config: %s", err)
 	}
 
 	// Parse peer template file
-	peerConfTemplateFile, err := os.ReadFile("./peer.conf")
-	peerConfTemplate, err := template.New("peer").Parse(string(peerConfTemplateFile))
-	if err != nil {
-		return "", fmt.Errorf("failed to parse peer config template: %s", err)
-	}
+	// peerConfTemplateFile, err := os.ReadFile("peer.conf")
+	// if err != nil {
+	// 	return "", fmt.Errorf("failed to read peer config file: %s", err)
+	// }
+	// peerConfTemplate, err := template.New("peer").Parse(string(peerConfTemplateFile))
+	// if err != nil {
+	// 	return "", fmt.Errorf("failed to parse peer config template: %s", err)
+	// }
 
 	var sb strings.Builder
 	peerData := map[string]string{
@@ -110,14 +125,14 @@ func (l *Awg) create(
 	sb.Reset()
 
 	// Create config file
-	confTemplateFile, err := os.ReadFile("./client.conf")
-	if err != nil {
-		return "", fmt.Errorf("failed to read config template: %s", err)
-	}
-	confTemplate, err := template.New("config").Parse(string(confTemplateFile))
-	if err != nil {
-		return "", fmt.Errorf("failed to create config template: %s", err)
-	}
+	// confTemplateFile, err := os.ReadFile("client.conf")
+	// if err != nil {
+	// 	return "", fmt.Errorf("failed to read config template: %s", err)
+	// }
+	// confTemplate, err := template.New("config").Parse(string(confTemplateFile))
+	// if err != nil {
+	// 	return "", fmt.Errorf("failed to create config template: %s", err)
+	// }
 	configData := map[string]string{
 		"ClientAddr":         newPeerAddr.String(),
 		"ClientPrivKey":      privKey,
@@ -133,4 +148,4 @@ func (l *Awg) create(
 	return sb.String(), nil
 }
 
-func (l *Awg) revoke(cg *ConfigGenerator) {}
+func (a *Awg) revoke(cg *ConfigGenerator) {}

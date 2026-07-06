@@ -16,6 +16,21 @@ type ContainerExecutor struct {
 	HostAddr    string
 }
 
+func New(id, hostAddr string) (*ContainerExecutor, error) {
+	c, err := client.New(client.FromEnv)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create container executor: %s", err)
+	}
+
+	cli := ContainerExecutor{
+		cli: c,
+		ContainerID: id,
+		HostAddr: hostAddr,
+	}
+
+	return &cli, nil
+}
+
 func (ce *ContainerExecutor) Run(ctx context.Context, cmd []string) (string, error) {
 	execResp, err := ce.cli.ExecCreate(ctx, ce.ContainerID, client.ExecCreateOptions{
 		Cmd:          cmd,
