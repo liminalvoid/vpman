@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"net/netip"
-	// "os"
 	"strings"
 	"text/template"
 
@@ -138,7 +137,7 @@ func (a *Awg) create(
 		"ClientPrivKey":      privKey,
 		"ServerPubKey":       serverPubKey,
 		"ClientPresharedKey": presKey,
-		"ServerAddr":         "192.168.0.1",
+		"ServerAddr":         cli.HostAddr,
 		"ServerPort":         serverPort,
 	}
 	if err := confTemplate.Execute(&sb, configData); err != nil {
