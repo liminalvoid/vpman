@@ -32,7 +32,7 @@ func (a *Awg) create(
 		"sh", "-c",
 		`privKey=$(wg genkey); pubKey=$(echo $privKey | wg pubkey); presKey=$(wg genpsk); echo "$privKey|$pubKey|$presKey"`,
 	}
-	output, err := cli.Run(ctx, keysGenerationCmd)
+	output, err := cli.Run(ctx, keysGenerationCmd, []byte{})
 	if err != nil {
 		return "", fmt.Errorf("failed keys generation: %s", err)
 	}
@@ -45,14 +45,14 @@ func (a *Awg) create(
 
 	// Obtain server's credentials
 	getServerPubKeyCmd := []string{"wg", "show", "wg0", "public-key"}
-	output, err = cli.Run(ctx, getServerPubKeyCmd)
+	output, err = cli.Run(ctx, getServerPubKeyCmd, []byte{})
 	if err != nil {
 		return "", fmt.Errorf("failed to get server's public key: %s", err)
 	}
 	serverPubKey := output
 
 	getServerPortCmd := []string{"wg", "show", "wg0", "listen-port"}
-	output, err = cli.Run(ctx, getServerPortCmd)
+	output, err = cli.Run(ctx, getServerPortCmd, []byte{})
 	if err != nil {
 		return "", fmt.Errorf("failed to get server's port: %s", err)
 	}
@@ -64,7 +64,7 @@ func (a *Awg) create(
 		`/\[Peer\]/{ip=""} /AllowedIPs/{ip=$0} END{sub(/.*= */,"",ip); sub(/\/.*/,"",ip); printf "%s", ip}`,
 		"/config/wg_confs/wg0.conf",
 	}
-	output, err = cli.Run(ctx, getLatestPeerAddrCmd)
+	output, err = cli.Run(ctx, getLatestPeerAddrCmd, []byte{})
 	if err != nil {
 		return "", fmt.Errorf("failed to get latest peer's IP: %s", err)
 	}
@@ -91,15 +91,9 @@ func (a *Awg) create(
 		fmt.Sprintf("%s:%s", cli.HostAddr, serverPort),
 		"persistent-keepalive 25",
 	}
-	output, err = cli.Run(ctx, createNewPeerCmd)
+	output, err = cli.Run(ctx, createNewPeerCmd, []byte{})
 	if err != nil {
 		return "", fmt.Errorf("failed to create new peer: %s", err)
-	}
-
-	writePeerCmd := []string{"tee", "-a", "/config/wg_confs/wg0.conf"}
-	output, err = cli.Run(ctx, writePeerCmd)
-	if err != nil {
-		return "", fmt.Errorf("failed to write peer to server's config: %s", err)
 	}
 
 	// Parse peer template file
@@ -108,6 +102,7 @@ func (a *Awg) create(
 	// 	return "", fmt.Errorf("failed to read peer config file: %s", err)
 	// }
 	// peerConfTemplate, err := template.New("peer").Parse(string(peerConfTemplateFile))
+
 	// if err != nil {
 	// 	return "", fmt.Errorf("failed to parse peer config template: %s", err)
 	// }
@@ -120,7 +115,12 @@ func (a *Awg) create(
 	if err := peerConfTemplate.Execute(&sb, peerData); err != nil {
 		return "", fmt.Errorf("failed to build peer config from template: %s", err)
 	}
-	_, err = cli.Run(ctx, writePeerCmd)
+
+	writePeerCmd := []string{"tee", "-a", "/config/wg_confs/wg0.conf"}
+	_, err = cli.Run(ctx, writePeerCmd, []byte(sb.String()))
+	if err != nil {
+		return "", fmt.Errorf("failed to write peer to server's config: %s", err)
+	}
 
 	sb.Reset()
 

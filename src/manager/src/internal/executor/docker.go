@@ -31,11 +31,12 @@ func New(id, hostAddr string) (*ContainerExecutor, error) {
 	return &cli, nil
 }
 
-func (ce *ContainerExecutor) Run(ctx context.Context, cmd []string) (string, error) {
+func (ce *ContainerExecutor) Run(ctx context.Context, cmd []string, stdin []byte) (string, error) {
 	execResp, err := ce.cli.ExecCreate(ctx, ce.ContainerID, client.ExecCreateOptions{
 		Cmd:          cmd,
 		AttachStdout: true,
 		AttachStderr: true,
+		AttachStdin:  true,
 	})
 	if err != nil {
 		return "", fmt.Errorf("failed command execution: %s", err)
@@ -46,6 +47,11 @@ func (ce *ContainerExecutor) Run(ctx context.Context, cmd []string) (string, err
 		return "", fmt.Errorf("failed attach connection: %s", err)
 	}
 	defer attachResp.Close()
+
+	if len(stdin) > 0 {
+		attachResp.Conn.Write(stdin)
+		attachResp.CloseWrite()
+	}
 
 	var stdoutBuf bytes.Buffer
 	if _, err := stdcopy.StdCopy(&stdoutBuf, io.Discard, attachResp.Reader); err != nil {
