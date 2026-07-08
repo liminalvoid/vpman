@@ -11,17 +11,17 @@ import (
 	"manager/internal/executor"
 )
 
-type Awg struct{}
+type Wg struct{}
 
 //go:embed templates/wg/peer.conf templates/wg/client.conf
 var templatesFS embed.FS
 
 var (
-	peerConfTemplate = template.Must(template.ParseFS(templatesFS, "peer.conf"))
-	confTemplate     = template.Must(template.ParseFS(templatesFS, "client.conf"))
+	peerConfTemplate = template.Must(template.ParseFS(templatesFS, "templates/wg/peer.conf"))
+	confTemplate     = template.Must(template.ParseFS(templatesFS, "templates/wg/client.conf"))
 )
 
-func (a *Awg) create(
+func (a *Wg) create(
 	ctx context.Context,
 	cli *executor.ContainerExecutor,
 ) (string, error) {
@@ -126,4 +126,4 @@ func (a *Awg) create(
 	return sb.String(), nil
 }
 
-func (a *Awg) revoke(cg *ConfigGenerator) {}
+func (a *Wg) revoke(cg *ConfigGenerator) {}

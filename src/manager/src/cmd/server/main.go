@@ -22,8 +22,8 @@ func main() {
 		return
 	}
 
-	awg := &configgen.Awg{}
-	cg := configgen.New(awg)
+	wg := &configgen.Wg{}
+	cg := configgen.New(wg)
 
 	cg.Create(ctx, cli)
 }
