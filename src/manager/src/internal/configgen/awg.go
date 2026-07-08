@@ -13,8 +13,7 @@ import (
 
 type Awg struct{}
 
-// TODO: Read configs directly from FS in runtime
-//go:embed peer.conf client.conf
+//go:embed templates/wg/peer.conf templates/wg/client.conf
 var templatesFS embed.FS
 
 var (
@@ -95,17 +94,6 @@ func (a *Awg) create(
 		return "", fmt.Errorf("failed to create new peer: %s", err)
 	}
 
-	// Parse peer template file
-	// peerConfTemplateFile, err := os.ReadFile("peer.conf")
-	// if err != nil {
-	// 	return "", fmt.Errorf("failed to read peer config file: %s", err)
-	// }
-	// peerConfTemplate, err := template.New("peer").Parse(string(peerConfTemplateFile))
-
-	// if err != nil {
-	// 	return "", fmt.Errorf("failed to parse peer config template: %s", err)
-	// }
-
 	var sb strings.Builder
 	peerData := map[string]string{
 		"ClientPubKey": pubKey,
@@ -123,15 +111,6 @@ func (a *Awg) create(
 
 	sb.Reset()
 
-	// Create config file
-	// confTemplateFile, err := os.ReadFile("client.conf")
-	// if err != nil {
-	// 	return "", fmt.Errorf("failed to read config template: %s", err)
-	// }
-	// confTemplate, err := template.New("config").Parse(string(confTemplateFile))
-	// if err != nil {
-	// 	return "", fmt.Errorf("failed to create config template: %s", err)
-	// }
 	configData := map[string]string{
 		"ClientAddr":         newPeerAddr.String(),
 		"ClientPrivKey":      privKey,
