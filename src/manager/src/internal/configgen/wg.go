@@ -81,7 +81,6 @@ func (w *Wg) create(
 		return "", fmt.Errorf("failed to add prefix to parsed IP: %s", err)
 	}
 
-	// TODO: Add preshared key to peer's config
 	// Add peer to interface config
 	createNewPeerCmd := []string{
 		"wg",
@@ -89,6 +88,8 @@ func (w *Wg) create(
 		"wg0",
 		"peer",
 		pubKey,
+		"preshared-key",
+		presKey,
 		"allowed-ips",
 		newPeerAddr.String(),
 		"endpoint",
@@ -103,6 +104,7 @@ func (w *Wg) create(
 	var sb strings.Builder
 	peerData := map[string]string{
 		"ClientPubKey": pubKey,
+		"ClientPresharedKey": presKey,
 		"ClientAddr":   newPeerAddr.String(),
 	}
 	if err := peerConfTemplate.Execute(&sb, peerData); err != nil {
