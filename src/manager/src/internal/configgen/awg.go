@@ -75,10 +75,11 @@ func (w *Awg) create(
 	}
 
 	obfuscationParams := make(map[string]string)
-	for _, line := range strings.Split(strings.TrimSpace(output), "\n") {
+	for line := range strings.SplitSeq(strings.TrimSpace(output), "\n") {
 		if line == "" {
 			continue
 		}
+
 		kv := strings.SplitN(line, "=", 2)
 		if len(kv) != 2 {
 			continue
