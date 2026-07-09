@@ -22,7 +22,7 @@ func main() {
 		return
 	}
 
-	wg := &configgen.Wg{}
+	wg := &configgen.Awg{}
 	cg := configgen.New(wg)
 
 	cg.Create(ctx, cli)

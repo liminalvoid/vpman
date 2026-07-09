@@ -1,8 +1,8 @@
 package configgen
 
 import (
-	"embed"
 	"context"
+	"embed"
 	"fmt"
 	"net/netip"
 	"strings"
@@ -14,17 +14,22 @@ import (
 type Wg struct{}
 
 //go:embed templates/wg/peer.conf templates/wg/client.conf
-var templatesFS embed.FS
+var wgTemplatesFS embed.FS
 
-var (
-	peerConfTemplate = template.Must(template.ParseFS(templatesFS, "templates/wg/peer.conf"))
-	confTemplate     = template.Must(template.ParseFS(templatesFS, "templates/wg/client.conf"))
-)
-
-func (a *Wg) create(
+func (w *Wg) create(
 	ctx context.Context,
 	cli *executor.ContainerExecutor,
 ) (string, error) {
+	// Read templates
+	peerConfTemplate, err := template.ParseFS(awgTemplateFS, "templates/wg/peer.conf")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse peer's config template: %s", err)
+	}
+	confTemplate, err := template.ParseFS(awgTemplateFS, "templates/wg/client.conf")
+	if err != nil {
+		return "", fmt.Errorf("failed to parse client's config template: %s", err)
+	}
+
 	// Generate keys
 	keysGenerationCmd := []string{
 		"sh", "-c",
@@ -76,6 +81,7 @@ func (a *Wg) create(
 		return "", fmt.Errorf("failed to add prefix to parsed IP: %s", err)
 	}
 
+	// TODO: Add preshared key to peer's config
 	// Add peer to interface config
 	createNewPeerCmd := []string{
 		"wg",
@@ -126,4 +132,4 @@ func (a *Wg) create(
 	return sb.String(), nil
 }
 
-func (a *Wg) revoke(cg *ConfigGenerator) {}
+func (w *Wg) revoke(cg *ConfigGenerator) {}
