@@ -84,6 +84,7 @@ func (w *Awg) create(
 		if len(kv) != 2 {
 			continue
 		}
+
 		obfuscationParams[strings.TrimSpace(kv[0])] = strings.TrimSpace(kv[1])
 	}
 

@@ -10,14 +10,23 @@ import (
 	"github.com/moby/moby/client"
 )
 
+type Config struct {
+	User     string
+	HostAddr string
+	HostPort string
+}
+
 type ContainerExecutor struct {
 	cli         *client.Client
 	ContainerID string
 	HostAddr    string
 }
 
-func New(id, hostAddr string) (*ContainerExecutor, error) {
-	c, err := client.New(client.FromEnv)
+func New(id, config Config) (*ContainerExecutor, error) {
+	// Create Docker host URL
+	dockerHost := fmt.Sprintf("ssh://%s@%s:%s", config.User, config.HostAddr, config.HostPort)
+
+	c, err := client.New(client.WithHost(dockerHost))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create container executor: %s", err)
 	}
