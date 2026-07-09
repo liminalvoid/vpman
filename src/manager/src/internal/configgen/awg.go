@@ -61,6 +61,31 @@ func (w *Awg) create(
 	}
 	serverPort := output
 
+	// Obtain the AmneziaWG obfuscation params (Jc, Jmin, Jmax, S1-S4, H1-H4, I1-I5)
+	// from the [Interface] section of the server's config, since `awg show` doesn't
+	// expose them and the client must match the server's values exactly.
+	getObfuscationParamsCmd := []string{
+		"awk",
+		`/^\[Interface\]/{f=1; next} /^\[/{f=0} f && match($0, /^(Jc|Jmin|Jmax|S1|S2|S3|S4|H1|H2|H3|H4|I1|I2|I3|I4|I5)[ \t]*=/) { split($0, kv, "="); k=kv[1]; v=kv[2]; gsub(/^[ \t]+|[ \t]+$/, "", k); gsub(/^[ \t]+|[ \t]+$/, "", v); print k"="v }`,
+		"/opt/amnezia/awg/awg0.conf",
+	}
+	output, err = cli.Run(ctx, getObfuscationParamsCmd, []byte{})
+	if err != nil {
+		return "", fmt.Errorf("failed to get obfuscation params: %s", err)
+	}
+
+	obfuscationParams := make(map[string]string)
+	for _, line := range strings.Split(strings.TrimSpace(output), "\n") {
+		if line == "" {
+			continue
+		}
+		kv := strings.SplitN(line, "=", 2)
+		if len(kv) != 2 {
+			continue
+		}
+		obfuscationParams[strings.TrimSpace(kv[0])] = strings.TrimSpace(kv[1])
+	}
+
 	// Get the latest added peer's IP
 	getLatestPeerAddrCmd := []string{
 		"awk",
@@ -126,6 +151,22 @@ func (w *Awg) create(
 		"ClientPresharedKey": presKey,
 		"ServerAddr":         cli.HostAddr,
 		"ServerPort":         serverPort,
+		"Jc":                 obfuscationParams["Jc"],
+		"Jmin":               obfuscationParams["Jmin"],
+		"Jmax":               obfuscationParams["Jmax"],
+		"S1":                 obfuscationParams["S1"],
+		"S2":                 obfuscationParams["S2"],
+		"S3":                 obfuscationParams["S3"],
+		"S4":                 obfuscationParams["S4"],
+		"H1":                 obfuscationParams["H1"],
+		"H2":                 obfuscationParams["H2"],
+		"H3":                 obfuscationParams["H3"],
+		"H4":                 obfuscationParams["H4"],
+		"I1":                 obfuscationParams["I1"],
+		"I2":                 obfuscationParams["I2"],
+		"I3":                 obfuscationParams["I3"],
+		"I4":                 obfuscationParams["I4"],
+		"I5":                 obfuscationParams["I5"],
 	}
 	if err := confTemplate.Execute(&sb, configData); err != nil {
 		return "", fmt.Errorf("failed to build config from template: %s", err)
