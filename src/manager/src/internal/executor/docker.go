@@ -11,9 +11,10 @@ import (
 )
 
 type Config struct {
-	User     string
-	HostAddr string
-	HostPort string
+	User        string
+	HostAddr    string
+	HostPort    string
+	ContainerID string
 }
 
 type ContainerExecutor struct {
@@ -22,7 +23,7 @@ type ContainerExecutor struct {
 	HostAddr    string
 }
 
-func New(id, config Config) (*ContainerExecutor, error) {
+func New(config *Config) (*ContainerExecutor, error) {
 	// Create Docker host URL
 	dockerHost := fmt.Sprintf("ssh://%s@%s:%s", config.User, config.HostAddr, config.HostPort)
 
@@ -32,9 +33,9 @@ func New(id, config Config) (*ContainerExecutor, error) {
 	}
 
 	cli := ContainerExecutor{
-		cli: c,
-		ContainerID: id,
-		HostAddr: hostAddr,
+		cli:         c,
+		ContainerID: config.ContainerID,
+		HostAddr:    config.HostAddr,
 	}
 
 	return &cli, nil
