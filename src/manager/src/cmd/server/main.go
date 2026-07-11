@@ -31,5 +31,12 @@ func main() {
 	wg := &configgen.Awg{}
 	cg := configgen.New(wg)
 
+	containersList, err := cli.ListContainers(ctx)
+	if err != nil {
+		fmt.Printf("failed to fetch containers list")
+	}
+
+	fmt.Println(containersList)
+
 	cg.Create(ctx, cli)
 }

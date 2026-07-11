@@ -75,3 +75,12 @@ func (ce *ContainerExecutor) Run(ctx context.Context, cmd []string, stdin []byte
 
 	return stdoutBuf.String(), nil
 }
+
+func (ce *ContainerExecutor) ListContainers(ctx context.Context) (*client.ContainerListResult, error) {
+	list, err := ce.cli.ContainerList(ctx, client.ContainerListOptions{All: true})
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch containers list: %s", err)
+	}
+
+	return &list, nil
+}
