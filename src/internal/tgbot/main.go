@@ -1,4 +1,4 @@
-package main
+package tgbot
 
 import (
 	"context"
@@ -6,20 +6,31 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/liminalvoid/vpn-manager/bot/internal/handlers"
-
 	"github.com/joho/godotenv"
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
+
+	"manager/internal/configgen"
+	"manager/internal/executor"
+	"manager/internal/tgbot/handlers"
 )
 
-func main() {
+type Config struct {
+	Token   string
+	AdminID int64
+}
+
+type Bot struct {
+	handler *th.BotHandler
+}
+
+func New(cfg Config, ex *executor.ContainerExecutor, cg *configgen.ConfigGenerator) (*Bot, error) {
+	// TODO: Move dotenv load into main function
 	err := godotenv.Load()
 	if err != nil {
 		fmt.Println("Error loading .env file")
 		os.Exit(1)
 	}
-
 	botToken := os.Getenv("TG_TOKEN")
 	adminId, err := strconv.ParseInt(os.Getenv("ME_ID"), 10, 64)
 	if err != nil {
@@ -94,4 +105,9 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+
+	return &Bot{handler: bh}, nil
 }
+
+func (b *Bot) Start() error { return &b.handler.Start() }
+func (b *Bot) Stop()        { b.handler.Stop() }
