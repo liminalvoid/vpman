@@ -8,7 +8,7 @@ import (
 	"strings"
 	"text/template"
 
-	"manager/internal/executor"
+	"vpnmanager/internal/executor"
 )
 
 type Wg struct{}

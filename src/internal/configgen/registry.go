@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"manager/internal/executor"
+	"vpnmanager/internal/executor"
 )
 
 type Protocol interface {

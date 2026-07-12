@@ -4,15 +4,12 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strconv"
-
-	"github.com/joho/godotenv"
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
 
-	"manager/internal/configgen"
-	"manager/internal/executor"
-	"manager/internal/tgbot/handlers"
+	"vpnmanager/internal/configgen"
+	"vpnmanager/internal/executor"
+	"vpnmanager/internal/tgbot/handlers"
 )
 
 type Config struct {
@@ -24,28 +21,20 @@ type Bot struct {
 	handler *th.BotHandler
 }
 
-func New(cfg Config, ex *executor.ContainerExecutor, cg *configgen.ConfigGenerator) (*Bot, error) {
-	// TODO: Move dotenv load into main function
-	err := godotenv.Load()
-	if err != nil {
-		fmt.Println("Error loading .env file")
-		os.Exit(1)
-	}
-	botToken := os.Getenv("TG_TOKEN")
-	adminId, err := strconv.ParseInt(os.Getenv("ME_ID"), 10, 64)
-	if err != nil {
-		fmt.Println("The administrator ID wasn't parsed")
-		os.Exit(1)
-	}
-
+func New(
+	ctx context.Context,
+	cfg Config,
+	ex *executor.ContainerExecutor,
+	cg *configgen.ConfigGenerator,
+) (*Bot, error) {
 	// FIXME: Remove this and think how to handle logs in prod
-	bot, err := telego.NewBot(botToken, telego.WithDefaultDebugLogger())
+	bot, err := telego.NewBot(cfg.Token, telego.WithDefaultDebugLogger())
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 
-	updates, _ := bot.UpdatesViaLongPolling(context.Background(), nil)
+	updates, _ := bot.UpdatesViaLongPolling(ctx, nil)
 
 	bh, _ := th.NewBotHandler(bot, updates)
 	h := handlers.NewHandlers(bot)
@@ -65,7 +54,7 @@ func New(cfg Config, ex *executor.ContainerExecutor, cg *configgen.ConfigGenerat
 				userName = update.CallbackQuery.From.FirstName
 			}
 
-			if userId != adminId {
+			if userId != cfg.AdminID {
 				bot.Logger().Debugf(
 					"%s is trying to access bot",
 					userName,
@@ -99,15 +88,8 @@ func New(cfg Config, ex *executor.ContainerExecutor, cg *configgen.ConfigGenerat
 		),
 	)
 
-	defer func() { bh.Stop() }()
-	err = bh.Start()
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
 	return &Bot{handler: bh}, nil
 }
 
-func (b *Bot) Start() error { return &b.handler.Start() }
+func (b *Bot) Start() error { return b.handler.Start() }
 func (b *Bot) Stop()        { b.handler.Stop() }
