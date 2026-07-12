@@ -35,7 +35,7 @@ func New(
 	updates, _ := bot.UpdatesViaLongPolling(ctx, nil)
 
 	bh, _ := th.NewBotHandler(bot, updates)
-	h := handlers.NewHandlers(bot)
+	h := handlers.NewHandlers(bot, cg, ex)
 
 	bh.Use(th.PanicRecovery())
 	bh.Use(

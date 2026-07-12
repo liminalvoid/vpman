@@ -19,8 +19,8 @@ func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
-	// TODO: Initialize modules (DB, Telegram bot, config manager)
-	err := godotenv.Load()
+	// Load dotenv
+	err := godotenv.Load(".env.development")
 	if err != nil {
 		fmt.Println("Error loading .env file")
 		os.Exit(1)
