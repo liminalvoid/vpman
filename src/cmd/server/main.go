@@ -42,7 +42,8 @@ func main() {
 	}
 
 	botToken := os.Getenv("TG_TOKEN")
-	adminId, err := strconv.ParseInt(os.Getenv("ME_ID"), 10, 64)
+	idSizeBytes := 64
+	adminId, err := strconv.ParseInt(os.Getenv("ME_ID"), 10, idSizeBytes)
 	if err != nil {
 		fmt.Println("The administrator ID wasn't parsed")
 		os.Exit(1)
