@@ -3,7 +3,6 @@ package tgbot
 import (
 	"context"
 	"fmt"
-	"os"
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
 
@@ -30,8 +29,7 @@ func New(
 	// FIXME: Remove this and think how to handle logs in prod
 	bot, err := telego.NewBot(cfg.Token, telego.WithDefaultDebugLogger())
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		return nil, fmt.Errorf("failed to create Telegram bot: %s", err)
 	}
 
 	updates, _ := bot.UpdatesViaLongPolling(ctx, nil)
