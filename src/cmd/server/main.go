@@ -48,18 +48,18 @@ func main() {
 		fmt.Println("The administrator ID wasn't parsed")
 		os.Exit(1)
 	}
-	bhCfg := tgbot.Config{
+	bCfg := tgbot.Config{
 		Token:   botToken,
 		AdminID: adminId,
 	}
-	bh, err := tgbot.New(ctx, bhCfg, ce, cg)
+	b, err := tgbot.New(ctx, bCfg, ce, cg)
 	if err != nil {
 		fmt.Printf("failed to create Telegram bot: %s\n", err)
 		os.Exit(1)
 	}
 
-	defer func() { bh.Stop() }()
-	err = bh.Start()
+	defer func() { b.Stop() }()
+	err = b.Start()
 	if err != nil {
 		fmt.Printf("failed to start Telegram bot: %s\n", err)
 		os.Exit(1)
