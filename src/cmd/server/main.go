@@ -29,9 +29,10 @@ func main() {
 	// Initialize container executor
 	ceCfg := executor.Config{
 		User:        "root",
-		HostAddr:    "192.168.0.127",
+		HostAddr:    "127.0.0.1",
 		HostPort:    "22",
-		ContainerID: "dfksjwewfef11234",
+		ContainerID: "5e13c8f1326929ea701a5a5fe41a4b7aab4ceb37cc78629d13fcb2f2e36d71fd",
+		FromEnv:     true,
 	}
 	ce, err := executor.New(&ceCfg)
 	if err != nil {
@@ -40,8 +41,8 @@ func main() {
 	}
 
 	// Initialize config generator
-	awg := &configgen.Awg{}
-	cg := configgen.New(awg, ce)
+	wg := &configgen.Wg{}
+	cg := configgen.New(wg, ce)
 
 	// Initialize Telegram bot
 	botToken := os.Getenv("TG_TOKEN")

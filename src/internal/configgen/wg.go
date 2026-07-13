@@ -14,18 +14,18 @@ import (
 type Wg struct{}
 
 //go:embed templates/wg/peer.conf templates/wg/client.conf
-var wgTemplatesFS embed.FS
+var wgTemplateFS embed.FS
 
 func (w *Wg) create(
 	ctx context.Context,
 	cli *executor.ContainerExecutor,
 ) (string, error) {
 	// Read templates
-	peerConfTemplate, err := template.ParseFS(awgTemplateFS, "templates/wg/peer.conf")
+	peerConfTemplate, err := template.ParseFS(wgTemplateFS, "templates/wg/peer.conf")
 	if err != nil {
 		return "", fmt.Errorf("failed to parse peer's config template: %s", err)
 	}
-	confTemplate, err := template.ParseFS(awgTemplateFS, "templates/wg/client.conf")
+	confTemplate, err := template.ParseFS(wgTemplateFS, "templates/wg/client.conf")
 	if err != nil {
 		return "", fmt.Errorf("failed to parse client's config template: %s", err)
 	}

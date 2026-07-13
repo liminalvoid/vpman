@@ -15,6 +15,7 @@ type Config struct {
 	HostAddr    string
 	HostPort    string
 	ContainerID string
+	FromEnv     bool
 }
 
 type ContainerExecutor struct {
@@ -24,12 +25,18 @@ type ContainerExecutor struct {
 }
 
 func New(config *Config) (*ContainerExecutor, error) {
-	// Create Docker host URL
-	dockerHost := fmt.Sprintf("ssh://%s@%s:%s", config.User, config.HostAddr, config.HostPort)
+	var option client.Opt
+	if config.FromEnv {
+		option = client.WithHostFromEnv()
+	} else {
+		// Create Docker host URL
+		dockerHost := fmt.Sprintf("ssh://%s@%s:%s", config.User, config.HostAddr, config.HostPort)
+		option = client.WithHost(dockerHost)
+	}
 
-	c, err := client.New(client.WithHost(dockerHost))
+	c, err := client.New(option)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create container executor: %s", err)
+		return nil, fmt.Errorf("creating container executor: %w", err)
 	}
 
 	cli := ContainerExecutor{

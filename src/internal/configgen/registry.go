@@ -39,15 +39,13 @@ func (cg *ConfigGenerator) GetProtocol() (string, error) {
 	return "", fmt.Errorf("failed to map protocol")
 }
 
-func (cg *ConfigGenerator) Create(ctx context.Context) {
+func (cg *ConfigGenerator) Create(ctx context.Context) (string, error) {
 	cfg, err := cg.protocol.create(ctx, cg.executor)
 	if err != nil {
-		fmt.Println(fmt.Errorf("failed to create config: %s", err))
-
-		return
+		return "", fmt.Errorf("creating config: %w", err)
 	}
 
-	fmt.Println("all great", cfg)
+	return cfg, nil
 }
 
 func (cg *ConfigGenerator) Revoke() {}
