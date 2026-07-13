@@ -26,6 +26,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Initialize container executor
 	ceCfg := executor.Config{
 		User:        "root",
 		HostAddr:    "192.168.0.127",
@@ -38,9 +39,11 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Initialize config generator
 	awg := &configgen.Awg{}
 	cg := configgen.New(awg, ce)
 
+	// Initialize Telegram bot
 	botToken := os.Getenv("TG_TOKEN")
 	idSizeBytes := 64
 	adminId, err := strconv.ParseInt(os.Getenv("ME_ID"), 10, idSizeBytes)
@@ -58,6 +61,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Start bot polling
 	defer func() { b.Stop() }()
 	err = b.Start()
 	if err != nil {
