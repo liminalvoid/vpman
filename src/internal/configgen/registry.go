@@ -14,11 +14,13 @@ type Protocol interface {
 
 type ConfigGenerator struct {
 	protocol Protocol
+	executor *executor.ContainerExecutor
 }
 
-func New(p Protocol) *ConfigGenerator {
+func New(p Protocol, ce *executor.ContainerExecutor) *ConfigGenerator {
 	return &ConfigGenerator{
 		protocol: p,
+		executor: ce,
 	}
 }
 
@@ -37,8 +39,8 @@ func (cg *ConfigGenerator) GetProtocol() (string, error) {
 	return "", fmt.Errorf("failed to map protocol")
 }
 
-func (cg *ConfigGenerator) Create(ctx context.Context, cli *executor.ContainerExecutor) {
-	cfg, err := cg.protocol.create(ctx, cli)
+func (cg *ConfigGenerator) Create(ctx context.Context) {
+	cfg, err := cg.protocol.create(ctx, cg.executor)
 	if err != nil {
 		fmt.Println(fmt.Errorf("failed to create config: %s", err))
 

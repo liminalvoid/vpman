@@ -8,7 +8,6 @@ import (
 	th "github.com/mymmrac/telego/telegohandler"
 
 	"vpnmanager/internal/configgen"
-	"vpnmanager/internal/executor"
 	"vpnmanager/internal/tgbot/handlers"
 	"vpnmanager/internal/tgbot/middleware"
 )
@@ -25,7 +24,6 @@ type Bot struct {
 func New(
 	ctx context.Context,
 	cfg Config,
-	ex *executor.ContainerExecutor,
 	cg *configgen.ConfigGenerator,
 ) (*Bot, error) {
 	// FIXME: Remove this and think how to handle logs in prod
@@ -37,7 +35,7 @@ func New(
 	updates, _ := bot.UpdatesViaLongPolling(ctx, nil)
 
 	bh, _ := th.NewBotHandler(bot, updates)
-	h := handlers.NewHandlers(bot, cg, ex)
+	h := handlers.NewHandlers(bot, cg)
 
 	bh.Use(th.PanicRecovery())
 	bh.Use(middleware.IsAdmin(bot, cfg.AdminID))

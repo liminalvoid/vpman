@@ -26,9 +26,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	awg := &configgen.Awg{}
-	cg := configgen.New(awg)
-
 	ceCfg := executor.Config{
 		User:        "root",
 		HostAddr:    "192.168.0.127",
@@ -41,6 +38,9 @@ func main() {
 		os.Exit(1)
 	}
 
+	awg := &configgen.Awg{}
+	cg := configgen.New(awg, ce)
+
 	botToken := os.Getenv("TG_TOKEN")
 	idSizeBytes := 64
 	adminId, err := strconv.ParseInt(os.Getenv("ME_ID"), 10, idSizeBytes)
@@ -52,7 +52,7 @@ func main() {
 		Token:   botToken,
 		AdminID: adminId,
 	}
-	b, err := tgbot.New(ctx, bCfg, ce, cg)
+	b, err := tgbot.New(ctx, bCfg, cg)
 	if err != nil {
 		fmt.Printf("failed to create Telegram bot: %s\n", err)
 		os.Exit(1)
