@@ -20,7 +20,7 @@ func main() {
 	defer cancel()
 
 	// Load dotenv
-	err := godotenv.Load(".env.development")
+	err := godotenv.Load(".env.dev")
 	if err != nil {
 		fmt.Println("Error loading .env file")
 		os.Exit(1)
