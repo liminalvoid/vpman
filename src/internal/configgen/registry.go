@@ -26,6 +26,17 @@ func (cg *ConfigGenerator) SetProtocol(p Protocol) {
 	cg.protocol = p
 }
 
+func (cg *ConfigGenerator) GetProtocol() (string, error) {
+	switch cg.protocol {
+	case &Awg{}:
+		return "awg", nil
+	case &Wg{}:
+		return "wg", nil
+	}
+
+	return "", fmt.Errorf("failed to map protocol")
+}
+
 func (cg *ConfigGenerator) Create(ctx context.Context, cli *executor.ContainerExecutor) {
 	cfg, err := cg.protocol.create(ctx, cli)
 	if err != nil {

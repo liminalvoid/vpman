@@ -3,12 +3,14 @@ package tgbot
 import (
 	"context"
 	"fmt"
+
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
 
 	"vpnmanager/internal/configgen"
 	"vpnmanager/internal/executor"
 	"vpnmanager/internal/tgbot/handlers"
+	"vpnmanager/internal/tgbot/middleware"
 )
 
 type Config struct {
@@ -38,34 +40,7 @@ func New(
 	h := handlers.NewHandlers(bot, cg, ex)
 
 	bh.Use(th.PanicRecovery())
-	bh.Use(
-		func(ctx *th.Context, update telego.Update) error {
-			userId := int64(0)
-			userName := ""
-
-			switch {
-			case update.Message != nil:
-				userId = update.Message.From.ID
-				userName = update.Message.From.FirstName
-			case update.CallbackQuery != nil:
-				userId = update.CallbackQuery.From.ID
-				userName = update.CallbackQuery.From.FirstName
-			}
-
-			if userId != cfg.AdminID {
-				bot.Logger().Debugf(
-					"%s is trying to access bot",
-					userName,
-				)
-
-				return nil
-			}
-
-			bot.Logger().Debugf("Access granted")
-
-			return ctx.Next(update)
-		},
-	)
+	bh.Use(middleware.IsAdmin(bot, cfg.AdminID))
 
 	bh.Handle(
 		h.HandleStart,
