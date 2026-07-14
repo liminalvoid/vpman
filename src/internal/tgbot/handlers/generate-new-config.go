@@ -125,24 +125,23 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			key.State = StateCreateConfigEnterKeyName
 		case strings.Contains(update.CallbackQuery.Data, "location"):
 			key.Location = strings.ReplaceAll(update.CallbackQuery.Data, "generate_key:location-", "")
+			key.Location = locationMap[key.Location]
 			key.State = StateCreateConfigConfirm
 
-			location := locationMap[key.Location]
-
-			response.Text = fmt.Sprintf(
-				"Название: %s\nПротокол: %s\nЛокация: %s\n\nСоздать ключ?",
-				key.Name,
-				key.Protocol,
-				location,
-			)
-			response.ReplyMarkup = submitActionKb
+			response.Text = "Выбери протокол"
+			response.ReplyMarkup = selectProtocolKb
 		case strings.Contains(update.CallbackQuery.Data, "protocol"):
 			key.Protocol = strings.ReplaceAll(update.CallbackQuery.Data, "generate_key:protocol-", "")
 			key.Protocol = protocolMap[key.Protocol]
 			key.State = StateCreateConfigSelectProtocol
 
-			response.Text = "Выбери локацию"
-			response.ReplyMarkup = selectLocationKb
+			response.Text = fmt.Sprintf(
+				"Название: %s\nПротокол: %s\nЛокация: %s\n\nСоздать ключ?",
+				key.Name,
+				key.Protocol,
+				key.Location,
+			)
+			response.ReplyMarkup = submitActionKb
 		case update.CallbackQuery.Data == "generate_key:yes":
 			config, err := h.ps.CreatePeer(ctx, update.CallbackQuery.From.ID, key.Name, key.Location)
 			if err != nil {
@@ -164,8 +163,8 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 		case StateCreateConfigEnterKeyName:
 			key.Name = update.Message.Text
 			key.State = StateCreateConfigSelectProtocol
-			response.Text = "Выбери протокол"
-			response.ReplyMarkup = selectProtocolKb
+			response.Text = "Выбери локацию"
+			response.ReplyMarkup = selectLocationKb
 		}
 	}
 
