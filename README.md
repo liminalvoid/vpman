@@ -9,8 +9,8 @@ src/
 │       └── main.go                    // entrypoint: wire dependencies, start server
 ├── internal/
 │   ├── configgen/
-│   │   ├── templates/
-│   │   │   └── ...                    // templates for config generation
+│   │   ├── templates/                 // templates for config generation
+│   │   │   └── ...                    
 │   │   ├── registry.go                // generation strategies registry
 │   │   └── ...protocols.go            // various strategies of generation for different protocols (e.g. awg.go, wg.go, etc)
 │   ├── executor/
