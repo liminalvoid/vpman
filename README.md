@@ -28,7 +28,7 @@ src/
 │   │   │   └── handlers.go            // base for bot handler
 │   │   ├── middleware/                // bot's middleware
 │   │   │   └── middleware.go
-│   │   └── bot.go                    // bot's orchestration
+│   │   └── bot.go                     // bot's orchestration
 │   ├── service/                       // business logic, framework-agnostic
 │   │   └── user.go
 │   ├── model/                         // domain types / structs
