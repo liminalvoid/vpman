@@ -80,6 +80,19 @@ var selectProtocolKb = tu.InlineKeyboard(
 	),
 )
 
+var finalMenuKb = tu.InlineKeyboard(
+	tu.InlineKeyboardRow(
+		tu.
+			InlineKeyboardButton("В меню").
+			WithCallbackData("menu"),
+	),
+	tu.InlineKeyboardRow(
+		tu.
+			InlineKeyboardButton("Сгенерировать ещё раз").
+			WithCallbackData("wizard:generate_key"),
+	),
+)
+
 func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error {
 	userId := int64(0)
 	switch {
@@ -134,13 +147,15 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			config, err := h.ps.CreatePeer(ctx, update.CallbackQuery.From.ID, key.Name, key.Location)
 			if err != nil {
 				response.Text = fmt.Sprintf("Не удалось создать конфиг: %s", err)
-				key.State = StateCreateConfigEnterKeyName
+				response.ReplyMarkup = finalMenuKb
+				key.State = StateCreateConfig
 
 				break
 			}
 
 			response.Text = fmt.Sprintf("Ключ успешно создан\\!\n\n```plain\n%s\n```", config)
-			key.State = StateCreateConfigEnterKeyName
+			response.ReplyMarkup = finalMenuKb
+			key.State = StateCreateConfig
 		}
 	case update.Message != nil:
 		response.ChatID = update.Message.Chat.ChatID()

@@ -42,7 +42,10 @@ func New(
 
 	bh.Handle(
 		h.HandleStart,
-		th.CommandEqual("start"),
+		th.Or(
+			th.CommandEqual("start"),
+			th.CallbackDataContains("menu"),
+		),
 	)
 	bh.Handle(
 		h.HandleNewConfig,
