@@ -131,16 +131,15 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			response.Text = "Выбери локацию"
 			response.ReplyMarkup = selectLocationKb
 		case update.CallbackQuery.Data == "generate_key:yes":
-			config, err := h.cg.Create(ctx)
+			config, err := h.ps.CreatePeer(ctx, update.CallbackQuery.From.ID, key.Name, key.Location)
 			if err != nil {
 				response.Text = fmt.Sprintf("Не удалось создать конфиг: %s", err)
-				key.State = StateCreateConfig
+				key.State = StateCreateConfigEnterKeyName
 
 				break
 			}
 
 			response.Text = fmt.Sprintf("Ключ успешно создан\\!\n\n```plain\n%s\n```", config)
-			key.State = StateCreateConfig
 			key.State = StateCreateConfigEnterKeyName
 		}
 	case update.Message != nil:

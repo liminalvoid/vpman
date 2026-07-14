@@ -12,6 +12,7 @@ import (
 
 	"vpnmanager/internal/configgen"
 	"vpnmanager/internal/executor"
+	"vpnmanager/internal/service"
 	"vpnmanager/internal/tgbot"
 )
 
@@ -44,6 +45,9 @@ func main() {
 	wg := &configgen.Wg{}
 	cg := configgen.New(wg, ce)
 
+	// Initialize peer service
+	ps := service.New(cg)
+
 	// Initialize Telegram bot
 	botToken := os.Getenv("TG_TOKEN")
 	idSizeBytes := 64
@@ -56,7 +60,7 @@ func main() {
 		Token:   botToken,
 		AdminID: adminId,
 	}
-	b, err := tgbot.New(ctx, bCfg, cg)
+	b, err := tgbot.New(ctx, bCfg, ps)
 	if err != nil {
 		fmt.Printf("failed to create Telegram bot: %s\n", err)
 		os.Exit(1)

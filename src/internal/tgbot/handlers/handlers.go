@@ -5,7 +5,7 @@ import (
 
 	"github.com/mymmrac/telego"
 
-	"vpnmanager/internal/configgen"
+	"vpnmanager/internal/service"
 )
 
 type Key struct {
@@ -19,17 +19,17 @@ type Handlers struct {
 	bot   *telego.Bot
 	keys  map[int64]Key
 	mutex *sync.RWMutex
-	cg    *configgen.ConfigGenerator
+	ps    *service.PeerService
 }
 
 func NewHandlers(
 	bot *telego.Bot,
-	cg *configgen.ConfigGenerator,
+	ps *service.PeerService,
 ) *Handlers {
 	return &Handlers{
 		bot:   bot,
 		keys:  make(map[int64]Key),
 		mutex: &sync.RWMutex{},
-		cg:    cg,
+		ps:    ps,
 	}
 }

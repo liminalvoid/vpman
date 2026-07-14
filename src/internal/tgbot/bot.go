@@ -7,7 +7,7 @@ import (
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
 
-	"vpnmanager/internal/configgen"
+	"vpnmanager/internal/service"
 	"vpnmanager/internal/tgbot/handlers"
 	"vpnmanager/internal/tgbot/middleware"
 )
@@ -24,7 +24,7 @@ type Bot struct {
 func New(
 	ctx context.Context,
 	cfg Config,
-	cg *configgen.ConfigGenerator,
+	cg *service.PeerService,
 ) (*Bot, error) {
 	// FIXME: Remove this and think how to handle logs in prod
 	bot, err := telego.NewBot(cfg.Token, telego.WithDefaultDebugLogger())
