@@ -11,7 +11,7 @@ type PeerService struct {
 	cg *configgen.ConfigGenerator
 }
 
-func New(cg *configgen.ConfigGenerator) *PeerService {
+func NewPeer(cg *configgen.ConfigGenerator) *PeerService {
 	return &PeerService{cg: cg}
 }
 

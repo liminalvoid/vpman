@@ -46,7 +46,7 @@ func main() {
 	cg := configgen.New(wg, ce)
 
 	// Initialize peer service
-	ps := service.New(cg)
+	ps := service.NewPeer(cg)
 
 	// Initialize Telegram bot
 	botToken := os.Getenv("TG_TOKEN")
