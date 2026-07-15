@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Config struct {
@@ -16,7 +16,7 @@ type Config struct {
 }
 
 type DB struct {
-	conn *pgx.Conn
+	pool *pgxpool.Pool
 }
 
 func New(ctx context.Context, cfg *Config) (*DB, error) {
@@ -28,12 +28,12 @@ func New(ctx context.Context, cfg *Config) (*DB, error) {
 		cfg.HostPort,
 		cfg.DatabaseName,
 	)
-	conn, err := pgx.Connect(ctx, connectionStr)
+	dbpool, err := pgxpool.New(ctx, connectionStr)
 	if err != nil {
 		return nil, fmt.Errorf("init DB: %w", err)
 	}
 
-	return &DB{conn: conn}, nil
+	return &DB{pool: dbpool}, nil
 }
 
-func (d *DB) Close(ctx context.Context) { d.conn.Close(ctx) }
+func (d *DB) Close() { d.pool.Close() }

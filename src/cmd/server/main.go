@@ -59,7 +59,7 @@ func main() {
 		fmt.Printf("failed to init DB: %s\n", err)
 		os.Exit(1)
 	}
-	defer db.Close(ctx)
+	defer db.Close()
 
 	// Initialize peer service
 	ps := service.NewPeer(cg)
