@@ -66,7 +66,7 @@ func main() {
 	configRepo := repository.NewConfig(db.Pool())
 
 	// Initialize peer service
-	ps := service.NewPeer(cg)
+	ps := service.NewPeer(cg, configRepo)
 
 	// Initialize Telegram bot
 	botToken := os.Getenv("TG_TOKEN")
