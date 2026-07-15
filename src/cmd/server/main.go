@@ -13,6 +13,7 @@ import (
 	"vpnmanager/internal/configgen"
 	"vpnmanager/internal/db"
 	"vpnmanager/internal/executor"
+	"vpnmanager/internal/repository"
 	"vpnmanager/internal/service"
 	"vpnmanager/internal/tgbot"
 )
@@ -60,6 +61,9 @@ func main() {
 		os.Exit(1)
 	}
 	defer db.Close()
+
+	// Initialize repos
+	configRepo := repository.NewConfig(db.Pool())
 
 	// Initialize peer service
 	ps := service.NewPeer(cg)
