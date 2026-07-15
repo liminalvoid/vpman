@@ -11,6 +11,7 @@ import (
 	"github.com/joho/godotenv"
 
 	"vpnmanager/internal/configgen"
+	"vpnmanager/internal/db"
 	"vpnmanager/internal/executor"
 	"vpnmanager/internal/service"
 	"vpnmanager/internal/tgbot"
@@ -45,6 +46,21 @@ func main() {
 	wg := &configgen.Wg{}
 	cg := configgen.New(wg, ce)
 
+	// Initialize DB module
+	dbCfg := db.Config{
+		Username:     "postgres",
+		Password:     "postgres",
+		HostAddr:     "localhost",
+		HostPort:     5432,
+		DatabaseName: "vpn",
+	}
+	db, err := db.New(ctx, &dbCfg)
+	if err != nil {
+		fmt.Printf("failed to init DB: %s\n", err)
+		os.Exit(1)
+	}
+	defer db.Close(ctx)
+
 	// Initialize peer service
 	ps := service.NewPeer(cg)
 
@@ -65,9 +81,9 @@ func main() {
 		fmt.Printf("failed to create Telegram bot: %s\n", err)
 		os.Exit(1)
 	}
+	defer func() { b.Stop() }()
 
 	// Start bot polling
-	defer func() { b.Stop() }()
 	err = b.Start()
 	if err != nil {
 		fmt.Printf("failed to start Telegram bot: %s\n", err)

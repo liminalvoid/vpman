@@ -11,7 +11,7 @@ type Config struct {
 	Username     string
 	Password     string
 	HostAddr     string
-	HostPort     string
+	HostPort     uint16
 	DatabaseName string
 }
 
@@ -21,7 +21,7 @@ type DB struct {
 
 func New(ctx context.Context, cfg *Config) (*DB, error) {
 	connectionStr := fmt.Sprintf(
-		"postgres://%s:%s@%s:%s/%s",
+		"postgres://%s:%s@%s:%d/%s",
 		cfg.Username,
 		cfg.Password,
 		cfg.HostAddr,
