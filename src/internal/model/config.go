@@ -20,7 +20,7 @@ type Config struct {
 	Name       string
 	UserID     int64
 	ProtocolID int16
+	ServerID   int64
 	Status     ConfigStatus
-	Location   string
 	CreatedAt  time.Time
 }

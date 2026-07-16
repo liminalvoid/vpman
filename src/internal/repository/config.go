@@ -24,12 +24,12 @@ func NewConfig(conn conn) *Config { return &Config{conn: conn} }
 
 func (r *Config) Create(ctx context.Context, config *model.Config) error {
 	const q = `
-		INSERT INTO configs (public_id, name, user_id, protocol_id, location)
+		INSERT INTO configs (public_id, name, user_id, protocol_id, server_id)
 		VALUES (gen_random_uuid(), $1, $2, $3, $4)
 		RETURNING id, public_id, status, created_at`
 
 	return r.conn.
-		QueryRow(ctx, q, config.Name, config.UserID, config.ProtocolID, config.Location).
+		QueryRow(ctx, q, config.Name, config.UserID, config.ProtocolID, config.ServerID).
 		Scan(&config.ID, &config.PublicID, &config.Status, &config.CreatedAt)
 }
 
@@ -53,8 +53,8 @@ func (r *Config) ListByUserID(ctx context.Context, userID int64) ([]model.Config
 			&c.Name,
 			&c.UserID,
 			&c.ProtocolID,
+			&c.ServerID,
 			&c.Status,
-			&c.Location,
 			&c.CreatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("scanning config: %w", err)

@@ -35,7 +35,7 @@ func (s *PeerService) CreatePeer(
 		Name: name,
 		UserID: ownerID,
 		ProtocolID: 0,
-		Location: location,
+		ServerID: 0,
 	}
 	err = s.cr.Create(ctx, &cfgData)
 	if err != nil {
