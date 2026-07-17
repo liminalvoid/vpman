@@ -113,3 +113,10 @@ Table servers {
     location_country text       [not null]
     location_city    text       [not null]
 }
+
+Table access_codes {
+    id         int         [pk, increment]
+    code       varchar(8)  [not null, unique]
+    created_at timestamptz [not null, default: `now()`]
+    used_at    timestamptz
+}
