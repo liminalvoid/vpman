@@ -89,7 +89,7 @@ Table subscriptions {
     canceled_at          timestamptz
     trial_end            timestamptz [note: "End of the trial"]
     created_at           timestamptz [not null, default: `now()`]
-    updated_at           timestamptz [not null, default: `now()`]
+    updated_at           timestamptz
 
     checks {
         `status IN ('active', 'trialing', 'past_due', 'canceled', 'incomplete')` [name: "chk_status_is_known"]
