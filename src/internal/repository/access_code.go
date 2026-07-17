@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 
 	"vpnmanager/internal/model"
 )
@@ -21,4 +22,22 @@ func (r *AccessCode) Create(ctx context.Context, accessCode *model.AccessCode) e
 	return r.conn.
 		QueryRow(ctx, q, accessCode.Code).
 		Scan(&accessCode.ID, &accessCode.Code, &accessCode.CreatedAt, &accessCode.UsedAt)
+}
+
+func (r *AccessCode) MarkUsed(ctx context.Context, code string) (*model.AccessCode, error) {
+	const q = `
+		UPDATE access_codes
+		SET used_at = CURRENT_TIMESTAMP
+		WHERE code = $1 AND used_at IS NULL
+		RETURNING id, code, created_at, used_at`
+
+	var ac model.AccessCode
+	err := r.conn.
+		QueryRow(ctx, q, code).
+		Scan(&ac.ID, &ac.Code, &ac.CreatedAt, &ac.UsedAt)
+	if err != nil {
+		return nil, fmt.Errorf("marking access code used: %w", err)
+	}
+	
+	return &ac, nil
 }
