@@ -10,15 +10,15 @@ import (
 )
 
 type PeerService struct {
-	cg *configgen.ConfigGenerator
-	cr *repository.Config
+	configGenerator  *configgen.ConfigGenerator
+	configRepository *repository.Config
 }
 
 func NewPeer(
 	configGenerator *configgen.ConfigGenerator,
 	configRepository *repository.Config,
 ) *PeerService {
-	return &PeerService{cg: configGenerator, cr: configRepository}
+	return &PeerService{configGenerator, configRepository}
 }
 
 func (s *PeerService) CreatePeer(
@@ -26,7 +26,7 @@ func (s *PeerService) CreatePeer(
 	ownerID int64,
 	name, location string,
 ) (string, error) {
-	cfg, err := s.cg.Create(ctx)
+	cfg, err := s.configGenerator.Create(ctx)
 	if err != nil {
 		return "", fmt.Errorf("generating config: %w", err)
 	}
@@ -37,7 +37,7 @@ func (s *PeerService) CreatePeer(
 		ProtocolID: 0,
 		ServerID:   0,
 	}
-	err = s.cr.Create(ctx, &cfgData)
+	err = s.configRepository.Create(ctx, &cfgData)
 	if err != nil {
 		return "", fmt.Errorf("writing config info to DB: %w", err)
 	}
