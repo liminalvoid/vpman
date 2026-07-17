@@ -38,11 +38,15 @@ Ref: configs.server_id   > servers.id   [delete: restrict, update: no action]
 Table users {
     id            bigint  [pk, increment]
     public_id     uuid    [not null, unique, default: `gen_random_uuid()`]
-    username      text    [not null, unique]
-    telegram_id   int64   [null]
-    password_hash text    [null]
+    username      text    [unique]
+    telegram_id   int64   [unique]
+    password_hash text
     is_admin      boolean [not null, default: false]
 
+    checks {
+        `(username IS NOT NULL AND password_hash IS NOT NULL) OR telegram_id IS NOT NULL` [name: "chk_has_identity"]
+        `(username IS NULL) = (password_hash IS NULL)`                                    [name: "chk_username_password_pair"]
+    }
 }
 
 Table sessions {
