@@ -15,10 +15,10 @@ type PeerService struct {
 }
 
 func NewPeer(
-	cg *configgen.ConfigGenerator,
-	cr *repository.Config,
+	configGenerator *configgen.ConfigGenerator,
+	configRepository *repository.Config,
 ) *PeerService {
-	return &PeerService{cg: cg, cr: cr}
+	return &PeerService{cg: configGenerator, cr: configRepository}
 }
 
 func (s *PeerService) CreatePeer(
@@ -32,10 +32,10 @@ func (s *PeerService) CreatePeer(
 	}
 
 	cfgData := model.Config{
-		Name: name,
-		UserID: ownerID,
+		Name:       name,
+		UserID:     ownerID,
 		ProtocolID: 0,
-		ServerID: 0,
+		ServerID:   0,
 	}
 	err = s.cr.Create(ctx, &cfgData)
 	if err != nil {
