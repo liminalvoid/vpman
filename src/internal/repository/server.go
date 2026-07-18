@@ -39,7 +39,7 @@ func (r *Server) Create(ctx context.Context, server *model.Server) error {
 		)
 }
 
-func (r *Server) ListAll(ctx context.Context, server *model.Server) ([]model.Server, error) {
+func (r *Server) ListAll(ctx context.Context) ([]model.Server, error) {
 	const q = `
 		SELECT id, public_address, internal_address, location, location_country, location_city
 		FROM servers`
