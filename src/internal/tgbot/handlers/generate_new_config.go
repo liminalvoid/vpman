@@ -25,17 +25,6 @@ const (
 	StateCreateConfigConfirm
 )
 
-var locationMap = map[string]string{
-	"ge": "🇩🇪 Германия",
-	"fr": "🇫🇷 Франция",
-	"nl": "🇳🇱 Нидерланды",
-}
-
-var protocolMap = map[string]string{
-	"awg":  "Amnezia WG",
-	"xray": "XRay",
-}
-
 var submitActionKb = tu.InlineKeyboard(
 	tu.InlineKeyboardRow(
 		tu.
@@ -46,37 +35,6 @@ var submitActionKb = tu.InlineKeyboard(
 		tu.
 			InlineKeyboardButton("Изменить").
 			WithCallbackData("generate_key:edit"),
-	),
-)
-
-var selectLocationKb = tu.InlineKeyboard(
-	tu.InlineKeyboardRow(
-		tu.
-			InlineKeyboardButton(locationMap["ge"]).
-			WithCallbackData("generate_key:location-ge"),
-	),
-	tu.InlineKeyboardRow(
-		tu.
-			InlineKeyboardButton(locationMap["fr"]).
-			WithCallbackData("generate_key:location-fr"),
-	),
-	tu.InlineKeyboardRow(
-		tu.
-			InlineKeyboardButton(locationMap["nl"]).
-			WithCallbackData("generate_key:location-nl"),
-	),
-)
-
-var selectProtocolKb = tu.InlineKeyboard(
-	tu.InlineKeyboardRow(
-		tu.
-			InlineKeyboardButton(protocolMap["awg"]).
-			WithCallbackData("generate_key:protocol-awg"),
-	),
-	tu.InlineKeyboardRow(
-		tu.
-			InlineKeyboardButton(protocolMap["xray"]).
-			WithCallbackData("generate_key:protocol-xray"),
 	),
 )
 
@@ -93,8 +51,21 @@ var finalMenuKb = tu.InlineKeyboard(
 	),
 )
 
+func countryFlagEmoji(code string) string {
+	if len(code) != 2 {
+		return ""
+	}
+
+	// Regional Indicator Symbol
+	risOffset := 127397
+	code = strings.ToUpper(code)
+	r := []rune(code)
+
+	return string(r[0] + rune(risOffset)) + string(r[1] + rune(risOffset))
+}
+
 func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error {
-	userId := int64(0)
+	var userId int64
 	switch {
 	case update.CallbackQuery != nil:
 		userId = update.CallbackQuery.From.ID
@@ -103,6 +74,27 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 	default:
 		return nil
 	}
+
+	// Generate keyboard with available servers
+	var kbRows [][]telego.InlineKeyboardButton
+	var selectLocationKb *telego.InlineKeyboardMarkup
+	servers, err := h.serverService.ListAll(ctx)
+	if err != nil {
+		return fmt.Errorf("retrieving servers: %w", err)
+	}
+	for _, s := range servers {
+		emoji := countryFlagEmoji(s.Location)
+		keyTitle := fmt.Sprintf("%s %s | %s", emoji, s.LocationCountry, s.LocationCity)
+		callbackData := fmt.Sprintf("generate_key:location-%s", strings.ToUpper(s.Location))
+
+		kbRows = append(kbRows, tu.InlineKeyboardRow(
+			tu.
+				InlineKeyboardButton(keyTitle).
+				WithCallbackData(callbackData),
+		))
+	}
+
+	selectLocationKb = tu.InlineKeyboard(kbRows...)
 
 	h.mutex.RLock()
 	key := h.keys[userId]
@@ -125,10 +117,12 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			key.State = StateCreateConfigEnterKeyName
 		case strings.Contains(update.CallbackQuery.Data, "location"):
 			key.Location = strings.ReplaceAll(update.CallbackQuery.Data, "generate_key:location-", "")
-			key.Location = locationMap[key.Location]
 			key.State = StateCreateConfigConfirm
 
 			response.Text = "Выбери протокол"
+
+				
+
 			response.ReplyMarkup = selectProtocolKb
 		case strings.Contains(update.CallbackQuery.Data, "protocol"):
 			key.Protocol = strings.ReplaceAll(update.CallbackQuery.Data, "generate_key:protocol-", "")

@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"sync"
 
 	"github.com/moby/moby/api/pkg/stdcopy"
 	"github.com/moby/moby/client"
@@ -14,42 +15,29 @@ type Config struct {
 	User        string
 	HostAddr    string
 	HostPort    string
-	ContainerID string
-	FromEnv     bool
 }
 
 type ContainerExecutor struct {
-	cli         *client.Client
-	ContainerID string
-	HostAddr    string
+	mu   sync.Mutex
+	pool map[string]*client.Client
 }
 
-func New(config *Config) (*ContainerExecutor, error) {
-	var option client.Opt
-	if config.FromEnv {
-		option = client.WithHostFromEnv()
-	} else {
-		// Create Docker host URL
-		dockerHost := fmt.Sprintf("ssh://%s@%s:%s", config.User, config.HostAddr, config.HostPort)
-		option = client.WithHost(dockerHost)
-	}
+func New() *ContainerExecutor {
+	return &ContainerExecutor{mu: sync.Mutex{}, pool: make(map[string]*client.Client)}
+}
 
-	c, err := client.New(option)
+func (ce *ContainerExecutor) Connect(cfg *Config) error {
+	dockerHost := fmt.Sprintf("ssh://%s@%s:%s", cfg.User, cfg.HostAddr, cfg.HostPort)
+	c, err := client.New(client.WithHost(dockerHost))
 	if err != nil {
-		return nil, fmt.Errorf("creating container executor: %w", err)
+		return fmt.Errorf("creating container executor: %w", err)
 	}
 
-	cli := ContainerExecutor{
-		cli:         c,
-		ContainerID: config.ContainerID,
-		HostAddr:    config.HostAddr,
-	}
-
-	return &cli, nil
+	ce.pool[cfg.HostAddr] = c
 }
 
 func (ce *ContainerExecutor) Run(ctx context.Context, cmd []string, stdin []byte) (string, error) {
-	execResp, err := ce.cli.ExecCreate(ctx, ce.ContainerID, client.ExecCreateOptions{
+	execResp, err := ce.pool[].ExecCreate(ctx, ce.ContainerID, client.ExecCreateOptions{
 		Cmd:          cmd,
 		AttachStdout: true,
 		AttachStderr: true,

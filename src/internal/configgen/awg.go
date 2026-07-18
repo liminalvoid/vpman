@@ -23,11 +23,11 @@ func (w *Awg) create(
 	// Read templates
 	peerConfTemplate, err := template.ParseFS(awgTemplateFS, "templates/awg/peer.conf")
 	if err != nil {
-		return "", fmt.Errorf("failed to parse peer's config template: %s", err) 
+		return "", fmt.Errorf("failed to parse peer's config template: %s", err)
 	}
 	confTemplate, err := template.ParseFS(awgTemplateFS, "templates/awg/client.conf")
 	if err != nil {
-		return "", fmt.Errorf("failed to parse client's config template: %s", err) 
+		return "", fmt.Errorf("failed to parse client's config template: %s", err)
 	}
 
 	// Generate keys
@@ -130,9 +130,9 @@ func (w *Awg) create(
 
 	var sb strings.Builder
 	peerData := map[string]string{
-		"ClientPubKey": pubKey,
+		"ClientPubKey":       pubKey,
 		"ClientPresharedKey": presKey,
-		"ClientAddr":   newPeerAddr.String(),
+		"ClientAddr":         newPeerAddr.String(),
 	}
 	if err := peerConfTemplate.Execute(&sb, peerData); err != nil {
 		return "", fmt.Errorf("failed to build peer config from template: %s", err)

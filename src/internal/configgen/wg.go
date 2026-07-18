@@ -103,9 +103,9 @@ func (w *Wg) create(
 
 	var sb strings.Builder
 	peerData := map[string]string{
-		"ClientPubKey": pubKey,
+		"ClientPubKey":       pubKey,
 		"ClientPresharedKey": presKey,
-		"ClientAddr":   newPeerAddr.String(),
+		"ClientAddr":         newPeerAddr.String(),
 	}
 	if err := peerConfTemplate.Execute(&sb, peerData); err != nil {
 		return "", fmt.Errorf("failed to build peer config from template: %s", err)
