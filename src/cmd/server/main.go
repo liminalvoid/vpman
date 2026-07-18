@@ -64,10 +64,11 @@ func main() {
 
 	// Initialize repos
 	configRepo := repository.NewConfig(db.Pool())
+	serverRepo := repository.NewServer(db.Pool())
 
 	// Initialize services
 	peerService := service.NewPeer(cg, configRepo)
-	serverService := service.NewServer()
+	serverService := service.NewServer(serverRepo)
 
 	// Initialize Telegram bot
 	botToken := os.Getenv("TG_TOKEN")
@@ -81,7 +82,12 @@ func main() {
 		Token:   botToken,
 		AdminID: adminId,
 	}
-	b, err := tgbot.New(ctx, bCfg, peerService)
+	b, err := tgbot.New(
+		ctx,
+		bCfg,
+		peerService,
+		serverService,
+	)
 	if err != nil {
 		fmt.Printf("failed to create Telegram bot: %s\n", err)
 		os.Exit(1)

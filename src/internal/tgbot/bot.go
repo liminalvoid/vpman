@@ -24,7 +24,8 @@ type Bot struct {
 func New(
 	ctx context.Context,
 	cfg Config,
-	cg *service.PeerService,
+	ps *service.PeerService,
+	ss *service.ServerService,
 ) (*Bot, error) {
 	// FIXME: Remove this and think how to handle logs in prod
 	bot, err := telego.NewBot(cfg.Token, telego.WithDefaultDebugLogger())
@@ -35,7 +36,11 @@ func New(
 	updates, _ := bot.UpdatesViaLongPolling(ctx, nil)
 
 	bh, _ := th.NewBotHandler(bot, updates)
-	h := handlers.NewHandlers(bot, cg)
+	h := handlers.NewHandlers(
+		bot,
+		ps,
+		ss,
+	)
 
 	bh.Use(th.PanicRecovery())
 	bh.Use(middleware.IsAdmin(bot, cfg.AdminID))

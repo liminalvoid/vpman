@@ -16,20 +16,23 @@ type Key struct {
 }
 
 type Handlers struct {
-	bot   *telego.Bot
-	keys  map[int64]Key
-	mutex *sync.RWMutex
-	ps    *service.PeerService
+	bot           *telego.Bot
+	keys          map[int64]Key
+	mutex         *sync.RWMutex
+	peerService   *service.PeerService
+	serverService *service.ServerService
 }
 
 func NewHandlers(
 	bot *telego.Bot,
 	ps *service.PeerService,
+	ss *service.ServerService,
 ) *Handlers {
 	return &Handlers{
-		bot:   bot,
-		keys:  make(map[int64]Key),
-		mutex: &sync.RWMutex{},
-		ps:    ps,
+		bot:           bot,
+		keys:          make(map[int64]Key),
+		mutex:         &sync.RWMutex{},
+		peerService:   ps,
+		serverService: ss,
 	}
 }
