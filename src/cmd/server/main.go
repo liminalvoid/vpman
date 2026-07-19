@@ -22,32 +22,18 @@ func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
-	// Load dotenv
 	err := godotenv.Load(".env.dev")
 	if err != nil {
 		fmt.Println("Error loading .env file")
 		os.Exit(1)
 	}
 
-	// Initialize container executor
-	ceCfg := executor.Config{
-		User:        "root",
-		HostAddr:    "127.0.0.1",
-		HostPort:    "22",
-		ContainerID: "5e13c8f1326929ea701a5a5fe41a4b7aab4ceb37cc78629d13fcb2f2e36d71fd",
-		FromEnv:     true,
-	}
-	ce, err := executor.New(&ceCfg)
-	if err != nil {
-		fmt.Printf("failed to start executor: %s\n", err)
-		os.Exit(1)
-	}
+	cr := executor.NewRegistry(executor.NewExecutor)
+	defer cr.Close()
 
-	// Initialize config generator
 	wg := &configgen.Wg{}
-	cg := configgen.New(wg, ce)
+	cg := configgen.New(wg, cr)
 
-	// Initialize DB module
 	dbCfg := db.Config{
 		Username:     "postgres",
 		Password:     "postgres",
@@ -70,7 +56,6 @@ func main() {
 	peerService := service.NewPeer(cg, configRepo)
 	serverService := service.NewServer(serverRepo)
 
-	// Initialize Telegram bot
 	botToken := os.Getenv("TG_TOKEN")
 	idSizeBytes := 64
 	adminId, err := strconv.ParseInt(os.Getenv("ME_ID"), 10, idSizeBytes)

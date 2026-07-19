@@ -11,11 +11,11 @@ import (
 
 type ServerService struct {
 	serverRepository  *repository.Server
-	containerExecutor *executor.ContainerExecutor	
+	containerRegistry *executor.Registry
 }
 
-func NewServer(sr *repository.Server, ce *executor.ContainerExecutor) *ServerService {
-	return &ServerService{serverRepository: sr, containerExecutor: ce}
+func NewServer(sr *repository.Server, cr *executor.Registry) *ServerService {
+	return &ServerService{serverRepository: sr, containerRegistry: cr}
 }
 
 func (s *ServerService) ListAll(ctx context.Context) ([]model.Server, error) {
@@ -28,10 +28,4 @@ func (s *ServerService) ListAll(ctx context.Context) ([]model.Server, error) {
 }
 
 func (s *ServerService) GetAvailableProtocols(server *model.Server) {
-	ceCfg := executor.Config{
-		User:        "root",
-		HostAddr:    server.InternalAddress,
-		HostPort:    "22",
-	}
-	s.containerExecutor.
 }
