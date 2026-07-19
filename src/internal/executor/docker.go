@@ -23,8 +23,8 @@ type Executor interface {
 
 type ContainerExecutor struct {
 	cli         *client.Client
-	hostAddr    string
-	containerID string
+	HostAddr    string
+	ContainerID string
 }
 
 type Factory func(ctx context.Context, cfg *Config) (Executor, error)
@@ -36,11 +36,11 @@ func NewExecutor(ctx context.Context, cfg *Config) (Executor, error) {
 		return nil, fmt.Errorf("creating container executor: %w", err)
 	}
 
-	return &ContainerExecutor{cli: c, hostAddr: cfg.HostAddr}, nil
+	return &ContainerExecutor{cli: c, HostAddr: cfg.HostAddr}, nil
 }
 
 func (ce *ContainerExecutor) Run(ctx context.Context, cmd []string, stdin []byte) (string, error) {
-	execResp, err := ce.cli.ExecCreate(ctx, ce.containerID, client.ExecCreateOptions{
+	execResp, err := ce.cli.ExecCreate(ctx, ce.ContainerID, client.ExecCreateOptions{
 		Cmd:          cmd,
 		AttachStdout: true,
 		AttachStderr: true,
