@@ -17,7 +17,7 @@ func (r *Server) Create(ctx context.Context, server *model.Server) error {
 	const q = `
 		INSERT INTO servers (public_address, internal_address, location, location_country, location_city)
 		VALUES ($1, $2, $3, $4, $5)
-		RETURNING id, public_address, internal_address, location, location_country, location_city`
+		RETURNING id, public_id, public_address, internal_address, location, location_country, location_city`
 
 	return r.conn.
 		QueryRow(
@@ -31,6 +31,7 @@ func (r *Server) Create(ctx context.Context, server *model.Server) error {
 		).
 		Scan(
 			&server.ID,
+			&server.PublicID,
 			&server.PublicAddress,
 			&server.InternalAddress,
 			&server.Location,
@@ -41,7 +42,7 @@ func (r *Server) Create(ctx context.Context, server *model.Server) error {
 
 func (r *Server) ListAll(ctx context.Context) ([]model.Server, error) {
 	const q = `
-		SELECT id, public_address, internal_address, location, location_country, location_city
+		SELECT id, public_id, public_address, internal_address, location, location_country, location_city
 		FROM servers`
 
 	rows, err := r.conn.Query(ctx, q)
@@ -55,6 +56,7 @@ func (r *Server) ListAll(ctx context.Context) ([]model.Server, error) {
 		var s model.Server
 		if err := rows.Scan(
 			&s.ID,
+			&s.PublicID,
 			&s.PublicAddress,
 			&s.InternalAddress,
 			&s.Location,
