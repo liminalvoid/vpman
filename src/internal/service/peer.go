@@ -11,15 +11,15 @@ import (
 )
 
 type PeerService struct {
-	configRepository *repository.Config
-	executors        *executor.Registry
+	configRepository  *repository.Config
+	containerRegistry *executor.Registry
 }
 
 func NewPeer(
-	configRepository *repository.Config,
-	executors        *executor.Registry,
+	configRepository  *repository.Config,
+	containerRegistry *executor.Registry,
 ) *PeerService {
-	return &PeerService{configRepository, executors}
+	return &PeerService{configRepository, containerRegistry}
 }
 
 func (s *PeerService) CreatePeer(
@@ -27,7 +27,7 @@ func (s *PeerService) CreatePeer(
 	ownerID int64,
 	name, location string,
 ) (string, error) {
-	cfg, err := s.configGenerator.Create(ctx)
+	cfg, err := configgen.New(&configgen.Awg{}, s.containerRegistry)
 	if err != nil {
 		return "", fmt.Errorf("generating config: %w", err)
 	}
@@ -51,4 +51,19 @@ func (s *PeerService) ListPeers(
 	ownerID int64,
 ) error {
 	return nil
+}
+
+func (s *PeerService) GetAvailableProtocols(ctx context.Context, serverId string) ([]string, error) {
+	ex, err := s.containerRegistry.Get(ctx, serverId)
+	if err != nil {
+		return nil, fmt.Errorf("getting %q from container registry: %w", serverId, err)
+	}
+
+	containers, err := ex.ListContainers(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("")
+	}
+
+	for _, c := range containers.Items {
+	}
 }

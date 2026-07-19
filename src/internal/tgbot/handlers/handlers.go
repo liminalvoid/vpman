@@ -11,7 +11,7 @@ import (
 type Key struct {
 	State    GenerateConfigState
 	Name     string
-	Location string
+	Server   string
 	Protocol string
 }
 

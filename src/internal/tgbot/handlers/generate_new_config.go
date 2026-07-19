@@ -61,7 +61,7 @@ func countryFlagEmoji(code string) string {
 	code = strings.ToUpper(code)
 	r := []rune(code)
 
-	return string(r[0] + rune(risOffset)) + string(r[1] + rune(risOffset))
+	return string(r[0]+rune(risOffset)) + string(r[1]+rune(risOffset))
 }
 
 func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error {
@@ -85,7 +85,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 	for _, s := range servers {
 		flagEmoji := countryFlagEmoji(s.Location)
 		keyTitle := fmt.Sprintf("%s %s | %s", flagEmoji, s.LocationCountry, s.LocationCity)
-		callbackData := fmt.Sprintf("generate_key:location-%s", strings.ToUpper(s.Location))
+		callbackData := fmt.Sprintf("generate_key:server-%s", strings.ToUpper(s.PublicID.String()))
 
 		kbRows = append(kbRows, tu.InlineKeyboardRow(
 			tu.
@@ -116,8 +116,13 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			response.Text = "Введи название ключа"
 			key.State = StateCreateConfigEnterKeyName
 		case strings.Contains(update.CallbackQuery.Data, "location"):
-			key.Location = strings.ReplaceAll(update.CallbackQuery.Data, "generate_key:location-", "")
+			key.Server = strings.ReplaceAll(update.CallbackQuery.Data, "generate_key:server-", "")
 			key.State = StateCreateConfigConfirm
+
+			var kbRows [][]telego.InlineKeyboardButton
+			var selectProtocolKb *telego.InlineKeyboardMarkup
+			protocols, err := h.serverService.GetAvailableProtocols(key.Server)
+
 
 			response.Text = "Выбери протокол"
 		case strings.Contains(update.CallbackQuery.Data, "protocol"):
@@ -128,11 +133,11 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 				"Название: %s\nПротокол: %s\nЛокация: %s\n\nСоздать ключ?",
 				key.Name,
 				key.Protocol,
-				key.Location,
+				key.Server,
 			)
 			response.ReplyMarkup = submitActionKb
 		case update.CallbackQuery.Data == "generate_key:yes":
-			config, err := h.peerService.CreatePeer(ctx, update.CallbackQuery.From.ID, key.Name, key.Location)
+			config, err := h.peerService.CreatePeer(ctx, update.CallbackQuery.From.ID, key.Name, key.Server)
 			if err != nil {
 				response.Text = fmt.Sprintf("Не удалось создать конфиг: %s", err)
 				response.ReplyMarkup = finalMenuKb

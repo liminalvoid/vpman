@@ -40,7 +40,6 @@ func (r *Registry) Add(
 func (r *Registry) Get(
 	ctx context.Context,
 	key string,
-	cfg *Config,
 ) (Executor, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()

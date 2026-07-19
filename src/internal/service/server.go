@@ -26,6 +26,3 @@ func (s *ServerService) ListAll(ctx context.Context) ([]model.Server, error) {
 
 	return servers, nil
 }
-
-func (s *ServerService) GetAvailableProtocols(server *model.Server) {
-}

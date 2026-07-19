@@ -20,6 +20,7 @@ type Config struct {
 type Executor interface {
 	Run(ctx context.Context, cmd []string, stdin []byte) (string, error)
 	Close() error
+	ListContainers(ctx context.Context) (*client.ContainerListResult, error)
 }
 
 type ContainerExecutor struct {
