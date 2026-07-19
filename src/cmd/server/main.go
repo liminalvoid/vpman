@@ -31,9 +31,6 @@ func main() {
 	cr := executor.NewRegistry(executor.NewExecutor)
 	defer cr.Close()
 
-	wg := &configgen.Wg{}
-	cg := configgen.New(wg, cr)
-
 	dbCfg := db.Config{
 		Username:     "postgres",
 		Password:     "postgres",
@@ -53,7 +50,7 @@ func main() {
 	serverRepo := repository.NewServer(db.Pool())
 
 	// Initialize services
-	peerService := service.NewPeer(configRepo, cg)
+	peerService := service.NewPeer(configRepo)
 	serverService := service.NewServer(serverRepo, cr)
 
 	botToken := os.Getenv("TG_TOKEN")

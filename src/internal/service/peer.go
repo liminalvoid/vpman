@@ -5,20 +5,21 @@ import (
 	"fmt"
 
 	"vpnmanager/internal/configgen"
+	"vpnmanager/internal/executor"
 	"vpnmanager/internal/model"
 	"vpnmanager/internal/repository"
 )
 
 type PeerService struct {
 	configRepository *repository.Config
-	configGenerator  *configgen.ConfigGenerator
+	executors        *executor.Registry
 }
 
 func NewPeer(
 	configRepository *repository.Config,
-	configGenerator *configgen.ConfigGenerator,
+	executors        *executor.Registry,
 ) *PeerService {
-	return &PeerService{configRepository, configGenerator}
+	return &PeerService{configRepository, executors}
 }
 
 func (s *PeerService) CreatePeer(
