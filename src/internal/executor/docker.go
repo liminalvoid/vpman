@@ -18,7 +18,7 @@ type Config struct {
 
 type Executor interface {
 	Run(ctx context.Context, cmd []string, stdin []byte) (string, error)
-	ListContainers(ctx context.Context) (*client.ContainerListResult, error)
+	Close() error
 }
 
 type ContainerExecutor struct {
@@ -49,29 +49,33 @@ func (ce *ContainerExecutor) Run(ctx context.Context, cmd []string, stdin []byte
 	if err != nil {
 		return "", fmt.Errorf("executing command: %w", err)
 	}
-
+	
 	attachResp, err := ce.cli.ExecAttach(ctx, execResp.ID, client.ExecAttachOptions{})
 	if err != nil {
 		return "", fmt.Errorf("attaching connection: %w", err)
 	}
 	defer attachResp.Close()
-
+	
 	if len(stdin) > 0 {
 		attachResp.Conn.Write(stdin)
 		attachResp.CloseWrite()
 	}
-
+	
 	var stdoutBuf bytes.Buffer
 	if _, err := stdcopy.StdCopy(&stdoutBuf, io.Discard, attachResp.Reader); err != nil {
 		return "", fmt.Errorf("de-multiplexing stdErr and stdOut: %w", err)
 	}
-
+	
 	_, err = ce.cli.ExecInspect(ctx, execResp.ID, client.ExecInspectOptions{})
 	if err != nil {
 		return "", fmt.Errorf("retrieving process info: %w", err)
 	}
-
+	
 	return stdoutBuf.String(), nil
+}
+
+func (ce *ContainerExecutor) Close() error {
+	return ce.cli.Close()
 }
 
 func (ce *ContainerExecutor) ListContainers(ctx context.Context) (*client.ContainerListResult, error) {
