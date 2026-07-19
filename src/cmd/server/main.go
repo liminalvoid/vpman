@@ -54,7 +54,7 @@ func main() {
 
 	// Initialize services
 	peerService := service.NewPeer(cg, configRepo)
-	serverService := service.NewServer(serverRepo)
+	serverService := service.NewServer(serverRepo, cr)
 
 	botToken := os.Getenv("TG_TOKEN")
 	idSizeBytes := 64

@@ -10,15 +10,15 @@ import (
 )
 
 type PeerService struct {
-	configGenerator  *configgen.ConfigGenerator
 	configRepository *repository.Config
+	configGenerator  *configgen.ConfigGenerator
 }
 
 func NewPeer(
-	configGenerator *configgen.ConfigGenerator,
 	configRepository *repository.Config,
+	configGenerator *configgen.ConfigGenerator,
 ) *PeerService {
-	return &PeerService{configGenerator, configRepository}
+	return &PeerService{configRepository, configGenerator}
 }
 
 func (s *PeerService) CreatePeer(
