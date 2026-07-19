@@ -107,6 +107,7 @@ Ref: subscriptions.plan_id > plans.id [delete: restrict, update: no action]
 
 Table servers {
     id               smallint   [pk, increment]
+    public_id        uuid       [not null, unique, default: `gen_random_uuid()`]
     public_address   text       [not null]
     internal_address text       [not null]
     location         varchar(2) [not null]
