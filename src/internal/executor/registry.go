@@ -49,7 +49,7 @@ func (r *Registry) Evict(key string) error {
 	delete(r.pool, key)
 
 	if err := ex.Close(); err != nil {
-		return fmt.Errorf("closing executor %q: %w", err)
+		return fmt.Errorf("closing executor %q: %w", key, err)
 	}
 
 	return nil
