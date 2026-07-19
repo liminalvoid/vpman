@@ -11,6 +11,7 @@ import (
 )
 
 type Config struct {
+	Name     string
 	User     string
 	HostAddr string
 	HostPort string
