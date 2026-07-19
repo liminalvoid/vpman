@@ -17,29 +17,10 @@ func NewRegistry(factory Factory) *Registry {
 	return &Registry{factory: factory, pool: make(map[string]Executor)}
 }
 
-func (r *Registry) Add(
-	ctx context.Context,
-	cfg *Config,
-) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	if _, ok := r.pool[cfg.Name]; ok {
-		return fmt.Errorf("executor %q exists", cfg.Name)
-	}
-
-	ex, err := r.factory(ctx, cfg)
-	if err != nil {
-		return fmt.Errorf("creating executor for %q: %w", cfg.Name, err)
-	}
-	r.pool[cfg.Name] = ex
-
-	return nil
-}
-
 func (r *Registry) Get(
 	ctx context.Context,
 	key string,
+	cfg *Config,
 ) (Executor, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -47,6 +28,16 @@ func (r *Registry) Get(
 	if ex, ok := r.pool[key]; ok {
 		return ex, nil
 	}
+
+	if cfg == nil {
+		return nil, fmt.Errorf("no config provided, cannot create new executor")
+	}
+
+	ex, err := r.factory(ctx, cfg)
+	if err != nil {
+		return nil, fmt.Errorf("creating executor for %q: %w", cfg.Name, err)
+	}
+	r.pool[cfg.Name] = ex
 
 	return nil, fmt.Errorf("no executor for %q", key)
 }

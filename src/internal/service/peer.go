@@ -16,7 +16,7 @@ type PeerService struct {
 }
 
 func NewPeer(
-	configRepository  *repository.Config,
+	configRepository *repository.Config,
 	containerRegistry *executor.Registry,
 ) *PeerService {
 	return &PeerService{configRepository, containerRegistry}
@@ -25,8 +25,24 @@ func NewPeer(
 func (s *PeerService) CreatePeer(
 	ctx context.Context,
 	ownerID int64,
-	name, location string,
+	name, server, protocol string,
 ) (string, error) {
+	p, err := configgen.GetProtocol(protocol)
+	if err != nil {
+		return "", fmt.Errorf("looking up for %q protocol: %w", name, err)
+	}
+
+	ser, err := s.containerRegistry.Get(ctx, server)
+	if err != nil {
+		cfg := &executor.Config{
+			Name:     "",
+			User:     "",
+			HostAddr: "",
+			HostPort: "",
+		}
+		err = s.containerRegistry.Add(ctx, cfg)
+	}
+
 	cfg, err := configgen.New(&configgen.Awg{}, s.containerRegistry)
 	if err != nil {
 		return "", fmt.Errorf("generating config: %w", err)
