@@ -83,8 +83,8 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 		return fmt.Errorf("retrieving servers: %w", err)
 	}
 	for _, s := range servers {
-		emoji := countryFlagEmoji(s.Location)
-		keyTitle := fmt.Sprintf("%s %s | %s", emoji, s.LocationCountry, s.LocationCity)
+		flagEmoji := countryFlagEmoji(s.Location)
+		keyTitle := fmt.Sprintf("%s %s | %s", flagEmoji, s.LocationCountry, s.LocationCity)
 		callbackData := fmt.Sprintf("generate_key:location-%s", strings.ToUpper(s.Location))
 
 		kbRows = append(kbRows, tu.InlineKeyboardRow(
@@ -120,13 +120,8 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			key.State = StateCreateConfigConfirm
 
 			response.Text = "Выбери протокол"
-
-				
-
-			response.ReplyMarkup = selectProtocolKb
 		case strings.Contains(update.CallbackQuery.Data, "protocol"):
 			key.Protocol = strings.ReplaceAll(update.CallbackQuery.Data, "generate_key:protocol-", "")
-			key.Protocol = protocolMap[key.Protocol]
 			key.State = StateCreateConfigSelectProtocol
 
 			response.Text = fmt.Sprintf(
