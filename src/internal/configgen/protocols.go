@@ -2,8 +2,6 @@ package configgen
 
 import (
 	"fmt"
-	"maps"
-	"slices"
 )
 
 var protocols = map[string]Protocol{
@@ -11,8 +9,8 @@ var protocols = map[string]Protocol{
 	"wg": &Wg{},
 }
 
-func ListProtocols() []string {
-	return slices.Collect(maps.Keys(protocols))
+func ListProtocols() map[string]Protocol {
+	return protocols
 }
 
 func GetProtocol(name string) (Protocol, error) {

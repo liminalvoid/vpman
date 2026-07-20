@@ -80,6 +80,8 @@ func (s *PeerService) GetAvailableProtocols(ctx context.Context, serverId string
 		return nil, fmt.Errorf("retrieving available containers: %w", err)
 	}
 
+	availableProtocols := configgen.ListProtocols()
+
 	for _, c := range containers.Items {
 		fmt.Println(c)
 	}
