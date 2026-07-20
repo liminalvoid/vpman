@@ -42,7 +42,7 @@ func (s *PeerService) CreatePeer(
 		return "", fmt.Errorf("unexpected executor type %T", ex)
 	}
 
-	cg := configgen.New(&configgen.Awg{}, ce)
+	cg := configgen.New(p, ce)
 	resultCfg, err := cg.Create(ctx)
 	if err != nil {
 		return "", fmt.Errorf("creating config: %w", err)
@@ -81,6 +81,6 @@ func (s *PeerService) GetAvailableProtocols(ctx context.Context, serverId string
 	}
 
 	for _, c := range containers.Items {
-		
+
 	}
 }
