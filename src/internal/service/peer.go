@@ -32,20 +32,20 @@ func (s *PeerService) CreatePeer(
 		return "", fmt.Errorf("looking up for %q protocol: %w", name, err)
 	}
 
-	ser, err := s.containerRegistry.Get(ctx, server)
+	ex, err := s.containerRegistry.Get(ctx, server, nil)
 	if err != nil {
-		cfg := &executor.Config{
-			Name:     "",
-			User:     "",
-			HostAddr: "",
-			HostPort: "",
-		}
-		err = s.containerRegistry.Add(ctx, cfg)
+		return "", fmt.Errorf("getting container %q from registry: %w", err)
 	}
 
-	cfg, err := configgen.New(&configgen.Awg{}, s.containerRegistry)
+	ce, ok := ex.(*executor.ContainerExecutor)
+	if !ok {
+		return "", fmt.Errorf("unexpected executor type %T", ex)
+	}
+
+	cg := configgen.New(&configgen.Awg{}, ce)
+	resultCfg, err := cg.Create(ctx)
 	if err != nil {
-		return "", fmt.Errorf("generating config: %w", err)
+		return "", fmt.Errorf("creating config: %w", err)
 	}
 
 	cfgData := model.Config{
@@ -59,7 +59,7 @@ func (s *PeerService) CreatePeer(
 		return "", fmt.Errorf("writing config info to DB: %w", err)
 	}
 
-	return cfg, nil
+	return resultCfg, nil
 }
 
 func (s *PeerService) ListPeers(
@@ -70,7 +70,7 @@ func (s *PeerService) ListPeers(
 }
 
 func (s *PeerService) GetAvailableProtocols(ctx context.Context, serverId string) ([]string, error) {
-	ex, err := s.containerRegistry.Get(ctx, serverId)
+	ex, err := s.containerRegistry.Get(ctx, serverId, nil)
 	if err != nil {
 		return nil, fmt.Errorf("getting %q from container registry: %w", serverId, err)
 	}
@@ -81,5 +81,6 @@ func (s *PeerService) GetAvailableProtocols(ctx context.Context, serverId string
 	}
 
 	for _, c := range containers.Items {
+		
 	}
 }
