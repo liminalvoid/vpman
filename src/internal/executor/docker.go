@@ -15,7 +15,6 @@ type Config struct {
 	User        string
 	HostAddr    string
 	HostPort    string
-	ContainerID string
 }
 
 type Executor interface {
@@ -39,7 +38,7 @@ func NewExecutor(ctx context.Context, cfg *Config) (Executor, error) {
 		return nil, fmt.Errorf("creating container executor: %w", err)
 	}
 
-	return &ContainerExecutor{cli: c, ContainerID: cfg.ContainerID, HostAddr: cfg.HostAddr}, nil
+	return &ContainerExecutor{cli: c, HostAddr: cfg.HostAddr}, nil
 }
 
 func (ce *ContainerExecutor) Run(ctx context.Context, cmd []string, stdin []byte) (string, error) {
@@ -88,4 +87,8 @@ func (ce *ContainerExecutor) ListContainers(ctx context.Context) (*client.Contai
 	}
 
 	return &list, nil
+}
+
+func (ce *ContainerExecutor) SetContainer(containerId string) {
+	ce.ContainerID = containerId
 }
