@@ -93,7 +93,6 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 				WithCallbackData(callbackData),
 		))
 	}
-
 	selectLocationKb = tu.InlineKeyboard(kbRows...)
 
 	h.mutex.RLock()
@@ -119,12 +118,26 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			key.Server = strings.ReplaceAll(update.CallbackQuery.Data, "generate_key:server-", "")
 			key.State = StateCreateConfigConfirm
 
+			// Generate keyboard with available protocols
 			var kbRows [][]telego.InlineKeyboardButton
 			var selectProtocolKb *telego.InlineKeyboardMarkup
-			protocols, err := h.serverService.GetAvailableProtocols(key.Server)
+			protocols, err := h.peerService.GetAvailableProtocols(ctx, key.Server)
+			if err != nil {
+				return fmt.Errorf("getting available protocols: %w", err)
+			}
+			for name := range protocols {
+				callbackData := fmt.Sprintf("generate_key:protocol-%s", name)
 
+				kbRows = append(kbRows, tu.InlineKeyboardRow(
+					tu.
+						InlineKeyboardButton(name).
+						WithCallbackData(callbackData),
+				))
+			}
+			selectProtocolKb = tu.InlineKeyboard(kbRows...)
 
 			response.Text = "Выбери протокол"
+			response.ReplyMarkup = selectProtocolKb
 		case strings.Contains(update.CallbackQuery.Data, "protocol"):
 			key.Protocol = strings.ReplaceAll(update.CallbackQuery.Data, "generate_key:protocol-", "")
 			key.State = StateCreateConfigSelectProtocol
@@ -137,7 +150,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			)
 			response.ReplyMarkup = submitActionKb
 		case update.CallbackQuery.Data == "generate_key:yes":
-			config, err := h.peerService.CreatePeer(ctx, update.CallbackQuery.From.ID, key.Name, key.Server)
+			config, err := h.peerService.CreatePeer(ctx, update.CallbackQuery.From.ID, key.Name, key.Server, key.Protocol)
 			if err != nil {
 				response.Text = fmt.Sprintf("Не удалось создать конфиг: %s", err)
 				response.ReplyMarkup = finalMenuKb
