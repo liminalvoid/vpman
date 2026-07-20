@@ -69,7 +69,7 @@ func (s *PeerService) ListPeers(
 	return nil
 }
 
-func (s *PeerService) GetAvailableProtocols(ctx context.Context, serverId string) ([]string, error) {
+func (s *PeerService) GetAvailableProtocols(ctx context.Context, serverId string) (map[string]string, error) {
 	ex, err := s.containerRegistry.Get(ctx, serverId, nil)
 	if err != nil {
 		return nil, fmt.Errorf("getting %q from container registry: %w", serverId, err)
@@ -80,11 +80,14 @@ func (s *PeerService) GetAvailableProtocols(ctx context.Context, serverId string
 		return nil, fmt.Errorf("retrieving available containers: %w", err)
 	}
 
-	availableProtocols := configgen.ListProtocols()
+	protocols := configgen.ListProtocols()
 
+	protocolToContainerMap := make(map[string]string, 0)
 	for _, c := range containers.Items {
-		fmt.Println(c)
+		if _, ok := protocols[c.Names[0]]; ok {
+			protocolToContainerMap[c.Names[0]] = c.ID
+		}
 	}
 
-	return nil, nil
+	return protocolToContainerMap, nil
 }
