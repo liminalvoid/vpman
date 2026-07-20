@@ -11,14 +11,15 @@ import (
 )
 
 type Config struct {
-	Name     string
-	User     string
-	HostAddr string
-	HostPort string
+	Name        string
+	User        string
+	HostAddr    string
+	HostPort    string
+	ContainerID string
 }
 
 type Executor interface {
-	Run(ctx context.Context, containerId string, cmd []string, stdin []byte) (string, error)
+	Run(ctx context.Context, cmd []string, stdin []byte) (string, error)
 	Close() error
 	ListContainers(ctx context.Context) (*client.ContainerListResult, error)
 }
@@ -38,10 +39,10 @@ func NewExecutor(ctx context.Context, cfg *Config) (Executor, error) {
 		return nil, fmt.Errorf("creating container executor: %w", err)
 	}
 
-	return &ContainerExecutor{cli: c, HostAddr: cfg.HostAddr}, nil
+	return &ContainerExecutor{cli: c, ContainerID: cfg.ContainerID, HostAddr: cfg.HostAddr}, nil
 }
 
-func (ce *ContainerExecutor) Run(ctx context.Context, containerId string, cmd []string, stdin []byte) (string, error) {
+func (ce *ContainerExecutor) Run(ctx context.Context, cmd []string, stdin []byte) (string, error) {
 	execResp, err := ce.cli.ExecCreate(ctx, ce.ContainerID, client.ExecCreateOptions{
 		Cmd:          cmd,
 		AttachStdout: true,
@@ -51,28 +52,28 @@ func (ce *ContainerExecutor) Run(ctx context.Context, containerId string, cmd []
 	if err != nil {
 		return "", fmt.Errorf("executing command: %w", err)
 	}
-	
+
 	attachResp, err := ce.cli.ExecAttach(ctx, execResp.ID, client.ExecAttachOptions{})
 	if err != nil {
 		return "", fmt.Errorf("attaching connection: %w", err)
 	}
 	defer attachResp.Close()
-	
+
 	if len(stdin) > 0 {
 		attachResp.Conn.Write(stdin)
 		attachResp.CloseWrite()
 	}
-	
+
 	var stdoutBuf bytes.Buffer
 	if _, err := stdcopy.StdCopy(&stdoutBuf, io.Discard, attachResp.Reader); err != nil {
 		return "", fmt.Errorf("de-multiplexing stdErr and stdOut: %w", err)
 	}
-	
+
 	_, err = ce.cli.ExecInspect(ctx, execResp.ID, client.ExecInspectOptions{})
 	if err != nil {
 		return "", fmt.Errorf("retrieving process info: %w", err)
 	}
-	
+
 	return stdoutBuf.String(), nil
 }
 
