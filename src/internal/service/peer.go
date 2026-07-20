@@ -34,7 +34,7 @@ func (s *PeerService) CreatePeer(
 
 	ex, err := s.containerRegistry.Get(ctx, server, nil)
 	if err != nil {
-		return "", fmt.Errorf("getting container %q from registry: %w", err)
+		return "", fmt.Errorf("getting server %q from registry: %w", server, err)
 	}
 
 	ce, ok := ex.(*executor.ContainerExecutor)
