@@ -119,12 +119,12 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			key.State = StateCreateConfigConfirm
 
 			// Generate keyboard with available protocols
-			var kbRows [][]telego.InlineKeyboardButton
-			var selectProtocolKb *telego.InlineKeyboardMarkup
 			protocols, err := h.peerService.GetAvailableProtocols(ctx, key.Server)
 			if err != nil {
 				return fmt.Errorf("getting available protocols: %w", err)
 			}
+			var kbRows [][]telego.InlineKeyboardButton
+			var selectProtocolKb *telego.InlineKeyboardMarkup
 			for name := range protocols {
 				callbackData := fmt.Sprintf("generate_key:protocol-%s", name)
 
