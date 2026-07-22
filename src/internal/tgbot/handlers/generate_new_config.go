@@ -169,10 +169,16 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 		switch key.State {
 		case StateCreateConfigEnterKeyName:
 			key.Name = update.Message.Text
-			key.State = StateCreateConfigSelectProtocol
-			response.Text = "Выбери локацию"
+			
+			if len(servers) > 0 {
+				key.State = StateCreateConfigSelectProtocol
+				response.Text = "Выбери локацию"
+				response.ReplyMarkup = selectLocationKb
+			}
 
-			response.ReplyMarkup = selectLocationKb
+			key.State = StateCreateConfig
+			response.Text = "Нет доступных серверов"
+			response.ReplyMarkup = finalMenuKb
 		}
 	}
 
