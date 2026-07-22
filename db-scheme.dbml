@@ -39,7 +39,7 @@ Table users {
     id            bigint  [pk, increment]
     public_id     uuid    [not null, unique, default: `gen_random_uuid()`]
     username      text    [unique]
-    telegram_id   int64   [unique]
+    telegram_id   bigint  [unique]
     password_hash text
     is_admin      boolean [not null, default: false]
 

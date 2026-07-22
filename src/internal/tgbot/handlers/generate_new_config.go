@@ -171,6 +171,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			key.Name = update.Message.Text
 			key.State = StateCreateConfigSelectProtocol
 			response.Text = "Выбери локацию"
+
 			response.ReplyMarkup = selectLocationKb
 		}
 	}
