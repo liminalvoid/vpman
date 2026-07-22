@@ -45,9 +45,8 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 		keyId = strings.ReplaceAll(keyId, " ", "-")
 
 		buttonText := fmt.Sprintf(
-			"%s, %s, %s",
+			"%s, %s",
 			currentKeys[i].Name,
-			locationMap[currentKeys[i].Location],
 			currentKeys[i].Protocol,
 		)
 
