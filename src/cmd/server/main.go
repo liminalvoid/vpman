@@ -10,7 +10,6 @@ import (
 
 	"github.com/joho/godotenv"
 
-	"vpnmanager/internal/configgen"
 	"vpnmanager/internal/db"
 	"vpnmanager/internal/executor"
 	"vpnmanager/internal/repository"
@@ -50,7 +49,7 @@ func main() {
 	serverRepo := repository.NewServer(db.Pool())
 
 	// Initialize services
-	peerService := service.NewPeer(configRepo)
+	peerService := service.NewPeer(configRepo, cr)
 	serverService := service.NewServer(serverRepo, cr)
 
 	botToken := os.Getenv("TG_TOKEN")
