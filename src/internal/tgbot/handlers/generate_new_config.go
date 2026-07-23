@@ -112,6 +112,14 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 
 		switch {
 		case update.CallbackQuery.Data == "wizard:generate_key" || update.CallbackQuery.Data == "generate_key:edit":
+			if len(servers) == 0 {
+				key.State = StateCreateConfig
+				response.Text = "Нет доступных серверов"
+				response.ReplyMarkup = finalMenuKb
+
+				break
+			}
+			
 			response.Text = "Введи название ключа"
 			key.State = StateCreateConfigEnterKeyName
 		case strings.Contains(update.CallbackQuery.Data, "location"):
@@ -170,15 +178,9 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 		case StateCreateConfigEnterKeyName:
 			key.Name = update.Message.Text
 			
-			if len(servers) > 0 {
-				key.State = StateCreateConfigSelectProtocol
-				response.Text = "Выбери локацию"
-				response.ReplyMarkup = selectLocationKb
-			}
-
-			key.State = StateCreateConfig
-			response.Text = "Нет доступных серверов"
-			response.ReplyMarkup = finalMenuKb
+			key.State = StateCreateConfigSelectProtocol
+			response.Text = "Выбери локацию"
+			response.ReplyMarkup = selectLocationKb
 		}
 	}
 
