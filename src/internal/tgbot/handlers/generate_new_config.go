@@ -124,13 +124,23 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			key.State = StateCreateConfigEnterKeyName
 		case strings.Contains(update.CallbackQuery.Data, "location"):
 			key.Server = strings.ReplaceAll(update.CallbackQuery.Data, "generate_key:server-", "")
-			key.State = StateCreateConfigConfirm
 
 			// Generate keyboard with available protocols
 			protocols, err := h.peerService.GetAvailableProtocols(ctx, key.Server)
 			if err != nil {
 				return fmt.Errorf("getting available protocols: %w", err)
 			}
+
+			fmt.Println(protocols)
+
+			if len(protocols) == 0 {
+				key.State = StateCreateConfig
+				response.Text = "Нет доступных протоколов"
+				response.ReplyMarkup = finalMenuKb
+
+				break
+			}
+
 			var kbRows [][]telego.InlineKeyboardButton
 			var selectProtocolKb *telego.InlineKeyboardMarkup
 			for name := range protocols {
@@ -144,6 +154,8 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			}
 			selectProtocolKb = tu.InlineKeyboard(kbRows...)
 
+
+			key.State = StateCreateConfigConfirm
 			response.Text = "Выбери протокол"
 			response.ReplyMarkup = selectProtocolKb
 		case strings.Contains(update.CallbackQuery.Data, "protocol"):
