@@ -85,7 +85,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 	for _, s := range servers {
 		flagEmoji := countryFlagEmoji(s.Location)
 		keyTitle := fmt.Sprintf("%s %s | %s", flagEmoji, s.LocationCountry, s.LocationCity)
-		callbackData := fmt.Sprintf("generate_key:server-%s", strings.ToUpper(s.PublicID.String()))
+		callbackData := fmt.Sprintf("generate_key:server-%s", s.PublicID.String())
 
 		kbRows = append(kbRows, tu.InlineKeyboardRow(
 			tu.
