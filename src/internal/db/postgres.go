@@ -33,6 +33,12 @@ func New(ctx context.Context, cfg *Config) (*DB, error) {
 		return nil, fmt.Errorf("init DB: %w", err)
 	}
 
+	if err := dbpool.Ping(ctx); err != nil {
+		dbpool.Close()
+
+		return nil, fmt.Errorf("ping DB: %w", err)
+	}
+
 	return &DB{pool: dbpool}, nil
 }
 
