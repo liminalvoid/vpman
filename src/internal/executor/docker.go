@@ -32,7 +32,7 @@ type ContainerExecutor struct {
 type Factory func(ctx context.Context, cfg *Config) (Executor, error)
 
 func NewExecutor(ctx context.Context, cfg *Config) (Executor, error) {
-	dockerHost := fmt.Sprintf("ssh://%s@%s:%s", cfg.User, cfg.HostAddr, cfg.HostPort)
+	dockerHost := fmt.Sprintf("tcp://%s:%s", cfg.HostAddr, cfg.HostPort)
 	c, err := client.New(client.WithHost(dockerHost))
 	if err != nil {
 		return nil, fmt.Errorf("creating container executor: %w", err)
