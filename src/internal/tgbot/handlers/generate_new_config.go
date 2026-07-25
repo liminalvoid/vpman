@@ -122,7 +122,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			
 			response.Text = "Введи название ключа"
 			key.State = StateCreateConfigEnterKeyName
-		case strings.Contains(update.CallbackQuery.Data, "location"):
+		case strings.Contains(update.CallbackQuery.Data, "server"):
 			key.Server = strings.ReplaceAll(update.CallbackQuery.Data, "generate_key:server-", "")
 
 			// Generate keyboard with available protocols
