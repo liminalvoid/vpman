@@ -7,6 +7,7 @@ import (
 var protocols = map[string]Protocol{
 	"awg": &Awg{},
 	"wg": &Wg{},
+	"wireguard": &Wg{},
 }
 
 func ListProtocols() map[string]Protocol {
