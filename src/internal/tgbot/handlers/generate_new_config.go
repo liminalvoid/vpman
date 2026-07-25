@@ -154,7 +154,6 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			}
 			selectProtocolKb = tu.InlineKeyboard(kbRows...)
 
-
 			key.State = StateCreateConfigConfirm
 			response.Text = "Выбери протокол"
 			response.ReplyMarkup = selectProtocolKb
