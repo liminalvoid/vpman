@@ -20,7 +20,6 @@ func NewRegistry(factory Factory) *Registry {
 func (r *Registry) Get(
 	ctx context.Context,
 	key string,
-	cfg *Config,
 ) (Executor, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -29,6 +28,11 @@ func (r *Registry) Get(
 		return ex, nil
 	}
 
+	return nil, fmt.Errorf("no executor for %q", key)
+}
+
+func (r *Registry) Add(ctx context.Context, cfg *Config) (Executor, error) {
+	// TODO: think of should I add custom error
 	if cfg == nil {
 		return nil, fmt.Errorf("no config provided, cannot create new executor")
 	}
@@ -39,7 +43,7 @@ func (r *Registry) Get(
 	}
 	r.pool[cfg.Name] = ex
 
-	return nil, fmt.Errorf("no executor for %q", key)
+	return ex, nil
 }
 
 func (r *Registry) Evict(key string) error {

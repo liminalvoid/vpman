@@ -32,7 +32,7 @@ func (s *PeerService) CreatePeer(
 		return "", fmt.Errorf("looking up for %q protocol: %w", name, err)
 	}
 
-	ex, err := s.containerRegistry.Get(ctx, server, nil)
+	ex, err := s.containerRegistry.Get(ctx, server)
 	if err != nil {
 		return "", fmt.Errorf("getting server %q from registry: %w", server, err)
 	}
@@ -70,7 +70,7 @@ func (s *PeerService) ListPeers(
 }
 
 func (s *PeerService) GetAvailableProtocols(ctx context.Context, serverId string) (map[string]string, error) {
-	ex, err := s.containerRegistry.Get(ctx, serverId, nil)
+	ex, err := s.containerRegistry.Get(ctx, serverId)
 	if err != nil {
 		return nil, fmt.Errorf("getting %q from container registry: %w", serverId, err)
 	}
