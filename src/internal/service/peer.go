@@ -69,10 +69,20 @@ func (s *PeerService) ListPeers(
 	return nil
 }
 
-func (s *PeerService) GetAvailableProtocols(ctx context.Context, serverId string) (map[string]string, error) {
-	ex, err := s.containerRegistry.Get(ctx, serverId)
+func (s *PeerService) GetAvailableProtocols(ctx context.Context, server model.Server) (map[string]string, error) {
+	var ex executor.Executor
+	ex, err := s.containerRegistry.Get(ctx, server.PublicID.String())
 	if err != nil {
-		return nil, fmt.Errorf("getting %q from container registry: %w", serverId, err)
+		cfg := executor.Config{
+			Name: server.PublicID.String(),	
+			User: "root",
+			HostAddr: server.InternalAddress,
+			HostPort: "2375",
+		}
+		ex, err = s.containerRegistry.Add(ctx, &cfg)
+		if err != nil {
+			return nil, fmt.Errorf("connecting to host %q: %w", server.InternalAddress, err)
+		}
 	}
 
 	containers, err := ex.ListContainers(ctx)

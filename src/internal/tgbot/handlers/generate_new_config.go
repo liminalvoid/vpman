@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"strings"
+	"vpnmanager/internal/model"
 
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
@@ -125,8 +126,17 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 		case strings.Contains(update.CallbackQuery.Data, "server"):
 			key.Server = strings.ReplaceAll(update.CallbackQuery.Data, "generate_key:server-", "")
 
+			var targetServer model.Server
+			for _, s := range servers {
+				if s.PublicID.String() == key.Server {
+					targetServer = s
+
+					break
+				}
+			}
+
 			// Generate keyboard with available protocols
-			protocols, err := h.peerService.GetAvailableProtocols(ctx, key.Server)
+			protocols, err := h.peerService.GetAvailableProtocols(ctx, targetServer)
 			if err != nil {
 				return fmt.Errorf("getting available protocols: %w", err)
 			}
