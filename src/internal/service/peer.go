@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"vpnmanager/internal/configgen"
 	"vpnmanager/internal/executor"
@@ -94,8 +95,10 @@ func (s *PeerService) GetAvailableProtocols(ctx context.Context, server model.Se
 
 	protocolToContainerMap := make(map[string]string, 0)
 	for _, c := range containers.Items {
-		if _, ok := protocols[c.Names[0]]; ok {
-			protocolToContainerMap[c.Names[0]] = c.ID
+		containerName := strings.ReplaceAll(c.Names[0], "/", "")
+		fmt.Println(containerName)
+		if _, ok := protocols[containerName]; ok {
+			protocolToContainerMap[containerName] = c.ID
 		}
 	}
 
