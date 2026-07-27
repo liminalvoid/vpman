@@ -126,10 +126,15 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 		case strings.Contains(update.CallbackQuery.Data, "server"):
 			key.Server = strings.ReplaceAll(update.CallbackQuery.Data, "generate_key:server-", "")
 
+			fmt.Println(key.Server)
+
 			var targetServer model.Server
 			for _, s := range servers {
 				if s.PublicID.String() == key.Server {
 					targetServer = s
+					flagEmoji := countryFlagEmoji(s.Location)
+					keyTitle := fmt.Sprintf("%s %s \\| %s", flagEmoji, s.LocationCountry, s.LocationCity)
+					key.Location = keyTitle
 
 					break
 				}
@@ -140,8 +145,6 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			if err != nil {
 				return fmt.Errorf("getting available protocols: %w", err)
 			}
-
-			fmt.Println(protocols)
 
 			if len(protocols) == 0 {
 				key.State = StateCreateConfig
@@ -175,7 +178,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 				"Название: %s\nПротокол: %s\nЛокация: %s\n\nСоздать ключ?",
 				key.Name,
 				key.Protocol,
-				key.Server,
+				key.Location,
 			)
 			response.ReplyMarkup = submitActionKb
 		case update.CallbackQuery.Data == "generate_key:yes":

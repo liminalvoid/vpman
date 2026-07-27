@@ -13,6 +13,7 @@ type Key struct {
 	Name     string
 	Server   string
 	Protocol string
+	Location string
 }
 
 type Handlers struct {

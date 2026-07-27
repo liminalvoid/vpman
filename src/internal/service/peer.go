@@ -73,6 +73,7 @@ func (s *PeerService) ListPeers(
 func (s *PeerService) GetAvailableProtocols(ctx context.Context, server model.Server) (map[string]string, error) {
 	var ex executor.Executor
 	ex, err := s.containerRegistry.Get(ctx, server.PublicID.String())
+	fmt.Println(server.PublicID.String())
 	if err != nil {
 		cfg := executor.Config{
 			Name: server.PublicID.String(),	
