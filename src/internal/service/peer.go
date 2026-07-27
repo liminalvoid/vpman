@@ -26,7 +26,7 @@ func NewPeer(
 func (s *PeerService) CreatePeer(
 	ctx context.Context,
 	ownerID int64,
-	name, server, protocol string,
+	name, server, protocol, containerId string,
 ) (string, error) {
 	p, err := configgen.GetProtocol(protocol)
 	if err != nil {
@@ -43,22 +43,24 @@ func (s *PeerService) CreatePeer(
 		return "", fmt.Errorf("unexpected executor type %T", ex)
 	}
 
+	ce.SetContainer(containerId)
+
 	cg := configgen.New(p, ce)
 	resultCfg, err := cg.Create(ctx)
 	if err != nil {
 		return "", fmt.Errorf("creating config: %w", err)
 	}
 
-	cfgData := model.Config{
-		Name:       name,
-		UserID:     ownerID,
-		ProtocolID: 0,
-		ServerID:   0,
-	}
-	err = s.configRepository.Create(ctx, &cfgData)
-	if err != nil {
-		return "", fmt.Errorf("writing config info to DB: %w", err)
-	}
+	// cfgData := model.Config{
+	// 	Name:       name,
+	// 	UserID:     ownerID,
+	// 	ProtocolID: 0,
+	// 	ServerID:   0,
+	// }
+	// err = s.configRepository.Create(ctx, &cfgData)
+	// if err != nil {
+	// 	return "", fmt.Errorf("writing config info to DB: %w", err)
+	// }
 
 	return resultCfg, nil
 }

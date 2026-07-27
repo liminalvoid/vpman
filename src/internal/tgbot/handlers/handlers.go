@@ -5,15 +5,17 @@ import (
 
 	"github.com/mymmrac/telego"
 
+	"vpnmanager/internal/model"
 	"vpnmanager/internal/service"
 )
 
 type Key struct {
-	State    GenerateConfigState
-	Name     string
-	Server   string
-	Protocol string
-	Location string
+	State       GenerateConfigState
+	Name        string
+	Server      *model.Server
+	Protocol    string
+	Location    string
+	ContainerID string
 }
 
 type Handlers struct {

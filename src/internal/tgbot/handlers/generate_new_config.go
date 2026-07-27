@@ -3,7 +3,6 @@ package handlers
 import (
 	"fmt"
 	"strings"
-	"vpnmanager/internal/model"
 
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
@@ -51,6 +50,8 @@ var finalMenuKb = tu.InlineKeyboard(
 			WithCallbackData("wizard:generate_key"),
 	),
 )
+
+var protocolToServerMap map[string]string
 
 func countryFlagEmoji(code string) string {
 	if len(code) != 2 {
@@ -124,14 +125,11 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			response.Text = "Введи название ключа"
 			key.State = StateCreateConfigEnterKeyName
 		case strings.Contains(update.CallbackQuery.Data, "server"):
-			key.Server = strings.ReplaceAll(update.CallbackQuery.Data, "generate_key:server-", "")
+			selectedServer := strings.ReplaceAll(update.CallbackQuery.Data, "generate_key:server-", "")
 
-			fmt.Println(key.Server)
-
-			var targetServer model.Server
 			for _, s := range servers {
-				if s.PublicID.String() == key.Server {
-					targetServer = s
+				if s.PublicID.String() == selectedServer {
+					key.Server = &s
 					flagEmoji := countryFlagEmoji(s.Location)
 					keyTitle := fmt.Sprintf("%s %s \\| %s", flagEmoji, s.LocationCountry, s.LocationCity)
 					key.Location = keyTitle
@@ -140,13 +138,12 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 				}
 			}
 
-			// Generate keyboard with available protocols
-			protocols, err := h.peerService.GetAvailableProtocols(ctx, targetServer)
+			protocolToServerMap, err = h.peerService.GetAvailableProtocols(ctx, *key.Server)
 			if err != nil {
 				return fmt.Errorf("getting available protocols: %w", err)
 			}
 
-			if len(protocols) == 0 {
+			if len(protocolToServerMap) == 0 {
 				key.State = StateCreateConfig
 				response.Text = "Нет доступных протоколов"
 				response.ReplyMarkup = finalMenuKb
@@ -154,9 +151,10 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 				break
 			}
 
+			// Generate keyboard with available protocols
 			var kbRows [][]telego.InlineKeyboardButton
 			var selectProtocolKb *telego.InlineKeyboardMarkup
-			for name := range protocols {
+			for name := range protocolToServerMap {
 				callbackData := fmt.Sprintf("generate_key:protocol-%s", name)
 
 				kbRows = append(kbRows, tu.InlineKeyboardRow(
@@ -182,7 +180,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			)
 			response.ReplyMarkup = submitActionKb
 		case update.CallbackQuery.Data == "generate_key:yes":
-			config, err := h.peerService.CreatePeer(ctx, update.CallbackQuery.From.ID, key.Name, key.Server, key.Protocol)
+			config, err := h.peerService.CreatePeer(ctx, update.CallbackQuery.From.ID, key.Name, key.Server.PublicID.String(), key.Protocol, protocolToServerMap[key.Protocol])
 			if err != nil {
 				response.Text = fmt.Sprintf("Не удалось создать конфиг: %s", err)
 				response.ReplyMarkup = finalMenuKb
