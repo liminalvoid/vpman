@@ -12,15 +12,21 @@ import (
 )
 
 type PeerService struct {
-	configRepository  *repository.Config
-	containerRegistry *executor.Registry
+	configRepository   *repository.Config
+	protocolRepository *repository.Protocol
+	containerRegistry  *executor.Registry
 }
 
 func NewPeer(
 	configRepository *repository.Config,
+	protocolRepository *repository.Protocol,
 	containerRegistry *executor.Registry,
 ) *PeerService {
-	return &PeerService{configRepository, containerRegistry}
+	return &PeerService{
+		configRepository,
+		protocolRepository,
+		containerRegistry,
+	}
 }
 
 func (s *PeerService) CreatePeer(
@@ -78,8 +84,8 @@ func (s *PeerService) GetAvailableProtocols(ctx context.Context, server model.Se
 	fmt.Println(server.PublicID.String())
 	if err != nil {
 		cfg := executor.Config{
-			Name: server.PublicID.String(),	
-			User: "root",
+			Name:     server.PublicID.String(),
+			User:     "root",
 			HostAddr: server.InternalAddress,
 			HostPort: "2375",
 		}
