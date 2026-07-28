@@ -189,6 +189,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 				protocolToServerMap[key.Protocol],
 			)
 			if err != nil {
+				// TODO: Remove error sent to the user
 				response.Text = fmt.Sprintf("Не удалось создать конфиг: %s", err)
 				response.ReplyMarkup = finalMenuKb
 				key.State = StateCreateConfig
