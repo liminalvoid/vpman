@@ -30,5 +30,5 @@ func (r *Protocol) Find(ctx context.Context, protocol *model.Protocol) error {
 
 	return r.conn.
 		QueryRow(ctx, q, &protocol.Name).
-		Scan(protocol, &protocol.ID, &protocol.Name)
+		Scan(&protocol.ID, &protocol.Name)
 }
