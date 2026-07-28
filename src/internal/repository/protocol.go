@@ -23,12 +23,12 @@ func (r *Protocol) Create(ctx context.Context, protocol *model.Protocol) error {
 		Scan(&protocol.ID, &protocol.Name)
 }
 
-func (r *Protocol) Lookup(ctx context.Context, protocol *model.Protocol) error {
+func (r *Protocol) Find(ctx context.Context, protocol *model.Protocol) error {
 	const q = `
 		SELECT id, name
 		FROM protocols WHERE name = $1`
 
 	return r.conn.
-		QueryRow(ctx, q, protocol.Name).
-		Scan(&protocol.ID, &protocol.Name)
+		QueryRow(ctx, q, &protocol.Name).
+		Scan(protocol, &protocol.ID, &protocol.Name)
 }

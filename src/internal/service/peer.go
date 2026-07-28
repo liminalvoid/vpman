@@ -32,16 +32,21 @@ func NewPeer(
 func (s *PeerService) CreatePeer(
 	ctx context.Context,
 	ownerID int64,
-	name, server, protocol, containerId string,
+	server *model.Server,
+	name, protocol, containerId string,
 ) (string, error) {
 	p, err := configgen.GetProtocol(protocol)
 	if err != nil {
 		return "", fmt.Errorf("looking up for %q protocol: %w", name, err)
 	}
 
-	ex, err := s.containerRegistry.Get(ctx, server)
+	ex, err := s.containerRegistry.Get(ctx, server.PublicID.String())
 	if err != nil {
-		return "", fmt.Errorf("getting server %q from registry: %w", server, err)
+		return "", fmt.Errorf(
+			"getting server %q from registry: %w",
+			server.PublicID.String(),
+			err,
+		)
 	}
 
 	ce, ok := ex.(*executor.ContainerExecutor)
@@ -57,16 +62,27 @@ func (s *PeerService) CreatePeer(
 		return "", fmt.Errorf("creating config: %w", err)
 	}
 
-	// cfgData := model.Config{
-	// 	Name:       name,
-	// 	UserID:     ownerID,
-	// 	ProtocolID: 0,
-	// 	ServerID:   0,
-	// }
-	// err = s.configRepository.Create(ctx, &cfgData)
-	// if err != nil {
-	// 	return "", fmt.Errorf("writing config info to DB: %w", err)
-	// }
+	protocolStruct := model.Protocol{
+		Name: protocol,
+	}
+	err = s.protocolRepository.Find(
+		ctx,
+		&protocolStruct,
+	)
+	if err != nil {
+		return "", fmt.Errorf("querying protocol %q: %w", protocolStruct.Name, err)
+	}
+
+	cfgData := model.Config{
+		Name:       name,
+		UserID:     ownerID,
+		ProtocolID: protocolStruct.ID,
+		ServerID:   int64(server.ID),
+	}
+	err = s.configRepository.Create(ctx, &cfgData)
+	if err != nil {
+		return "", fmt.Errorf("writing config info to DB: %w", err)
+	}
 
 	return resultCfg, nil
 }

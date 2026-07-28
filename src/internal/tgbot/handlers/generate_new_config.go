@@ -180,7 +180,14 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			)
 			response.ReplyMarkup = submitActionKb
 		case update.CallbackQuery.Data == "generate_key:yes":
-			config, err := h.peerService.CreatePeer(ctx, update.CallbackQuery.From.ID, key.Name, key.Server.PublicID.String(), key.Protocol, protocolToServerMap[key.Protocol])
+			config, err := h.peerService.CreatePeer(
+				ctx,
+				update.CallbackQuery.From.ID,
+				key.Server,
+				key.Name,
+				key.Protocol,
+				protocolToServerMap[key.Protocol],
+			)
 			if err != nil {
 				response.Text = fmt.Sprintf("Не удалось создать конфиг: %s", err)
 				response.ReplyMarkup = finalMenuKb
