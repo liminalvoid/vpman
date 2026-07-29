@@ -56,3 +56,39 @@ func (r *Config) ListByUserID(ctx context.Context, userID int64) ([]model.Config
 
 	return out, rows.Err()
 }
+
+func (r *Config) ListByTelegramID(ctx context.Context, userID int64) ([]model.ConfigListView, error) {
+	const q = `
+		SELECT c.id, c.public_id, c.name, p.name, s.location, c.status, c.created_at
+		FROM configs c
+		JOIN users u ON c.user_id = u.id
+		JOIN protocols p ON c.protocol_id = p.id
+		JOIN servers s ON c.server_id = s.id
+		WHERE u.telegram_id = $1`
+
+	rows, err := r.conn.Query(ctx, q, userID)
+	if err != nil {
+		return nil, fmt.Errorf("listing configs by Telegram ID %d: %w", userID, err)
+	}
+	defer rows.Close()
+
+	var out []model.ConfigListView
+	for rows.Next() {
+		var c model.ConfigListView
+		if err := rows.Scan(
+			&c.ID,
+			&c.PublicID,
+			&c.Name,
+			&c.Protocol,
+			&c.Location,
+			&c.Status,
+			&c.CreatedAt,
+		); err != nil {
+			return nil, fmt.Errorf("scanning config list view: %w", err)
+		}
+
+		out = append(out, c)
+	}
+
+	return out, rows.Err()
+}

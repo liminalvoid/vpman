@@ -101,11 +101,16 @@ func (s *PeerService) CreatePeer(
 	return resultCfg, nil
 }
 
-func (s *PeerService) ListPeers(
+func (s *PeerService) ListConfigs(
 	ctx context.Context,
 	ownerID int64,
-) error {
-	return nil
+) ([]model.ConfigListView, error) {
+	configs, err := s.configRepository.ListByTelegramID(ctx, ownerID)
+	if err != nil {
+		return nil, fmt.Errorf("querying user's (%d) configs: %w", ownerID, err)
+	}
+
+	return configs, nil
 }
 
 func (s *PeerService) GetAvailableProtocols(ctx context.Context, server model.Server) (map[string]string, error) {

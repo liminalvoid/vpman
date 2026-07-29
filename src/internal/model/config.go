@@ -24,3 +24,13 @@ type Config struct {
 	Status     ConfigStatus
 	CreatedAt  time.Time
 }
+
+type ConfigListView struct {
+	ID        int64
+	PublicID  uuid.UUID
+	Name      string
+	Protocol  string
+	Location  string
+	Status    ConfigStatus
+	CreatedAt time.Time
+}
