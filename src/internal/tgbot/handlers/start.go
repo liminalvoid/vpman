@@ -48,7 +48,7 @@ func (h *Handlers) HandleStart(ctx *th.Context, update telego.Update) error {
 	var formattedServers []string
 	for _, s := range availableServers {
 		formattedString := fmt.Sprintf(
-			"- %s %s | %s",
+			"%s %s | %s",
 			countryFlagEmoji(s.Location),
 			s.LocationCountry,
 			s.LocationCity,
