@@ -25,10 +25,10 @@ func (r *User) Create(ctx context.Context, user *model.User) error {
 
 func (r *User) FindByTelegramID(ctx context.Context, user *model.User) error {
 	const q = `
-		SELECT public_id, username, telegram_id, is_admin
+		SELECT id, public_id, telegram_id, is_admin
 		FROM users WHERE telegram_id = $1`
 	
 	return r.conn.	
 		QueryRow(ctx, q, user.TelegramID).
-		Scan(&user.PublicID, &user.Username, &user.TelegramID, &user.IsAdmin)
+		Scan(&user.ID, &user.PublicID, &user.TelegramID, &user.IsAdmin)
 }

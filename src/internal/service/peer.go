@@ -14,7 +14,7 @@ import (
 type PeerService struct {
 	configRepository   *repository.Config
 	protocolRepository *repository.Protocol
-	userRepository *repository.User
+	userRepository     *repository.User
 	containerRegistry  *executor.Registry
 }
 
@@ -76,11 +76,22 @@ func (s *PeerService) CreatePeer(
 		return "", fmt.Errorf("querying protocol %q: %w", protocolStruct.Name, err)
 	}
 
+	user := model.User{
+		TelegramID: ownerID,
+	}
+	err = s.userRepository.FindByTelegramID(ctx, &user)
+	if err != nil {
+		return "", fmt.Errorf("querying user by Telegram ID (%d): %w", ownerID, err)
+	}
+
+	fmt.Println(user)
+
 	cfgData := model.Config{
 		Name:       name,
-		UserID:     ownerID,
+		UserID:     user.ID,
 		ProtocolID: protocolStruct.ID,
 		ServerID:   int64(server.ID),
+		Status:     model.ConfigStatusActive,
 	}
 	err = s.configRepository.Create(ctx, &cfgData)
 	if err != nil {
