@@ -48,9 +48,15 @@ func main() {
 	configRepo := repository.NewConfig(db.Pool())
 	protocolRepo := repository.NewProtocol(db.Pool())
 	serverRepo := repository.NewServer(db.Pool())
+	userRepo := repository.NewUser(db.Pool())
 
 	// Initialize services
-	peerService := service.NewPeer(configRepo, protocolRepo, cr)
+	peerService := service.NewPeer(
+		configRepo,
+		protocolRepo,
+		userRepo,
+		cr,
+	)
 	serverService := service.NewServer(serverRepo, cr)
 
 	botToken := os.Getenv("TG_TOKEN")

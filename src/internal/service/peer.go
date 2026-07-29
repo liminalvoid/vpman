@@ -14,17 +14,20 @@ import (
 type PeerService struct {
 	configRepository   *repository.Config
 	protocolRepository *repository.Protocol
+	userRepository *repository.User
 	containerRegistry  *executor.Registry
 }
 
 func NewPeer(
 	configRepository *repository.Config,
 	protocolRepository *repository.Protocol,
+	userRepository *repository.User,
 	containerRegistry *executor.Registry,
 ) *PeerService {
 	return &PeerService{
 		configRepository,
 		protocolRepository,
+		userRepository,
 		containerRegistry,
 	}
 }
