@@ -121,7 +121,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 
 				break
 			}
-			
+
 			response.Text = "Введи название ключа"
 			key.State = StateCreateConfigEnterKeyName
 		case strings.Contains(update.CallbackQuery.Data, "server"):
@@ -180,7 +180,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			)
 			response.ReplyMarkup = submitActionKb
 		case update.CallbackQuery.Data == "generate_key:yes":
-			config, err := h.peerService.CreatePeer(
+			config, err := h.peerService.CreateConfig(
 				ctx,
 				update.CallbackQuery.From.ID,
 				key.Server,
@@ -207,7 +207,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 		switch key.State {
 		case StateCreateConfigEnterKeyName:
 			key.Name = update.Message.Text
-			
+
 			key.State = StateCreateConfigSelectProtocol
 			response.Text = "Выбери локацию"
 			response.ReplyMarkup = selectLocationKb

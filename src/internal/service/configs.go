@@ -11,20 +11,20 @@ import (
 	"vpnmanager/internal/repository"
 )
 
-type PeerService struct {
+type ConfigService struct {
 	configRepository   *repository.Config
 	protocolRepository *repository.Protocol
 	userRepository     *repository.User
 	containerRegistry  *executor.Registry
 }
 
-func NewPeer(
+func NewConfig(
 	configRepository *repository.Config,
 	protocolRepository *repository.Protocol,
 	userRepository *repository.User,
 	containerRegistry *executor.Registry,
-) *PeerService {
-	return &PeerService{
+) *ConfigService {
+	return &ConfigService{
 		configRepository,
 		protocolRepository,
 		userRepository,
@@ -32,7 +32,7 @@ func NewPeer(
 	}
 }
 
-func (s *PeerService) CreatePeer(
+func (s *ConfigService) CreateConfig(
 	ctx context.Context,
 	ownerID int64,
 	server *model.Server,
@@ -101,7 +101,7 @@ func (s *PeerService) CreatePeer(
 	return resultCfg, nil
 }
 
-func (s *PeerService) ListConfigs(
+func (s *ConfigService) ListConfigs(
 	ctx context.Context,
 	ownerID int64,
 ) ([]model.ConfigListView, error) {
@@ -113,7 +113,7 @@ func (s *PeerService) ListConfigs(
 	return configs, nil
 }
 
-func (s *PeerService) GetAvailableProtocols(ctx context.Context, server model.Server) (map[string]string, error) {
+func (s *ConfigService) GetAvailableProtocols(ctx context.Context, server model.Server) (map[string]string, error) {
 	var ex executor.Executor
 	ex, err := s.containerRegistry.Get(ctx, server.PublicID.String())
 	fmt.Println(server.PublicID.String())

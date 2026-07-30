@@ -51,7 +51,7 @@ func main() {
 	userRepo := repository.NewUser(db.Pool())
 
 	// Initialize services
-	peerService := service.NewPeer(
+	peerService := service.NewConfig(
 		configRepo,
 		protocolRepo,
 		userRepo,

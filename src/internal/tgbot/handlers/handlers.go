@@ -22,13 +22,13 @@ type Handlers struct {
 	bot           *telego.Bot
 	keys          map[int64]Key
 	mutex         *sync.RWMutex
-	peerService   *service.PeerService
+	peerService   *service.ConfigService
 	serverService *service.ServerService
 }
 
 func NewHandlers(
 	bot *telego.Bot,
-	ps *service.PeerService,
+	ps *service.ConfigService,
 	ss *service.ServerService,
 ) *Handlers {
 	return &Handlers{
