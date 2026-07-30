@@ -56,12 +56,18 @@ func (h *Handlers) HandleStart(ctx *th.Context, update telego.Update) error {
 		formattedServers = append(formattedServers, formattedString)
 	}
 
+	configs, err := h.peerService.ListConfigs(ctx, chatID.ID)
+	if err != nil {
+		return fmt.Errorf("querying configs: %w", err)
+	}
+
 	h.bot.SendMessage(
 		ctx,
 		tu.Messagef(
 			chatID,
-			"Привет, %s\n\nКоличество ключей: 5/5\n\nДоступные локации:\n\n%s",
+			"Привет, %s\n\nКоличество ключей: %d\n\nДоступные локации:\n\n%s",
 			firstName,
+			len(configs),
 			strings.Join(formattedServers, "\n"),
 		).
 			WithReplyMarkup(startKb),
