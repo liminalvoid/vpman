@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/google/uuid"
+
 	"vpnmanager/internal/configgen"
 	"vpnmanager/internal/executor"
 	"vpnmanager/internal/model"
@@ -38,6 +40,7 @@ func (s *ConfigService) CreateConfig(
 	server *model.Server,
 	name, protocol, containerId string,
 ) (string, error) {
+	// TODO: Add revert of transaction and revocation of config on failure
 	p, err := configgen.GetProtocol(protocol)
 	if err != nil {
 		return "", fmt.Errorf("looking up for %q protocol: %w", name, err)
@@ -99,6 +102,13 @@ func (s *ConfigService) CreateConfig(
 	}
 
 	return resultCfg, nil
+}
+
+func (s *ConfigService) RevokeConfig(
+	ctx context.Context,
+	id uuid.UUID,
+) error {
+	return nil
 }
 
 func (s *ConfigService) ListConfigs(
