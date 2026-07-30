@@ -17,51 +17,6 @@ type Config struct {
 }
 
 func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error {
-	currentKeys := [...]*Config{
-		{
-			Name: "VPN",
-			Location: "fr",
-			Protocol: "AWG",
-			Key: "alkdsjflkwo3283",
-		},
-		{
-			Name: "VPN 2",
-			Location: "nl",
-			Protocol: "AWG",
-			Key: "alkdsjflkwo3283",
-		},
-		{
-			Name: "VPN 3",
-			Location: "ge",
-			Protocol: "XRay",
-			Key: "alkdsjflkwo3283",
-		},
-	}
-
-	keysKbButtons := make([][]telego.InlineKeyboardButton, 0)
-
-	for i := range len(currentKeys) {
-		keyId := strings.ToLower(currentKeys[i].Name)
-		keyId = strings.ReplaceAll(keyId, " ", "-")
-
-		buttonText := fmt.Sprintf(
-			"%s, %s",
-			currentKeys[i].Name,
-			currentKeys[i].Protocol,
-		)
-
-		keysKbButtons = append(
-			keysKbButtons, 
-			tu.InlineKeyboardRow(
-				tu.
-					InlineKeyboardButton(buttonText).
-					WithCallbackData(fmt.Sprintf("manage_keys:key-%s", keyId)),
-			),
-		)
-	}
-
-	keysKb := tu.InlineKeyboard(keysKbButtons...)
-
 	response := Response{}
 
 	switch {
@@ -72,12 +27,48 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 			ctx,
 			tu.CallbackQuery(update.CallbackQuery.ID),
 		)
+	case update.Message != nil:
+		response.ChatID = update.Message.Chat.ChatID()
+	}
 
+	configs, err := h.peerService.ListConfigs(ctx, response.ChatID.ID)
+	if err != nil {
+		return fmt.Errorf("querying configs: %w", err)
+	}
+
+	keysKbButtons := make([][]telego.InlineKeyboardButton, 0)
+
+	for _, c := range configs {
+		keyId := strings.Replace(strings.ToLower(c.Name), " ", "-", 1)
+
+		buttonText := fmt.Sprintf(
+			"%s, %s",
+			c.Name,
+			c.Protocol,
+		)
+
+		keysKbButtons = append(
+			keysKbButtons,
+			tu.InlineKeyboardRow(
+				tu.
+					InlineKeyboardButton(buttonText).
+					WithCallbackData(fmt.Sprintf("manage_keys:key-%s", keyId)),
+			),
+		)
+	}
+
+	keysKb := tu.InlineKeyboard(keysKbButtons...)
+
+	if update.CallbackQuery != nil {
 		switch update.CallbackQuery.Data {
 		case "wizard:manage_keys":
 			response.Text = "Текущие ключи"
 			response.ReplyMarkup = keysKb
 		}
+	}
+
+	if response.Text == "" {
+		return nil
 	}
 
 	message := tu.Message(response.ChatID, response.Text)
@@ -86,10 +77,9 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 		message = message.WithReplyMarkup(response.ReplyMarkup)
 	}
 
-	h.bot.SendMessage(
-		ctx,
-		message,
-	)
+	if _, err := h.bot.SendMessage(ctx, message); err != nil {
+		return fmt.Errorf("sending message: %w", err)
+	}
 
 	return nil
 }
