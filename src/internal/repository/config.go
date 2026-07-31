@@ -24,6 +24,19 @@ func (r *Config) Create(ctx context.Context, config *model.Config) error {
 		Scan(&config.ID, &config.PublicID, &config.Status, &config.CreatedAt)
 }
 
+func (r *Config) Delete(ctx context.Context, id int64) error {
+	const q = `
+		DELETE FROM configs WHERE id = $1`
+	
+	_, err := r.conn.
+		Exec(ctx, q, id)
+	if err != nil {
+		return fmt.Errorf("deleting config %q: %w", id, err)
+	}
+
+	return nil
+}
+
 func (r *Config) ListByUserID(ctx context.Context, userID int64) ([]model.Config, error) {
 	const q = `
 		SELECT id, public_id, name, user_id, protocol_id, status, location, created_at
@@ -92,3 +105,5 @@ func (r *Config) ListByTelegramID(ctx context.Context, userID int64) ([]model.Co
 
 	return out, rows.Err()
 }
+
+func (r *Config) DeleteConfig()
