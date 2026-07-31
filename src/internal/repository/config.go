@@ -25,13 +25,11 @@ func (r *Config) Create(ctx context.Context, config *model.Config) error {
 }
 
 func (r *Config) Delete(ctx context.Context, id int64) error {
-	const q = `
-		DELETE FROM configs WHERE id = $1`
+	const q = `DELETE FROM configs WHERE id = $1`
 	
-	_, err := r.conn.
-		Exec(ctx, q, id)
+	_, err := r.conn.Exec(ctx, q, id)
 	if err != nil {
-		return fmt.Errorf("deleting config %q: %w", id, err)
+		return fmt.Errorf("deleting config %d: %w", id, err)
 	}
 
 	return nil
