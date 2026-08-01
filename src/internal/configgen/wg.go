@@ -136,7 +136,7 @@ func (w *Wg) create(
 
 func (w *Wg) revoke(
 	ctx context.Context,
-	cli executor.ContainerExecutor,
+	cli *executor.ContainerExecutor,
 ) error {
 	removeConfigCmd := []string{
 		fmt.Sprintf(

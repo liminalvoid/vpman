@@ -177,4 +177,9 @@ func (w *Awg) create(
 	return sb.String(), nil
 }
 
-func (w *Awg) revoke(cg *ConfigGenerator) {}
+func (w *Awg) revoke(
+	ctx context.Context,
+	cli *executor.ContainerExecutor,
+) error {
+	return nil
+}

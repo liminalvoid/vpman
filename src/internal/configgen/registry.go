@@ -9,7 +9,7 @@ import (
 
 type Protocol interface {
 	create(ctx context.Context, cli *executor.ContainerExecutor) (string, error)
-	revoke(cg *ConfigGenerator)
+	revoke(ctx context.Context, cli *executor.ContainerExecutor) error
 }
 
 type ConfigGenerator struct {
