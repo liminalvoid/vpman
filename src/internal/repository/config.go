@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/google/uuid"
+
 	"vpnmanager/internal/model"
 )
 
@@ -24,12 +26,12 @@ func (r *Config) Create(ctx context.Context, config *model.Config) error {
 		Scan(&config.ID, &config.PublicID, &config.Status, &config.CreatedAt)
 }
 
-func (r *Config) Delete(ctx context.Context, id int64) error {
-	const q = `DELETE FROM configs WHERE id = $1`
+func (r *Config) Delete(ctx context.Context, publicID uuid.UUID) error {
+	const q = `DELETE FROM configs WHERE public_id = $1`
 	
-	_, err := r.conn.Exec(ctx, q, id)
+	_, err := r.conn.Exec(ctx, q, publicID)
 	if err != nil {
-		return fmt.Errorf("deleting config %d: %w", id, err)
+		return fmt.Errorf("deleting config %d: %w", publicID, err)
 	}
 
 	return nil
@@ -103,5 +105,3 @@ func (r *Config) ListByTelegramID(ctx context.Context, userID int64) ([]model.Co
 
 	return out, rows.Err()
 }
-
-func (r *Config) DeleteConfig()

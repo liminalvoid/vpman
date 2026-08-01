@@ -104,11 +104,15 @@ func (s *ConfigService) CreateConfig(
 	return resultCfg, nil
 }
 
+// TODO: Add removal logic
 func (s *ConfigService) RevokeConfig(
 	ctx context.Context,
-	id uuid.UUID,
+	publicID uuid.UUID,
 ) error {
-	return nil
+	err := s.configRepository.Delete(ctx, publicID)
+	if err != nil {
+		return fmt.Errorf("deleting config %q from DB: %w", publicID, err)
+	}
 }
 
 func (s *ConfigService) ListConfigs(

@@ -134,4 +134,20 @@ func (w *Wg) create(
 	return sb.String(), nil
 }
 
-func (w *Wg) revoke(cg *ConfigGenerator) {}
+func (w *Wg) revoke(
+	ctx context.Context,
+	cli executor.ContainerExecutor,
+) error {
+	removeConfigCmd := []string{
+		fmt.Sprintf(
+			"pubkey=$(wg show wg0 allowed-ips | grep \"%s\" | awk '{print $1}'); wg set wg0 peer \"$pubkey\" remove",
+			"10.0.0.2/32",
+		),
+	}
+	_, err := cli.Run(ctx, removeConfigCmd, nil)
+	if err != nil {
+		return fmt.Errorf("removing config from server: %w", err)
+	}
+
+	return nil
+}
