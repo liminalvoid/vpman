@@ -9,7 +9,7 @@ import (
 
 type Protocol interface {
 	create(ctx context.Context, cli *executor.ContainerExecutor) (string, error)
-	revoke(ctx context.Context, cli *executor.ContainerExecutor) error
+	revoke(ctx context.Context, cli *executor.ContainerExecutor, addr string) error
 }
 
 type ConfigGenerator struct {
@@ -48,4 +48,11 @@ func (cg *ConfigGenerator) Create(ctx context.Context) (string, error) {
 	return cfg, nil
 }
 
-func (cg *ConfigGenerator) Revoke() {}
+func (cg *ConfigGenerator) Revoke(ctx context.Context, addr string) error {
+	err := cg.protocol.revoke(ctx, cg.executor, addr)
+	if err != nil {
+		return fmt.Errorf("revoking config: %w", err)
+	}
+
+	return nil
+}

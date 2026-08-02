@@ -180,6 +180,7 @@ func (w *Awg) create(
 func (w *Awg) revoke(
 	ctx context.Context,
 	cli *executor.ContainerExecutor,
+	addr string,
 ) error {
 	return nil
 }

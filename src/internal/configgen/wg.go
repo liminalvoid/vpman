@@ -137,11 +137,12 @@ func (w *Wg) create(
 func (w *Wg) revoke(
 	ctx context.Context,
 	cli *executor.ContainerExecutor,
+	addr string,
 ) error {
 	removeConfigCmd := []string{
 		fmt.Sprintf(
 			"pubkey=$(wg show wg0 allowed-ips | grep \"%s\" | awk '{print $1}'); wg set wg0 peer \"$pubkey\" remove",
-			"10.0.0.2/32",
+			addr,
 		),
 	}
 	_, err := cli.Run(ctx, removeConfigCmd, nil)

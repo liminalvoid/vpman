@@ -107,12 +107,44 @@ func (s *ConfigService) CreateConfig(
 // TODO: Add removal logic
 func (s *ConfigService) RevokeConfig(
 	ctx context.Context,
-	publicID uuid.UUID,
+	server *model.Server,
+	containerID, protocol string,
+	config *model.Config,
 ) error {
-	err := s.configRepository.Delete(ctx, publicID)
+	ex, err := s.containerRegistry.Get(ctx, server.PublicID.String())
 	if err != nil {
-		return fmt.Errorf("deleting config %q from DB: %w", publicID, err)
+		return fmt.Errorf(
+			"retrieving server %q from registry: %w",
+			server.PublicID.String(),
+			err,
+		)
 	}
+
+	ce, ok := ex.(*executor.ContainerExecutor)
+	if !ok {
+		return fmt.Errorf("unexpected executor type %T", ex)
+	}
+
+	ce.SetContainer(containerID)
+
+	p, err := configgen.GetProtocol(protocol)
+	if err != nil {
+		return fmt.Errorf("mapping protocol %q to object: %w", protocol, err)
+	}
+
+	cg := configgen.New(p, ce)
+
+	err = cg.Revoke(ctx, config.Addr)
+	if err != nil {
+		return fmt.Errorf("deleting peer: %w", err)
+	}
+
+	err = s.configRepository.Delete(ctx, config.PublicID)
+	if err != nil {
+		return fmt.Errorf("deleting config %q from DB: %w", config.PublicID, err)
+	}
+
+	return nil
 }
 
 func (s *ConfigService) ListConfigs(
