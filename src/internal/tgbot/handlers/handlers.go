@@ -5,7 +5,6 @@ import (
 
 	"github.com/mymmrac/telego"
 
-	"vpnmanager/internal/model"
 	"vpnmanager/internal/service"
 )
 
@@ -13,6 +12,14 @@ type Response struct {
 	Text        string
 	ReplyMarkup telego.ReplyMarkup
 	ChatID      telego.ChatID
+}
+
+
+type Handlers struct {
+	bot           *telego.Bot
+	sessions      *Sessions
+	peerService   *service.ConfigService
+	serverService *service.ServerService
 }
 
 type WizardState int
@@ -32,33 +39,17 @@ const (
 	StateEditConfigDelete
 )
 
-type Store struct {
-	State       WizardState
-	Name        string
-	Server      *model.Server
-	Protocol    string
-	Location    string
-	ContainerID string
-	KeyID       string
-}
-
-type Handlers struct {
-	bot           *telego.Bot
-	storage       map[int64]Store
-	mutex         *sync.RWMutex
-	peerService   *service.ConfigService
-	serverService *service.ServerService
-}
-
 func NewHandlers(
 	bot *telego.Bot,
 	ps *service.ConfigService,
 	ss *service.ServerService,
 ) *Handlers {
 	return &Handlers{
-		bot:           bot,
-		storage:       make(map[int64]Store),
-		mutex:         &sync.RWMutex{},
+		bot: bot,
+		sessions: &Sessions{
+			mu: sync.Mutex{},
+			m:  make(map[int64]*Session),
+		},
 		peerService:   ps,
 		serverService: ss,
 	}

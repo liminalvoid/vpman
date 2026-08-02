@@ -81,10 +81,6 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 	}
 	selectLocationKb = tu.InlineKeyboard(kbRows...)
 
-	h.mutex.RLock()
-	store := h.storage[userId]
-	h.mutex.RUnlock()
-
 	response := Response{}
 
 	switch {
@@ -99,7 +95,9 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 		switch {
 		case update.CallbackQuery.Data == "wizard:generate_key" || update.CallbackQuery.Data == "generate_key:edit":
 			if len(servers) == 0 {
-				store.State = StateCreateConfig
+				h.sessions.Update(userId, func(s *Session) {
+					s.State = StateCreateConfig
+				})
 				response.Text = "Нет доступных серверов"
 				response.ReplyMarkup = finalMenuKb
 
@@ -107,28 +105,34 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			}
 
 			response.Text = "Введи название ключа"
-			store.State = StateCreateConfigEnterName
+			h.sessions.Update(userId, func(s *Session) {
+				s.State = StateCreateConfigEnterName
+			})
 		case strings.Contains(update.CallbackQuery.Data, "server"):
 			selectedServer := strings.ReplaceAll(update.CallbackQuery.Data, "generate_key:server-", "")
 
-			for _, s := range servers {
-				if s.PublicID.String() == selectedServer {
-					store.Server = &s
-					flagEmoji := convertCountryCodeToFlagEmoji(s.Location)
-					keyTitle := fmt.Sprintf("%s %s \\| %s", flagEmoji, s.LocationCountry, s.LocationCity)
-					store.Location = keyTitle
+			for _, serv := range servers {
+				if serv.PublicID.String() == selectedServer {
+					h.sessions.Update(userId, func(s *Session) {
+						s.Create.Server = &serv
+					})
+					// flagEmoji := convertCountryCodeToFlagEmoji(serv.Location)
+					// keyTitle := fmt.Sprintf("%s %s \\| %s", flagEmoji, serv.LocationCountry, serv.LocationCity)
 
 					break
 				}
 			}
 
-			protocolToServerMap, err = h.peerService.GetAvailableProtocols(ctx, *store.Server)
+			sess := h.sessions.Get(userId)
+			protocolToServerMap, err = h.peerService.GetAvailableProtocols(ctx, *sess.Create.Server)
 			if err != nil {
 				return fmt.Errorf("getting available protocols: %w", err)
 			}
 
 			if len(protocolToServerMap) == 0 {
-				store.State = StateCreateConfig
+				h.sessions.Update(userId, func(s *Session) {
+					s.State = StateCreateConfig
+				})
 				response.Text = "Нет доступных протоколов"
 				response.ReplyMarkup = finalMenuKb
 
@@ -149,50 +153,65 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			}
 			selectProtocolKb = tu.InlineKeyboard(kbRows...)
 
-			store.State = StateCreateConfigConfirm
+			h.sessions.Update(userId, func(s *Session) {
+				s.State = StateCreateConfigConfirm
+			})
 			response.Text = "Выбери протокол"
 			response.ReplyMarkup = selectProtocolKb
 		case strings.Contains(update.CallbackQuery.Data, "protocol"):
-			store.Protocol = strings.ReplaceAll(update.CallbackQuery.Data, "generate_key:protocol-", "")
-			store.State = StateCreateConfigSelectProtocol
+			h.sessions.Update(userId, func(s *Session) {
+				s.Create.Protocol = strings.ReplaceAll(update.CallbackQuery.Data, "generate_key:protocol-", "")
+				s.State = StateCreateConfigSelectProtocol
+			})
+
+			sess := h.sessions.Get(userId)
 
 			response.Text = fmt.Sprintf(
 				"Название: %s\nПротокол: %s\nЛокация: %s\n\nСоздать ключ?",
-				store.Name,
-				store.Protocol,
-				store.Location,
+				sess.Create.Name,
+				sess.Create.Protocol,
+				sess.Create.Server.Location,
 			)
 			response.ReplyMarkup = submitActionKb
 		case update.CallbackQuery.Data == "generate_key:yes":
+			sess := h.sessions.Get(userId)
 			config, err := h.peerService.CreateConfig(
 				ctx,
 				update.CallbackQuery.From.ID,
-				store.Server,
-				store.Name,
-				store.Protocol,
-				protocolToServerMap[store.Protocol],
+				sess.Create.Server,
+				sess.Create.Name,
+				sess.Create.Protocol,
+				protocolToServerMap[sess.Create.Protocol],
 			)
 			if err != nil {
 				// TODO: Remove error sent to the user
 				response.Text = fmt.Sprintf("Не удалось создать конфиг: %s", err)
 				response.ReplyMarkup = finalMenuKb
-				store.State = StateCreateConfig
+
+				h.sessions.Update(userId, func(s *Session) {
+					s.State = StateCreateConfig
+				})
 
 				break
 			}
 
 			response.Text = fmt.Sprintf("Ключ успешно создан\\!\n\n```plain\n%s\n```", config)
 			response.ReplyMarkup = finalMenuKb
-			store.State = StateCreateConfig
+			h.sessions.Update(userId, func(s *Session) {
+				s.State = StateCreateConfig
+			})
 		}
 	case update.Message != nil:
 		response.ChatID = update.Message.Chat.ChatID()
 
-		switch store.State {
+		sess := h.sessions.Get(userId)
+		switch sess.State {
 		case StateCreateConfigEnterName:
-			store.Name = update.Message.Text
+			h.sessions.Update(userId, func(s *Session) {
+				s.State = StateCreateConfigSelectProtocol
+				s.Create.Name = update.Message.Text
+			})
 
-			store.State = StateCreateConfigSelectProtocol
 			response.Text = "Выбери локацию"
 			response.ReplyMarkup = selectLocationKb
 		}
@@ -208,10 +227,6 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 		ctx,
 		message,
 	)
-
-	h.mutex.Lock()
-	h.storage[userId] = store
-	h.mutex.Unlock()
 
 	return nil
 }

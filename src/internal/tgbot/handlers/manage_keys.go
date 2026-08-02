@@ -35,10 +35,6 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 
 	response := Response{}
 
-	h.mutex.RLock()
-	key := h.storage[userId]
-	h.mutex.RUnlock()
-
 	switch {
 	case update.CallbackQuery != nil:
 		response.ChatID = update.CallbackQuery.Message.GetChat().ChatID()
@@ -50,7 +46,9 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 
 		switch {
 		case update.CallbackQuery.Data == "wizard:manage_keys":
-			key.State = StateEditConfig
+			h.sessions.Update(userId, func(s *Session) {
+				s.State = StateEditConfig
+			})
 
 			configs, err := h.peerService.ListConfigs(ctx, response.ChatID.ID)
 			if err != nil {
@@ -81,17 +79,29 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 			response.Text = "Текущие ключи"
 			response.ReplyMarkup = keysKb
 		case strings.Contains(update.CallbackQuery.Data, "manage_keys:key-"):
-			key.State = StateEditConfigSelect
 			keyId := strings.ReplaceAll(update.CallbackQuery.Data, "manage_keys:key-", "")
-			key.KeyID = keyId
+			h.sessions.Update(userId, func(s *Session) {
+				s.State = StateEditConfigSelect
+				s.Edit.KeyID = keyId
+			})
 
-			response.Text = fmt.Sprintf("**%s**\n\nЛокация: %s\nПротокол: %s\nСтатус: активен", key.Name, "EU", key.Protocol)
+			sess := h.sessions.Get(userId)
+			response.Text = fmt.Sprintf(
+				"**%s**\n\nЛокация: %s\nПротокол: %s\nСтатус: активен",
+				sess.updatedAt,
+				"EU",
+				sess.updatedAt,
+			)
 			response.ReplyMarkup = manageKeyKb
 		case strings.Contains(update.CallbackQuery.Data, "edit_name"):
-			key.State = StateEditConfigEnterName
+			h.sessions.Update(userId, func(s *Session) {
+				s.State = StateEditConfigEnterName
+			})
 			response.Text = "Введите новое название"
 		case strings.Contains(update.CallbackQuery.Data, "delete"):
-			key.State = StateEditConfigDelete
+			h.sessions.Update(userId, func(s *Session) {
+				s.State = StateEditConfigDelete
+			})
 			response.Text = "Конфиг удален"
 		}
 	case update.Message != nil:
@@ -111,10 +121,6 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 	if _, err := h.bot.SendMessage(ctx, message); err != nil {
 		return fmt.Errorf("sending message: %w", err)
 	}
-
-	h.mutex.Lock()
-	h.storage[userId] = key
-	h.mutex.Unlock()
 
 	return nil
 }
