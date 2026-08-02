@@ -49,7 +49,7 @@ func (h *Handlers) HandleStart(ctx *th.Context, update telego.Update) error {
 	for _, s := range availableServers {
 		formattedString := fmt.Sprintf(
 			"%s %s | %s",
-			countryFlagEmoji(s.Location),
+			convertCountryCodeToFlagEmoji(s.Location),
 			s.LocationCountry,
 			s.LocationCity,
 		)

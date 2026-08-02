@@ -53,7 +53,7 @@ var finalMenuKb = tu.InlineKeyboard(
 
 var protocolToServerMap map[string]string
 
-func countryFlagEmoji(code string) string {
+func convertCountryCodeToFlagEmoji(code string) string {
 	if len(code) != 2 {
 		return ""
 	}
@@ -85,7 +85,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 		return fmt.Errorf("retrieving servers: %w", err)
 	}
 	for _, s := range servers {
-		flagEmoji := countryFlagEmoji(s.Location)
+		flagEmoji := convertCountryCodeToFlagEmoji(s.Location)
 		keyTitle := fmt.Sprintf("%s %s | %s", flagEmoji, s.LocationCountry, s.LocationCity)
 		callbackData := fmt.Sprintf("generate_key:server-%s", s.PublicID.String())
 
@@ -130,7 +130,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			for _, s := range servers {
 				if s.PublicID.String() == selectedServer {
 					key.Server = &s
-					flagEmoji := countryFlagEmoji(s.Location)
+					flagEmoji := convertCountryCodeToFlagEmoji(s.Location)
 					keyTitle := fmt.Sprintf("%s %s \\| %s", flagEmoji, s.LocationCountry, s.LocationCity)
 					key.Location = keyTitle
 
