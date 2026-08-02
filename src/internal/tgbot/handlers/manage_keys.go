@@ -35,6 +35,7 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 
 	response := Response{}
 
+
 	h.mutex.RLock()
 	key := h.keys[userId]
 	h.mutex.RUnlock()
@@ -49,55 +50,48 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 		)
 
 		switch {
+		case update.CallbackQuery.Data == "wizard:manage_keys":
+			configs, err := h.peerService.ListConfigs(ctx, response.ChatID.ID)
+			if err != nil {
+				return fmt.Errorf("querying configs: %w", err)
+			}
+
+			keysKbButtons := make([][]telego.InlineKeyboardButton, 0)
+			for _, c := range configs {
+				keyId := strings.Replace(strings.ToLower(c.Name), " ", "-", 1)
+
+				buttonText := fmt.Sprintf(
+					"%s, %s",
+					c.Name,
+					c.Protocol,
+				)
+
+				keysKbButtons = append(
+					keysKbButtons,
+					tu.InlineKeyboardRow(
+						tu.
+							InlineKeyboardButton(buttonText).
+							WithCallbackData(fmt.Sprintf("manage_keys:key-%s", keyId)),
+					),
+				)
+			}
+			keysKb := tu.InlineKeyboard(keysKbButtons...)
+
+			response.Text = "Текущие ключи"
+			response.ReplyMarkup = keysKb
 		case strings.Contains(update.CallbackQuery.Data, "key"):
 			keyId := strings.ReplaceAll(update.CallbackQuery.Data, "manage_keys:key-", "")
 			key.KeyID = keyId
 
 			response.Text = fmt.Sprintf("**%s**\n\nЛокация: %s\nПротокол: %s\nСтатус: активен", key.Name, "EU", key.Protocol)
 			response.ReplyMarkup = manageKeyKb
-		case strings.Contains(update.CallbackQuery.Data, "edit"):
+		case strings.Contains(update.CallbackQuery.Data, "edit_name"):
 			response.Text = "Введите новое название"
 		case strings.Contains(update.CallbackQuery.Data, "delete"):
 			response.Text = "Конфиг удален"
 		}
 	case update.Message != nil:
 		response.ChatID = update.Message.Chat.ChatID()
-	}
-
-	configs, err := h.peerService.ListConfigs(ctx, response.ChatID.ID)
-	if err != nil {
-		return fmt.Errorf("querying configs: %w", err)
-	}
-
-	keysKbButtons := make([][]telego.InlineKeyboardButton, 0)
-
-	for _, c := range configs {
-		keyId := strings.Replace(strings.ToLower(c.Name), " ", "-", 1)
-
-		buttonText := fmt.Sprintf(
-			"%s, %s",
-			c.Name,
-			c.Protocol,
-		)
-
-		keysKbButtons = append(
-			keysKbButtons,
-			tu.InlineKeyboardRow(
-				tu.
-					InlineKeyboardButton(buttonText).
-					WithCallbackData(fmt.Sprintf("manage_keys:key-%s", keyId)),
-			),
-		)
-	}
-
-	keysKb := tu.InlineKeyboard(keysKbButtons...)
-
-	if update.CallbackQuery != nil {
-		switch update.CallbackQuery.Data {
-		case "wizard:manage_keys":
-			response.Text = "Текущие ключи"
-			response.ReplyMarkup = keysKb
-		}
 	}
 
 	if response.Text == "" {
