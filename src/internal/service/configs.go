@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/google/uuid"
-
 	"vpnmanager/internal/configgen"
 	"vpnmanager/internal/executor"
 	"vpnmanager/internal/model"
@@ -134,7 +132,7 @@ func (s *ConfigService) RevokeConfig(
 
 	cg := configgen.New(p, ce)
 
-	err = cg.Revoke(ctx, config.Addr)
+	err = cg.Revoke(ctx, config.IPAddress)
 	if err != nil {
 		return fmt.Errorf("deleting peer: %w", err)
 	}
