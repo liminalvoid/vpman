@@ -9,12 +9,6 @@ import (
 	tu "github.com/mymmrac/telego/telegoutil"
 )
 
-type Response struct {
-	Text        string
-	ReplyMarkup telego.ReplyMarkup
-	ChatID      telego.ChatID
-}
-
 type GenerateConfigState int
 
 const (

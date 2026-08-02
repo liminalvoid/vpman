@@ -9,6 +9,12 @@ import (
 	"vpnmanager/internal/service"
 )
 
+type Response struct {
+	Text        string
+	ReplyMarkup telego.ReplyMarkup
+	ChatID      telego.ChatID
+}
+
 type Key struct {
 	State       GenerateConfigState
 	Name        string
