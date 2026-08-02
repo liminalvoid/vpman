@@ -9,15 +9,35 @@ import (
 	tu "github.com/mymmrac/telego/telegoutil"
 )
 
-type Config struct {
-	Name     string
-	Location string
-	Protocol string
-	Key      string
-}
+var manageKeyKb = tu.InlineKeyboard(
+	tu.InlineKeyboardRow(
+		tu.
+			InlineKeyboardButton("Изменить название").
+			WithCallbackData("manage_keys:edit_name"),
+	),
+	tu.InlineKeyboardRow(
+		tu.
+			InlineKeyboardButton("Удалить").
+			WithCallbackData("manage_keys:delete"),
+	),
+)
 
 func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error {
+	var userId int64
+	switch {
+	case update.CallbackQuery != nil:
+		userId = update.CallbackQuery.From.ID
+	case update.Message != nil:
+		userId = update.Message.From.ID
+	default:
+		return nil
+	}
+
 	response := Response{}
+
+	h.mutex.RLock()
+	key := h.keys[userId]
+	h.mutex.RUnlock()
 
 	switch {
 	case update.CallbackQuery != nil:
@@ -27,6 +47,19 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 			ctx,
 			tu.CallbackQuery(update.CallbackQuery.ID),
 		)
+
+		switch {
+		case strings.Contains(update.CallbackQuery.Data, "key"):
+			keyId := strings.ReplaceAll(update.CallbackQuery.Data, "manage_keys:key-", "")
+			key.KeyID = keyId
+
+			response.Text = fmt.Sprintf("**%s**\n\nЛокация: %s\nПротокол: %s\nСтатус: активен", key.Name, "EU", key.Protocol)
+			response.ReplyMarkup = manageKeyKb
+		case strings.Contains(update.CallbackQuery.Data, "edit"):
+			response.Text = "Введите новое название"
+		case strings.Contains(update.CallbackQuery.Data, "delete"):
+			response.Text = "Конфиг удален"
+		}
 	case update.Message != nil:
 		response.ChatID = update.Message.Chat.ChatID()
 	}
@@ -80,6 +113,10 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 	if _, err := h.bot.SendMessage(ctx, message); err != nil {
 		return fmt.Errorf("sending message: %w", err)
 	}
+
+	h.mutex.RLock()
+	h.keys[userId] = key
+	h.mutex.RUnlock()
 
 	return nil
 }

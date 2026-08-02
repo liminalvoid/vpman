@@ -16,6 +16,7 @@ type Key struct {
 	Protocol    string
 	Location    string
 	ContainerID string
+	KeyID       string
 }
 
 type Handlers struct {
