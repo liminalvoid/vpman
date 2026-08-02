@@ -67,8 +67,8 @@ func (s *ConfigService) CreateConfig(
 	}
 
 	var ipAddr string
-	switch p {
-	case &configgen.Awg{}, &configgen.Wg{}:
+	switch p.(type) {
+	case *configgen.Awg, *configgen.Wg:
 		lookupStr := "Address = "
 		ipAddrIdx := strings.Index(resultCfg, lookupStr)
 		if ipAddrIdx == -1 {
@@ -80,7 +80,7 @@ func (s *ConfigService) CreateConfig(
 		if bitmaskIdx == -1 {
 			return "", fmt.Errorf("can't find EOL to extract IP address")
 		}
-		ipAddr = resultCfg[:bitmaskIdx]
+		ipAddr = ipAddr[:bitmaskIdx]
 	}
 
 	protocolStruct := model.Protocol{
