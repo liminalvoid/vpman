@@ -66,6 +66,23 @@ func (s *ConfigService) CreateConfig(
 		return "", fmt.Errorf("creating config: %w", err)
 	}
 
+	var ipAddr string
+	switch p {
+	case &configgen.Awg{}, &configgen.Wg{}:
+		lookupStr := "Address = "
+		ipAddrIdx := strings.Index(resultCfg, lookupStr)
+		if ipAddrIdx == -1 {
+			return "", fmt.Errorf("can't find config's IP address")
+		}
+		ipAddrIdx += len(lookupStr)
+		ipAddr = resultCfg[ipAddrIdx:]
+		bitmaskIdx := strings.Index(ipAddr, "/32")
+		if bitmaskIdx == -1 {
+			return "", fmt.Errorf("can't find EOL to extract IP address")
+		}
+		ipAddr = resultCfg[:bitmaskIdx]
+	}
+
 	protocolStruct := model.Protocol{
 		Name: protocol,
 	}
@@ -89,6 +106,7 @@ func (s *ConfigService) CreateConfig(
 
 	cfgData := model.Config{
 		Name:       name,
+		IPAddress:  ipAddr,
 		UserID:     user.ID,
 		ProtocolID: protocolStruct.ID,
 		ServerID:   int64(server.ID),

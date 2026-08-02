@@ -17,8 +17,8 @@ func NewConfig(conn conn) *Config { return &Config{conn: conn} }
 
 func (r *Config) Create(ctx context.Context, config *model.Config) error {
 	const q = `
-		INSERT INTO configs (public_id, name, user_id, protocol_id, server_id)
-		VALUES (gen_random_uuid(), $1, $2, $3, $4)
+		INSERT INTO configs (public_id, name, ip_address, user_id, protocol_id, server_id)
+		VALUES (gen_random_uuid(), $1, $2, $3, $4, %5)
 		RETURNING id, public_id, status, created_at`
 
 	return r.conn.
@@ -72,7 +72,7 @@ func (r *Config) ListByUserID(ctx context.Context, userID int64) ([]model.Config
 
 func (r *Config) ListByTelegramID(ctx context.Context, userID int64) ([]model.ConfigListView, error) {
 	const q = `
-		SELECT c.id, c.public_id, c.name, p.name, s.location, c.status, c.created_at
+		SELECT c.id, c.public_id, c.name, c.ip_address, p.name, s.location, c.status, c.created_at
 		FROM configs c
 		JOIN users u ON c.user_id = u.id
 		JOIN protocols p ON c.protocol_id = p.id
@@ -92,6 +92,7 @@ func (r *Config) ListByTelegramID(ctx context.Context, userID int64) ([]model.Co
 			&c.ID,
 			&c.PublicID,
 			&c.Name,
+			&c.IPAddress,
 			&c.Protocol,
 			&c.Location,
 			&c.Status,

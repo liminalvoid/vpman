@@ -30,6 +30,7 @@ type ConfigListView struct {
 	ID        int64
 	PublicID  uuid.UUID
 	Name      string
+	IPAddress  string
 	Protocol  string
 	Location  string
 	Status    ConfigStatus
