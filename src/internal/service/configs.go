@@ -120,7 +120,6 @@ func (s *ConfigService) CreateConfig(
 	return resultCfg, nil
 }
 
-// TODO: Add removal logic
 func (s *ConfigService) RevokeConfig(
 	ctx context.Context,
 	server *model.Server,

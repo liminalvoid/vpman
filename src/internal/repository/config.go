@@ -18,11 +18,11 @@ func NewConfig(conn conn) *Config { return &Config{conn: conn} }
 func (r *Config) Create(ctx context.Context, config *model.Config) error {
 	const q = `
 		INSERT INTO configs (public_id, name, ip_address, user_id, protocol_id, server_id)
-		VALUES (gen_random_uuid(), $1, $2, $3, $4, %5)
+		VALUES (gen_random_uuid(), $1, $2, $3, $4, $5)
 		RETURNING id, public_id, status, created_at`
 
 	return r.conn.
-		QueryRow(ctx, q, config.Name, config.UserID, config.ProtocolID, config.ServerID).
+		QueryRow(ctx, q, config.Name, config.IPAddress, config.UserID, config.ProtocolID, config.ServerID).
 		Scan(&config.ID, &config.PublicID, &config.Status, &config.CreatedAt)
 }
 
