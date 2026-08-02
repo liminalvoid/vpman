@@ -102,8 +102,6 @@ func (s *ConfigService) CreateConfig(
 		return "", fmt.Errorf("querying user by Telegram ID (%d): %w", ownerID, err)
 	}
 
-	fmt.Println(user)
-
 	cfgData := model.Config{
 		Name:       name,
 		IPAddress:  ipAddr,
