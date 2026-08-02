@@ -114,9 +114,9 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 		return fmt.Errorf("sending message: %w", err)
 	}
 
-	h.mutex.RLock()
+	h.mutex.Lock()
 	h.keys[userId] = key
-	h.mutex.RUnlock()
+	h.mutex.Unlock()
 
 	return nil
 }
