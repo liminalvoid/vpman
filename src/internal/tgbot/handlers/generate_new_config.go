@@ -116,8 +116,6 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 					h.sessions.Update(userId, func(s *Session) {
 						s.Create.Server = &serv
 					})
-					// flagEmoji := convertCountryCodeToFlagEmoji(serv.Location)
-					// keyTitle := fmt.Sprintf("%s %s \\| %s", flagEmoji, serv.LocationCountry, serv.LocationCity)
 
 					break
 				}
