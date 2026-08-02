@@ -177,7 +177,6 @@ func (s *ConfigService) ListConfigs(
 func (s *ConfigService) GetAvailableProtocols(ctx context.Context, server model.Server) (map[string]string, error) {
 	var ex executor.Executor
 	ex, err := s.containerRegistry.Get(ctx, server.PublicID.String())
-	fmt.Println(server.PublicID.String())
 	if err != nil {
 		cfg := executor.Config{
 			Name:     server.PublicID.String(),
@@ -201,7 +200,6 @@ func (s *ConfigService) GetAvailableProtocols(ctx context.Context, server model.
 	protocolToContainerMap := make(map[string]string, 0)
 	for _, c := range containers.Items {
 		containerName := strings.ReplaceAll(c.Names[0], "/", "")
-		fmt.Println(containerName)
 		if _, ok := protocols[containerName]; ok {
 			protocolToContainerMap[containerName] = c.ID
 		}
