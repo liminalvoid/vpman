@@ -109,7 +109,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 		switch {
 		case update.CallbackQuery.Data == "wizard:generate_key" || update.CallbackQuery.Data == "generate_key:edit":
 			if len(servers) == 0 {
-				key.State = StateCreateConfig
+				key.State = int(StateCreateConfig)
 				response.Text = "Нет доступных серверов"
 				response.ReplyMarkup = finalMenuKb
 
@@ -117,7 +117,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			}
 
 			response.Text = "Введи название ключа"
-			key.State = StateCreateConfigEnterKeyName
+			key.State = int(StateCreateConfigEnterKeyName)
 		case strings.Contains(update.CallbackQuery.Data, "server"):
 			selectedServer := strings.ReplaceAll(update.CallbackQuery.Data, "generate_key:server-", "")
 
@@ -138,7 +138,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			}
 
 			if len(protocolToServerMap) == 0 {
-				key.State = StateCreateConfig
+				key.State = int(StateCreateConfig)
 				response.Text = "Нет доступных протоколов"
 				response.ReplyMarkup = finalMenuKb
 
@@ -159,12 +159,12 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			}
 			selectProtocolKb = tu.InlineKeyboard(kbRows...)
 
-			key.State = StateCreateConfigConfirm
+			key.State = int(StateCreateConfigConfirm)
 			response.Text = "Выбери протокол"
 			response.ReplyMarkup = selectProtocolKb
 		case strings.Contains(update.CallbackQuery.Data, "protocol"):
 			key.Protocol = strings.ReplaceAll(update.CallbackQuery.Data, "generate_key:protocol-", "")
-			key.State = StateCreateConfigSelectProtocol
+			key.State = int(StateCreateConfigSelectProtocol)
 
 			response.Text = fmt.Sprintf(
 				"Название: %s\nПротокол: %s\nЛокация: %s\n\nСоздать ключ?",
@@ -186,23 +186,23 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 				// TODO: Remove error sent to the user
 				response.Text = fmt.Sprintf("Не удалось создать конфиг: %s", err)
 				response.ReplyMarkup = finalMenuKb
-				key.State = StateCreateConfig
+				key.State = int(StateCreateConfig)
 
 				break
 			}
 
 			response.Text = fmt.Sprintf("Ключ успешно создан\\!\n\n```plain\n%s\n```", config)
 			response.ReplyMarkup = finalMenuKb
-			key.State = StateCreateConfig
+			key.State = int(StateCreateConfig)
 		}
 	case update.Message != nil:
 		response.ChatID = update.Message.Chat.ChatID()
 
 		switch key.State {
-		case StateCreateConfigEnterKeyName:
+		case int(StateCreateConfigEnterKeyName):
 			key.Name = update.Message.Text
 
-			key.State = StateCreateConfigSelectProtocol
+			key.State = int(StateCreateConfigSelectProtocol)
 			response.Text = "Выбери локацию"
 			response.ReplyMarkup = selectLocationKb
 		}

@@ -16,7 +16,7 @@ type Response struct {
 }
 
 type Key struct {
-	State       GenerateConfigState
+	State       int
 	Name        string
 	Server      *model.Server
 	Protocol    string
