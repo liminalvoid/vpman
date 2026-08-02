@@ -9,16 +9,6 @@ import (
 	tu "github.com/mymmrac/telego/telegoutil"
 )
 
-type GenerateConfigState int
-
-const (
-	StateCreateConfig GenerateConfigState = iota
-	StateCreateConfigEnterKeyName
-	StateCreateConfigSelectLocation
-	StateCreateConfigSelectProtocol
-	StateCreateConfigConfirm
-)
-
 var submitActionKb = tu.InlineKeyboard(
 	tu.InlineKeyboardRow(
 		tu.
@@ -109,7 +99,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 		switch {
 		case update.CallbackQuery.Data == "wizard:generate_key" || update.CallbackQuery.Data == "generate_key:edit":
 			if len(servers) == 0 {
-				key.State = int(StateCreateConfig)
+				key.State = StateCreateConfig
 				response.Text = "Нет доступных серверов"
 				response.ReplyMarkup = finalMenuKb
 
@@ -117,7 +107,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			}
 
 			response.Text = "Введи название ключа"
-			key.State = int(StateCreateConfigEnterKeyName)
+			key.State = StateCreateConfigEnterKeyName
 		case strings.Contains(update.CallbackQuery.Data, "server"):
 			selectedServer := strings.ReplaceAll(update.CallbackQuery.Data, "generate_key:server-", "")
 
@@ -138,7 +128,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			}
 
 			if len(protocolToServerMap) == 0 {
-				key.State = int(StateCreateConfig)
+				key.State = StateCreateConfig
 				response.Text = "Нет доступных протоколов"
 				response.ReplyMarkup = finalMenuKb
 
@@ -159,12 +149,12 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			}
 			selectProtocolKb = tu.InlineKeyboard(kbRows...)
 
-			key.State = int(StateCreateConfigConfirm)
+			key.State = StateCreateConfigConfirm
 			response.Text = "Выбери протокол"
 			response.ReplyMarkup = selectProtocolKb
 		case strings.Contains(update.CallbackQuery.Data, "protocol"):
 			key.Protocol = strings.ReplaceAll(update.CallbackQuery.Data, "generate_key:protocol-", "")
-			key.State = int(StateCreateConfigSelectProtocol)
+			key.State = StateCreateConfigSelectProtocol
 
 			response.Text = fmt.Sprintf(
 				"Название: %s\nПротокол: %s\nЛокация: %s\n\nСоздать ключ?",
@@ -186,23 +176,23 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 				// TODO: Remove error sent to the user
 				response.Text = fmt.Sprintf("Не удалось создать конфиг: %s", err)
 				response.ReplyMarkup = finalMenuKb
-				key.State = int(StateCreateConfig)
+				key.State = StateCreateConfig
 
 				break
 			}
 
 			response.Text = fmt.Sprintf("Ключ успешно создан\\!\n\n```plain\n%s\n```", config)
 			response.ReplyMarkup = finalMenuKb
-			key.State = int(StateCreateConfig)
+			key.State = StateCreateConfig
 		}
 	case update.Message != nil:
 		response.ChatID = update.Message.Chat.ChatID()
 
 		switch key.State {
-		case int(StateCreateConfigEnterKeyName):
+		case StateCreateConfigEnterKeyName:
 			key.Name = update.Message.Text
 
-			key.State = int(StateCreateConfigSelectProtocol)
+			key.State = StateCreateConfigSelectProtocol
 			response.Text = "Выбери локацию"
 			response.ReplyMarkup = selectLocationKb
 		}

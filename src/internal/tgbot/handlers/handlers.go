@@ -15,8 +15,20 @@ type Response struct {
 	ChatID      telego.ChatID
 }
 
+type WizardState int
+
+const (
+	StateIdle WizardState = iota
+
+	StateCreateConfig
+	StateCreateConfigEnterKeyName
+	StateCreateConfigSelectLocation
+	StateCreateConfigSelectProtocol
+	StateCreateConfigConfirm
+)
+
 type Key struct {
-	State       int
+	State       WizardState
 	Name        string
 	Server      *model.Server
 	Protocol    string
