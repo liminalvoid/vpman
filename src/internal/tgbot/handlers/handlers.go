@@ -32,7 +32,7 @@ const (
 	StateEditConfigDelete
 )
 
-type Key struct {
+type Store struct {
 	State       WizardState
 	Name        string
 	Server      *model.Server
@@ -44,7 +44,7 @@ type Key struct {
 
 type Handlers struct {
 	bot           *telego.Bot
-	keys          map[int64]Key
+	storage       map[int64]Store
 	mutex         *sync.RWMutex
 	peerService   *service.ConfigService
 	serverService *service.ServerService
@@ -57,7 +57,7 @@ func NewHandlers(
 ) *Handlers {
 	return &Handlers{
 		bot:           bot,
-		keys:          make(map[int64]Key),
+		storage:       make(map[int64]Store),
 		mutex:         &sync.RWMutex{},
 		peerService:   ps,
 		serverService: ss,

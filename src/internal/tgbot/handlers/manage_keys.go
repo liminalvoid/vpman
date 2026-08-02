@@ -35,9 +35,8 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 
 	response := Response{}
 
-
 	h.mutex.RLock()
-	key := h.keys[userId]
+	key := h.storage[userId]
 	h.mutex.RUnlock()
 
 	switch {
@@ -114,7 +113,7 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 	}
 
 	h.mutex.Lock()
-	h.keys[userId] = key
+	h.storage[userId] = key
 	h.mutex.Unlock()
 
 	return nil

@@ -82,7 +82,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 	selectLocationKb = tu.InlineKeyboard(kbRows...)
 
 	h.mutex.RLock()
-	key := h.keys[userId]
+	store := h.storage[userId]
 	h.mutex.RUnlock()
 
 	response := Response{}
@@ -99,7 +99,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 		switch {
 		case update.CallbackQuery.Data == "wizard:generate_key" || update.CallbackQuery.Data == "generate_key:edit":
 			if len(servers) == 0 {
-				key.State = StateCreateConfig
+				store.State = StateCreateConfig
 				response.Text = "Нет доступных серверов"
 				response.ReplyMarkup = finalMenuKb
 
@@ -107,28 +107,28 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			}
 
 			response.Text = "Введи название ключа"
-			key.State = StateCreateConfigEnterName
+			store.State = StateCreateConfigEnterName
 		case strings.Contains(update.CallbackQuery.Data, "server"):
 			selectedServer := strings.ReplaceAll(update.CallbackQuery.Data, "generate_key:server-", "")
 
 			for _, s := range servers {
 				if s.PublicID.String() == selectedServer {
-					key.Server = &s
+					store.Server = &s
 					flagEmoji := convertCountryCodeToFlagEmoji(s.Location)
 					keyTitle := fmt.Sprintf("%s %s \\| %s", flagEmoji, s.LocationCountry, s.LocationCity)
-					key.Location = keyTitle
+					store.Location = keyTitle
 
 					break
 				}
 			}
 
-			protocolToServerMap, err = h.peerService.GetAvailableProtocols(ctx, *key.Server)
+			protocolToServerMap, err = h.peerService.GetAvailableProtocols(ctx, *store.Server)
 			if err != nil {
 				return fmt.Errorf("getting available protocols: %w", err)
 			}
 
 			if len(protocolToServerMap) == 0 {
-				key.State = StateCreateConfig
+				store.State = StateCreateConfig
 				response.Text = "Нет доступных протоколов"
 				response.ReplyMarkup = finalMenuKb
 
@@ -149,50 +149,50 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			}
 			selectProtocolKb = tu.InlineKeyboard(kbRows...)
 
-			key.State = StateCreateConfigConfirm
+			store.State = StateCreateConfigConfirm
 			response.Text = "Выбери протокол"
 			response.ReplyMarkup = selectProtocolKb
 		case strings.Contains(update.CallbackQuery.Data, "protocol"):
-			key.Protocol = strings.ReplaceAll(update.CallbackQuery.Data, "generate_key:protocol-", "")
-			key.State = StateCreateConfigSelectProtocol
+			store.Protocol = strings.ReplaceAll(update.CallbackQuery.Data, "generate_key:protocol-", "")
+			store.State = StateCreateConfigSelectProtocol
 
 			response.Text = fmt.Sprintf(
 				"Название: %s\nПротокол: %s\nЛокация: %s\n\nСоздать ключ?",
-				key.Name,
-				key.Protocol,
-				key.Location,
+				store.Name,
+				store.Protocol,
+				store.Location,
 			)
 			response.ReplyMarkup = submitActionKb
 		case update.CallbackQuery.Data == "generate_key:yes":
 			config, err := h.peerService.CreateConfig(
 				ctx,
 				update.CallbackQuery.From.ID,
-				key.Server,
-				key.Name,
-				key.Protocol,
-				protocolToServerMap[key.Protocol],
+				store.Server,
+				store.Name,
+				store.Protocol,
+				protocolToServerMap[store.Protocol],
 			)
 			if err != nil {
 				// TODO: Remove error sent to the user
 				response.Text = fmt.Sprintf("Не удалось создать конфиг: %s", err)
 				response.ReplyMarkup = finalMenuKb
-				key.State = StateCreateConfig
+				store.State = StateCreateConfig
 
 				break
 			}
 
 			response.Text = fmt.Sprintf("Ключ успешно создан\\!\n\n```plain\n%s\n```", config)
 			response.ReplyMarkup = finalMenuKb
-			key.State = StateCreateConfig
+			store.State = StateCreateConfig
 		}
 	case update.Message != nil:
 		response.ChatID = update.Message.Chat.ChatID()
 
-		switch key.State {
+		switch store.State {
 		case StateCreateConfigEnterName:
-			key.Name = update.Message.Text
+			store.Name = update.Message.Text
 
-			key.State = StateCreateConfigSelectProtocol
+			store.State = StateCreateConfigSelectProtocol
 			response.Text = "Выбери локацию"
 			response.ReplyMarkup = selectLocationKb
 		}
@@ -210,7 +210,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 	)
 
 	h.mutex.Lock()
-	h.keys[userId] = key
+	h.storage[userId] = store
 	h.mutex.Unlock()
 
 	return nil
