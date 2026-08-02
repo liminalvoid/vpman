@@ -172,6 +172,18 @@ func (s *ConfigService) ListConfigs(
 	return configs, nil
 }
 
+func (s *ConfigService) GetByPublicID(
+	ctx context.Context,
+	publicID string,
+) (*model.ConfigListView, error) {
+	cfg, err := s.configRepository.GetByPublicID(ctx, publicID)
+	if err != nil {
+		return nil, err
+	}
+
+	return cfg, nil
+}
+
 func (s *ConfigService) GetAvailableProtocols(ctx context.Context, server model.Server) (map[string]string, error) {
 	var ex executor.Executor
 	ex, err := s.containerRegistry.Get(ctx, server.PublicID.String())

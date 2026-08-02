@@ -23,12 +23,12 @@ var manageKeyKb = tu.InlineKeyboard(
 )
 
 func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error {
-	var userId int64
+	var userID int64
 	switch {
 	case update.CallbackQuery != nil:
-		userId = update.CallbackQuery.From.ID
+		userID = update.CallbackQuery.From.ID
 	case update.Message != nil:
-		userId = update.Message.From.ID
+		userID = update.Message.From.ID
 	default:
 		return nil
 	}
@@ -46,7 +46,7 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 
 		switch {
 		case update.CallbackQuery.Data == "wizard:manage_keys":
-			h.sessions.Update(userId, func(s *Session) {
+			h.sessions.Update(userID, func(s *Session) {
 				s.State = StateEditConfig
 			})
 
@@ -57,8 +57,6 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 
 			keysKbButtons := make([][]telego.InlineKeyboardButton, 0)
 			for _, c := range configs {
-				keyId := strings.Replace(strings.ToLower(c.Name), " ", "-", 1)
-
 				buttonText := fmt.Sprintf(
 					"%s, %s",
 					c.Name,
@@ -70,7 +68,7 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 					tu.InlineKeyboardRow(
 						tu.
 							InlineKeyboardButton(buttonText).
-							WithCallbackData(fmt.Sprintf("manage_keys:key-%s", keyId)),
+							WithCallbackData(fmt.Sprintf("manage_keys:key-%s", c.PublicID.String())),
 					),
 				)
 			}
@@ -79,27 +77,31 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 			response.Text = "Текущие ключи"
 			response.ReplyMarkup = keysKb
 		case strings.Contains(update.CallbackQuery.Data, "manage_keys:key-"):
-			keyId := strings.ReplaceAll(update.CallbackQuery.Data, "manage_keys:key-", "")
-			h.sessions.Update(userId, func(s *Session) {
+			keyID := strings.ReplaceAll(update.CallbackQuery.Data, "manage_keys:key-", "")
+			h.sessions.Update(userID, func(s *Session) {
 				s.State = StateEditConfigSelect
-				s.Edit.KeyID = keyId
 			})
 
-			sess := h.sessions.Get(userId)
+			cfg, err := h.peerService.GetByPublicID(ctx, keyID)
+			if err != nil {
+				return fmt.Errorf("retrieving configs: %w", err)
+			}
+			
 			response.Text = fmt.Sprintf(
-				"**%s**\n\nЛокация: %s\nПротокол: %s\nСтатус: активен",
-				sess.updatedAt,
-				"EU",
-				sess.updatedAt,
+				"%s\n\nЛокация: %s\nПротокол: %s\nСтатус: %s",
+				cfg.Name,
+				convertCountryCodeToFlagEmoji(cfg.Location),
+				cfg.Protocol,
+				cfg.Status,
 			)
 			response.ReplyMarkup = manageKeyKb
 		case strings.Contains(update.CallbackQuery.Data, "edit_name"):
-			h.sessions.Update(userId, func(s *Session) {
+			h.sessions.Update(userID, func(s *Session) {
 				s.State = StateEditConfigEnterName
 			})
 			response.Text = "Введите новое название"
 		case strings.Contains(update.CallbackQuery.Data, "delete"):
-			h.sessions.Update(userId, func(s *Session) {
+			h.sessions.Update(userID, func(s *Session) {
 				s.State = StateEditConfigDelete
 			})
 			response.Text = "Конфиг удален"

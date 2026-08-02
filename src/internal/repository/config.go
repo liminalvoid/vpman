@@ -106,3 +106,35 @@ func (r *Config) ListByTelegramID(ctx context.Context, userID int64) ([]model.Co
 
 	return out, rows.Err()
 }
+
+func (r *Config) GetByPublicID(
+	ctx context.Context,
+	publicID string,
+) (*model.ConfigListView, error) {
+	const q = `
+		SELECT c.id, c.public_id, c.name, c.ip_address, p.name, s.location, c.status, c.created_at
+		FROM configs c
+		JOIN users u ON c.user_id = u.id
+		JOIN protocols p ON c.protocol_id = p.id
+		JOIN servers s ON c.server_id = s.id
+		WHERE c.public_id = $1`
+
+	var resultConfig model.ConfigListView
+	err := r.conn.
+		QueryRow(ctx, q, publicID).
+		Scan(
+			&resultConfig.ID,
+			&resultConfig.PublicID,
+			&resultConfig.Name,
+			&resultConfig.IPAddress,
+			&resultConfig.Protocol,
+			&resultConfig.Location,
+			&resultConfig.Status,
+			&resultConfig.CreatedAt,
+		)	
+	if err != nil {
+		return nil, fmt.Errorf("retrieving config by public ID %q: %w", publicID, err)
+	}
+
+	return &resultConfig, nil
+}
