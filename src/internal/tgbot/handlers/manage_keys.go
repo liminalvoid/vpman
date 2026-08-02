@@ -51,6 +51,8 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 
 		switch {
 		case update.CallbackQuery.Data == "wizard:manage_keys":
+			key.State = StateEditConfig
+
 			configs, err := h.peerService.ListConfigs(ctx, response.ChatID.ID)
 			if err != nil {
 				return fmt.Errorf("querying configs: %w", err)
@@ -79,15 +81,18 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 
 			response.Text = "Текущие ключи"
 			response.ReplyMarkup = keysKb
-		case strings.Contains(update.CallbackQuery.Data, "key"):
+		case strings.Contains(update.CallbackQuery.Data, "manage_keys:key-"):
+			key.State = StateEditConfigSelect
 			keyId := strings.ReplaceAll(update.CallbackQuery.Data, "manage_keys:key-", "")
 			key.KeyID = keyId
 
 			response.Text = fmt.Sprintf("**%s**\n\nЛокация: %s\nПротокол: %s\nСтатус: активен", key.Name, "EU", key.Protocol)
 			response.ReplyMarkup = manageKeyKb
 		case strings.Contains(update.CallbackQuery.Data, "edit_name"):
+			key.State = StateEditConfigEnterName
 			response.Text = "Введите новое название"
 		case strings.Contains(update.CallbackQuery.Data, "delete"):
+			key.State = StateEditConfigDelete
 			response.Text = "Конфиг удален"
 		}
 	case update.Message != nil:

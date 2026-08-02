@@ -107,7 +107,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			}
 
 			response.Text = "Введи название ключа"
-			key.State = StateCreateConfigEnterKeyName
+			key.State = StateCreateConfigEnterName
 		case strings.Contains(update.CallbackQuery.Data, "server"):
 			selectedServer := strings.ReplaceAll(update.CallbackQuery.Data, "generate_key:server-", "")
 
@@ -189,7 +189,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 		response.ChatID = update.Message.Chat.ChatID()
 
 		switch key.State {
-		case StateCreateConfigEnterKeyName:
+		case StateCreateConfigEnterName:
 			key.Name = update.Message.Text
 
 			key.State = StateCreateConfigSelectProtocol

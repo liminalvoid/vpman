@@ -21,10 +21,15 @@ const (
 	StateIdle WizardState = iota
 
 	StateCreateConfig
-	StateCreateConfigEnterKeyName
+	StateCreateConfigEnterName
 	StateCreateConfigSelectLocation
 	StateCreateConfigSelectProtocol
 	StateCreateConfigConfirm
+
+	StateEditConfig
+	StateEditConfigSelect
+	StateEditConfigEnterName
+	StateEditConfigDelete
 )
 
 type Key struct {
