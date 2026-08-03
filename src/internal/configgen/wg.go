@@ -47,6 +47,8 @@ func (w *Wg) create(
 	}
 	privKey, pubKey, presKey := keys[0], keys[1], keys[2]
 
+	fmt.Println(presKey)
+
 	// Obtain server's credentials
 	getServerPubKeyCmd := []string{"wg", "show", "wg0", "public-key"}
 	output, err = cli.Run(ctx, containerID, getServerPubKeyCmd, []byte{})
@@ -105,7 +107,7 @@ func (w *Wg) create(
 	var sb strings.Builder
 	peerData := map[string]string{
 		"ClientPubKey":       pubKey,
-		"ClientPresharedKey": presKey,
+		"ClientPresKey": presKey,
 		"ClientAddr":         newPeerAddr.String(),
 	}
 	if err := peerConfTemplate.Execute(&sb, peerData); err != nil {
@@ -141,11 +143,32 @@ func (w *Wg) revoke(
 	containerID string,
 	addr string,
 ) error {
+	const script = `set -e
+allowed="%s/32"
+conf="/config/wg_confs/wg0.conf"
+
+pubkey=$(wg show wg0 allowed-ips | awk -v ip="$allowed" '$2 == ip {print $1; exit}')
+if [ -n "$pubkey" ]; then
+	wg set wg0 peer "$pubkey" remove
+fi
+
+awk -v ip="$allowed" '
+	function flush(  i) {
+		if (n > 0 && !drop) { for (i = 0; i < n; i++) print buf[i] }
+		n = 0; drop = 0
+	}
+	/^\[/ { flush() }
+	{ buf[n++] = $0 }
+	$1 == "AllowedIPs" && $3 == ip { drop = 1 }
+	END { flush() }
+' "$conf" > "$conf.tmp"
+cat "$conf.tmp" > "$conf"
+rm -f "$conf.tmp"
+`
+
 	removeConfigCmd := []string{
-		fmt.Sprintf(
-			"pubkey=$(wg show wg0 allowed-ips | grep \"%s\" | awk '{print $1}'); wg set wg0 peer \"$pubkey\" remove",
-			addr,
-		),
+		"sh", "-c",
+		fmt.Sprintf(script, addr),
 	}
 	_, err := cli.Run(ctx, containerID, removeConfigCmd, nil)
 	if err != nil {
