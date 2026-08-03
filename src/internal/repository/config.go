@@ -112,7 +112,7 @@ func (r *Config) GetByPublicID(
 	publicID string,
 ) (*model.ConfigListView, error) {
 	const q = `
-		SELECT c.id, c.public_id, c.name, c.ip_address, p.name, s.location, c.status, c.created_at
+		SELECT c.id, c.public_id, c.name, c.ip_address, p.name, s.location, s.public_id, c.status, c.created_at
 		FROM configs c
 		JOIN users u ON c.user_id = u.id
 		JOIN protocols p ON c.protocol_id = p.id
@@ -129,6 +129,7 @@ func (r *Config) GetByPublicID(
 			&resultConfig.IPAddress,
 			&resultConfig.Protocol,
 			&resultConfig.Location,
+			&resultConfig.ServerPublicID,
 			&resultConfig.Status,
 			&resultConfig.CreatedAt,
 		)	

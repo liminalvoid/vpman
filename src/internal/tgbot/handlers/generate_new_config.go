@@ -82,7 +82,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 
 	response := Response{}
 
-	var protocolToServerMap map[string]string
+	var availableProtocols map[string]struct{}
 
 	switch {
 	case update.CallbackQuery != nil:
@@ -124,12 +124,12 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 
 			sess := h.sessions.Get(userId)
 
-			protocolToServerMap, err = h.peerService.GetAvailableProtocols(ctx, *sess.Create.Server)
+			availableProtocols, err = h.peerService.GetAvailableProtocols(ctx, sess.Create.Server)
 			if err != nil {
 				return fmt.Errorf("getting available protocols: %w", err)
 			}
 
-			if len(protocolToServerMap) == 0 {
+			if len(availableProtocols) == 0 {
 				h.sessions.Update(userId, func(s *Session) {
 					s.State = StateCreateConfig
 				})
@@ -142,7 +142,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			// Generate keyboard with available protocols
 			var kbRows [][]telego.InlineKeyboardButton
 			var selectProtocolKb *telego.InlineKeyboardMarkup
-			for name := range protocolToServerMap {
+			for name := range availableProtocols {
 				callbackData := fmt.Sprintf("generate_key:protocol-%s", name)
 
 				kbRows = append(kbRows, tu.InlineKeyboardRow(

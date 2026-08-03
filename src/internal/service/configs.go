@@ -119,8 +119,7 @@ func (s *ConfigService) CreateConfig(
 func (s *ConfigService) RevokeConfig(
 	ctx context.Context,
 	server *model.Server,
-	containerID, protocol string,
-	config *model.Config,
+	config *model.ConfigListView,
 ) error {
 	ex, err := s.containerRegistry.Get(ctx, server.PublicID.String())
 	if err != nil {
@@ -136,14 +135,14 @@ func (s *ConfigService) RevokeConfig(
 		return fmt.Errorf("unexpected executor type %T", ex)
 	}
 
-	p, err := configgen.GetProtocol(protocol)
+	p, err := configgen.GetProtocol(config.Protocol)
 	if err != nil {
-		return fmt.Errorf("mapping protocol %q to object: %w", protocol, err)
+		return fmt.Errorf("mapping protocol %q to object: %w", config.Protocol, err)
 	}
 
 	cg := configgen.New(p, ce)
 
-	err = cg.Revoke(ctx, containerID, config.IPAddress)
+	err = cg.Revoke(ctx, config.Protocol, config.IPAddress)
 	if err != nil {
 		return fmt.Errorf("deleting peer: %w", err)
 	}
@@ -180,7 +179,7 @@ func (s *ConfigService) GetByPublicID(
 	return cfg, nil
 }
 
-func (s *ConfigService) GetAvailableProtocols(ctx context.Context, server model.Server) (map[string]string, error) {
+func (s *ConfigService) GetAvailableProtocols(ctx context.Context, server *model.Server) (map[string]struct{}, error) {
 	var ex executor.Executor
 	ex, err := s.containerRegistry.Get(ctx, server.PublicID.String())
 	if err != nil {
@@ -203,13 +202,13 @@ func (s *ConfigService) GetAvailableProtocols(ctx context.Context, server model.
 
 	protocols := configgen.ListProtocols()
 
-	protocolToContainerMap := make(map[string]string, 0)
+	availableProtocols := make(map[string]struct{}, 0)
 	for _, c := range containers.Items {
 		containerName := strings.ReplaceAll(c.Names[0], "/", "")
 		if _, ok := protocols[containerName]; ok {
-			protocolToContainerMap[containerName] = c.ID
+			availableProtocols[containerName] = struct{}{}
 		}
 	}
 
-	return protocolToContainerMap, nil
+	return availableProtocols, nil
 }

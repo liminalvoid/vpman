@@ -27,12 +27,13 @@ type Config struct {
 }
 
 type ConfigListView struct {
-	ID        int64
-	PublicID  uuid.UUID
-	Name      string
-	IPAddress  string
-	Protocol  string
-	Location  string
-	Status    ConfigStatus
-	CreatedAt time.Time
+	ID             int64
+	PublicID       uuid.UUID
+	Name           string
+	IPAddress      string
+	Protocol       string
+	Location       string
+	ServerPublicID uuid.UUID
+	Status         ConfigStatus
+	CreatedAt      time.Time
 }

@@ -71,3 +71,35 @@ func (r *Server) ListAll(ctx context.Context) ([]model.Server, error) {
 
 	return out, rows.Err()
 }
+
+func (r *Server) GetByPublicID(
+	ctx context.Context,
+	publicID string,
+) (*model.Server, error) {
+	const q = `
+		SELECT id, public_id, public_address, internal_address, location, location_country, location_city
+		FROM servers
+		WHERE public_id = $1`
+
+	var server model.Server
+	err := r.conn.
+		QueryRow(ctx, q, publicID).
+		Scan(
+			&server.ID,
+			&server.PublicID,
+			&server.PublicAddress,
+			&server.InternalAddress,
+			&server.Location,
+			&server.LocationCountry,
+			&server.LocationCity,
+		)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"retrieving server with public ID %q: %w",
+			publicID,
+			err,
+		)
+	}
+
+	return &server, nil
+}

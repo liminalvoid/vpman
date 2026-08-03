@@ -78,14 +78,15 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 			response.ReplyMarkup = keysKb
 		case strings.Contains(update.CallbackQuery.Data, "manage_keys:key-"):
 			keyID := strings.ReplaceAll(update.CallbackQuery.Data, "manage_keys:key-", "")
-			h.sessions.Update(userID, func(s *Session) {
-				s.State = StateEditConfigSelect
-			})
-
 			cfg, err := h.peerService.GetByPublicID(ctx, keyID)
 			if err != nil {
 				return fmt.Errorf("retrieving configs: %w", err)
 			}
+
+			h.sessions.Update(userID, func(s *Session) {
+				s.State = StateEditConfigSelect
+				s.Edit.Config = cfg
+			})
 			
 			response.Text = fmt.Sprintf(
 				"%s\n\nЛокация: %s\nПротокол: %s\nСтатус: %s",
@@ -104,6 +105,26 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 			h.sessions.Update(userID, func(s *Session) {
 				s.State = StateEditConfigDelete
 			})
+
+			sess := h.sessions.Get(userID)
+			serverPublicID := sess.Edit.Config.ServerPublicID.String()
+			server, err := h.serverService.GetByPublicID(
+				ctx,
+				serverPublicID,
+			)
+			if err != nil {
+				return fmt.Errorf("retrieving server %q: %w", serverPublicID, err)
+			}
+
+			err = h.peerService.RevokeConfig(ctx, server, sess.Edit.Config)
+			if err != nil {
+				return fmt.Errorf(
+					"revoking config %q: %w",
+					sess.Edit.Config.PublicID.String(),
+					err,
+				)
+			}
+
 			response.Text = "Конфиг удален"
 		}
 	case update.Message != nil:

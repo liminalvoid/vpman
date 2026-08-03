@@ -14,7 +14,7 @@ type CreateDraft struct {
 }
 
 type EditDraft struct {
-	KeyID string
+	Config *model.ConfigListView
 }
 
 type Session struct {
