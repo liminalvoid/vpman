@@ -36,7 +36,7 @@ func (s *ConfigService) CreateConfig(
 	ctx context.Context,
 	ownerID int64,
 	server *model.Server,
-	name, protocol, containerId string,
+	name, protocol, containerID string,
 ) (string, error) {
 	// TODO: Add revert of transaction and revocation of config on failure
 	p, err := configgen.GetProtocol(protocol)
@@ -58,10 +58,8 @@ func (s *ConfigService) CreateConfig(
 		return "", fmt.Errorf("unexpected executor type %T", ex)
 	}
 
-	ce.SetContainer(containerId)
-
 	cg := configgen.New(p, ce)
-	resultCfg, err := cg.Create(ctx)
+	resultCfg, err := cg.Create(ctx, containerID)
 	if err != nil {
 		return "", fmt.Errorf("creating config: %w", err)
 	}
@@ -138,8 +136,6 @@ func (s *ConfigService) RevokeConfig(
 		return fmt.Errorf("unexpected executor type %T", ex)
 	}
 
-	ce.SetContainer(containerID)
-
 	p, err := configgen.GetProtocol(protocol)
 	if err != nil {
 		return fmt.Errorf("mapping protocol %q to object: %w", protocol, err)
@@ -147,7 +143,7 @@ func (s *ConfigService) RevokeConfig(
 
 	cg := configgen.New(p, ce)
 
-	err = cg.Revoke(ctx, config.IPAddress)
+	err = cg.Revoke(ctx, containerID, config.IPAddress)
 	if err != nil {
 		return fmt.Errorf("deleting peer: %w", err)
 	}

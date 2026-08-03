@@ -19,6 +19,7 @@ var awgTemplateFS embed.FS
 func (w *Awg) create(
 	ctx context.Context,
 	cli *executor.ContainerExecutor,
+	containerID string,
 ) (string, error) {
 	// Read templates
 	peerConfTemplate, err := template.ParseFS(awgTemplateFS, "templates/awg/peer.conf")
@@ -35,7 +36,7 @@ func (w *Awg) create(
 		"sh", "-c",
 		`privKey=$(awg genkey); pubKey=$(echo $privKey | awg pubkey); presKey=$(awg genpsk); echo "$privKey|$pubKey|$presKey"`,
 	}
-	output, err := cli.Run(ctx, keysGenerationCmd, []byte{})
+	output, err := cli.Run(ctx, containerID, keysGenerationCmd, []byte{})
 	if err != nil {
 		return "", fmt.Errorf("failed keys generation: %s", err)
 	}
@@ -48,14 +49,14 @@ func (w *Awg) create(
 
 	// Obtain server's credentials
 	getServerPubKeyCmd := []string{"awg", "show", "awg0", "public-key"}
-	output, err = cli.Run(ctx, getServerPubKeyCmd, []byte{})
+	output, err = cli.Run(ctx, containerID, getServerPubKeyCmd, []byte{})
 	if err != nil {
 		return "", fmt.Errorf("failed to get server's public key: %s", err)
 	}
 	serverPubKey := output
 
 	getServerPortCmd := []string{"awg", "show", "awg0", "listen-port"}
-	output, err = cli.Run(ctx, getServerPortCmd, []byte{})
+	output, err = cli.Run(ctx, containerID, getServerPortCmd, []byte{})
 	if err != nil {
 		return "", fmt.Errorf("failed to get server's port: %s", err)
 	}
@@ -69,7 +70,7 @@ func (w *Awg) create(
 		`/^\[Interface\]/{f=1; next} /^\[/{f=0} f && match($0, /^(Jc|Jmin|Jmax|S1|S2|S3|S4|H1|H2|H3|H4|I1|I2|I3|I4|I5)[ \t]*=/) { split($0, kv, "="); k=kv[1]; v=kv[2]; gsub(/^[ \t]+|[ \t]+$/, "", k); gsub(/^[ \t]+|[ \t]+$/, "", v); print k"="v }`,
 		"/opt/amnezia/awg/awg0.conf",
 	}
-	output, err = cli.Run(ctx, getObfuscationParamsCmd, []byte{})
+	output, err = cli.Run(ctx, containerID, getObfuscationParamsCmd, []byte{})
 	if err != nil {
 		return "", fmt.Errorf("failed to get obfuscation params: %s", err)
 	}
@@ -94,7 +95,7 @@ func (w *Awg) create(
 		`/\[Peer\]/{ip=""} /AllowedIPs/{ip=$0} END{sub(/.*= */,"",ip); sub(/\/.*/,"",ip); printf "%s", ip}`,
 		"/opt/amnezia/awg/awg0.conf",
 	}
-	output, err = cli.Run(ctx, getLatestPeerAddrCmd, []byte{})
+	output, err = cli.Run(ctx, containerID, getLatestPeerAddrCmd, []byte{})
 	if err != nil {
 		return "", fmt.Errorf("failed to get latest peer's IP: %s", err)
 	}
@@ -123,7 +124,7 @@ func (w *Awg) create(
 		fmt.Sprintf("%s:%s", cli.HostAddr, serverPort),
 		"persistent-keepalive 25",
 	}
-	output, err = cli.Run(ctx, createNewPeerCmd, []byte{})
+	output, err = cli.Run(ctx, containerID, createNewPeerCmd, []byte{})
 	if err != nil {
 		return "", fmt.Errorf("failed to create new peer: %s", err)
 	}
@@ -139,7 +140,7 @@ func (w *Awg) create(
 	}
 
 	writePeerCmd := []string{"tee", "-a", "/opt/amnezia/awg/awg0.conf"}
-	_, err = cli.Run(ctx, writePeerCmd, []byte(sb.String()))
+	_, err = cli.Run(ctx, containerID, writePeerCmd, []byte(sb.String()))
 	if err != nil {
 		return "", fmt.Errorf("failed to write peer to server's config: %s", err)
 	}
@@ -180,6 +181,7 @@ func (w *Awg) create(
 func (w *Awg) revoke(
 	ctx context.Context,
 	cli *executor.ContainerExecutor,
+	containerID string,
 	addr string,
 ) error {
 	return nil

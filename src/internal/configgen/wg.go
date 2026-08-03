@@ -19,6 +19,7 @@ var wgTemplateFS embed.FS
 func (w *Wg) create(
 	ctx context.Context,
 	cli *executor.ContainerExecutor,
+	containerID string,
 ) (string, error) {
 	// Read templates
 	peerConfTemplate, err := template.ParseFS(wgTemplateFS, "templates/wg/peer.conf")
@@ -35,7 +36,7 @@ func (w *Wg) create(
 		"sh", "-c",
 		`privKey=$(wg genkey); pubKey=$(echo $privKey | wg pubkey); presKey=$(wg genpsk); echo "$privKey|$pubKey|$presKey"`,
 	}
-	output, err := cli.Run(ctx, keysGenerationCmd, []byte{})
+	output, err := cli.Run(ctx, containerID, keysGenerationCmd, []byte{})
 	if err != nil {
 		return "", fmt.Errorf("failed keys generation: %s", err)
 	}
@@ -48,14 +49,14 @@ func (w *Wg) create(
 
 	// Obtain server's credentials
 	getServerPubKeyCmd := []string{"wg", "show", "wg0", "public-key"}
-	output, err = cli.Run(ctx, getServerPubKeyCmd, []byte{})
+	output, err = cli.Run(ctx, containerID, getServerPubKeyCmd, []byte{})
 	if err != nil {
 		return "", fmt.Errorf("failed to get server's public key: %s", err)
 	}
 	serverPubKey := output
 
 	getServerPortCmd := []string{"wg", "show", "wg0", "listen-port"}
-	output, err = cli.Run(ctx, getServerPortCmd, []byte{})
+	output, err = cli.Run(ctx, containerID, getServerPortCmd, []byte{})
 	if err != nil {
 		return "", fmt.Errorf("failed to get server's port: %s", err)
 	}
@@ -67,7 +68,7 @@ func (w *Wg) create(
 		`/\[Peer\]/{ip=""} /AllowedIPs/{ip=$0} END{sub(/.*= */,"",ip); sub(/\/.*/,"",ip); printf "%s", ip}`,
 		"/config/wg_confs/wg0.conf",
 	}
-	output, err = cli.Run(ctx, getLatestPeerAddrCmd, []byte{})
+	output, err = cli.Run(ctx, containerID, getLatestPeerAddrCmd, []byte{})
 	if err != nil {
 		return "", fmt.Errorf("failed to get latest peer's IP: %s", err)
 	}
@@ -96,7 +97,7 @@ func (w *Wg) create(
 		fmt.Sprintf("%s:%s", cli.HostAddr, serverPort),
 		"persistent-keepalive 25",
 	}
-	output, err = cli.Run(ctx, createNewPeerCmd, []byte{})
+	output, err = cli.Run(ctx, containerID, createNewPeerCmd, []byte{})
 	if err != nil {
 		return "", fmt.Errorf("failed to create new peer: %s", err)
 	}
@@ -112,7 +113,7 @@ func (w *Wg) create(
 	}
 
 	writePeerCmd := []string{"tee", "-a", "/config/wg_confs/wg0.conf"}
-	_, err = cli.Run(ctx, writePeerCmd, []byte(sb.String()))
+	_, err = cli.Run(ctx, containerID, writePeerCmd, []byte(sb.String()))
 	if err != nil {
 		return "", fmt.Errorf("failed to write peer to server's config: %s", err)
 	}
@@ -137,6 +138,7 @@ func (w *Wg) create(
 func (w *Wg) revoke(
 	ctx context.Context,
 	cli *executor.ContainerExecutor,
+	containerID string,
 	addr string,
 ) error {
 	removeConfigCmd := []string{
@@ -145,7 +147,7 @@ func (w *Wg) revoke(
 			addr,
 		),
 	}
-	_, err := cli.Run(ctx, removeConfigCmd, nil)
+	_, err := cli.Run(ctx, containerID, removeConfigCmd, nil)
 	if err != nil {
 		return fmt.Errorf("removing config from server: %w", err)
 	}

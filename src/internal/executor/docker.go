@@ -18,7 +18,7 @@ type Config struct {
 }
 
 type Executor interface {
-	Run(ctx context.Context, cmd []string, stdin []byte) (string, error)
+	Run(ctx context.Context, containerID string, cmd []string, stdin []byte) (string, error)
 	Close() error
 	ListContainers(ctx context.Context) (*client.ContainerListResult, error)
 }
@@ -26,7 +26,6 @@ type Executor interface {
 type ContainerExecutor struct {
 	cli         *client.Client
 	HostAddr    string
-	ContainerID string
 }
 
 type Factory func(ctx context.Context, cfg *Config) (Executor, error)
@@ -41,8 +40,8 @@ func NewExecutor(ctx context.Context, cfg *Config) (Executor, error) {
 	return &ContainerExecutor{cli: c, HostAddr: cfg.HostAddr}, nil
 }
 
-func (ce *ContainerExecutor) Run(ctx context.Context, cmd []string, stdin []byte) (string, error) {
-	execResp, err := ce.cli.ExecCreate(ctx, ce.ContainerID, client.ExecCreateOptions{
+func (ce *ContainerExecutor) Run(ctx context.Context, containerID string, cmd []string, stdin []byte) (string, error) {
+	execResp, err := ce.cli.ExecCreate(ctx, containerID, client.ExecCreateOptions{
 		Cmd:          cmd,
 		AttachStdout: true,
 		AttachStderr: true,
@@ -87,8 +86,4 @@ func (ce *ContainerExecutor) ListContainers(ctx context.Context) (*client.Contai
 	}
 
 	return &list, nil
-}
-
-func (ce *ContainerExecutor) SetContainer(containerId string) {
-	ce.ContainerID = containerId
 }

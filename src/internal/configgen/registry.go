@@ -8,8 +8,8 @@ import (
 )
 
 type Protocol interface {
-	create(ctx context.Context, cli *executor.ContainerExecutor) (string, error)
-	revoke(ctx context.Context, cli *executor.ContainerExecutor, addr string) error
+	create(ctx context.Context, cli *executor.ContainerExecutor, containerID string) (string, error)
+	revoke(ctx context.Context, cli *executor.ContainerExecutor, containerID string, addr string) error
 }
 
 type ConfigGenerator struct {
@@ -39,8 +39,8 @@ func (cg *ConfigGenerator) GetProtocol() (string, error) {
 	return "", fmt.Errorf("failed to map protocol")
 }
 
-func (cg *ConfigGenerator) Create(ctx context.Context) (string, error) {
-	cfg, err := cg.protocol.create(ctx, cg.executor)
+func (cg *ConfigGenerator) Create(ctx context.Context, containerID string) (string, error) {
+	cfg, err := cg.protocol.create(ctx, cg.executor, containerID)
 	if err != nil {
 		return "", fmt.Errorf("creating config: %w", err)
 	}
@@ -48,8 +48,8 @@ func (cg *ConfigGenerator) Create(ctx context.Context) (string, error) {
 	return cfg, nil
 }
 
-func (cg *ConfigGenerator) Revoke(ctx context.Context, addr string) error {
-	err := cg.protocol.revoke(ctx, cg.executor, addr)
+func (cg *ConfigGenerator) Revoke(ctx context.Context, containerID string, addr string) error {
+	err := cg.protocol.revoke(ctx, cg.executor, containerID, addr)
 	if err != nil {
 		return fmt.Errorf("revoking config: %w", err)
 	}

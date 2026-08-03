@@ -35,7 +35,6 @@ var finalMenuKb = tu.InlineKeyboard(
 	),
 )
 
-var protocolToServerMap map[string]string
 
 func convertCountryCodeToFlagEmoji(code string) string {
 	if len(code) != 2 {
@@ -83,6 +82,8 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 
 	response := Response{}
 
+	var protocolToServerMap map[string]string
+
 	switch {
 	case update.CallbackQuery != nil:
 		response.ChatID = update.CallbackQuery.Message.GetChat().ChatID()
@@ -122,6 +123,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			}
 
 			sess := h.sessions.Get(userId)
+
 			protocolToServerMap, err = h.peerService.GetAvailableProtocols(ctx, *sess.Create.Server)
 			if err != nil {
 				return fmt.Errorf("getting available protocols: %w", err)
@@ -179,7 +181,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 				sess.Create.Server,
 				sess.Create.Name,
 				sess.Create.Protocol,
-				protocolToServerMap[sess.Create.Protocol],
+				sess.Create.Protocol,
 			)
 			if err != nil {
 				// TODO: Remove error sent to the user
