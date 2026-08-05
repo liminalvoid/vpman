@@ -56,14 +56,14 @@ func New(
 		h.HandleNewConfig,
 		th.Or(
 			th.CallbackDataContains("generate_key"),
-			th.AnyMessage(),
+			th.And(th.AnyMessage(), h.InState(handlers.StateCreateConfigEnterName)),
 		),
 	)
 	bh.Handle(
 		h.HandleManageKeys,
 		th.Or(
 			th.CallbackDataContains("manage_keys"),
-			th.AnyMessage(),
+			th.And(th.AnyMessage(), h.InState(handlers.StateEditConfigEnterName)),
 		),
 	)
 

@@ -1,9 +1,12 @@
 package handlers
 
 import (
+	"slices"
 	"sync"
+	"context"
 
 	"github.com/mymmrac/telego"
+	th "github.com/mymmrac/telego/telegohandler"
 
 	"vpnmanager/internal/service"
 )
@@ -52,5 +55,15 @@ func NewHandlers(
 		},
 		peerService:   ps,
 		serverService: ss,
+	}
+}
+
+func (h *Handlers) InState(states ...WizardState) th.Predicate {
+	return func(_ context.Context, update telego.Update) bool {
+		if update.Message == nil || update.Message.From == nil {
+			return false
+		}
+
+		return slices.Contains(states, h.sessions.Get(update.Message.From.ID).State)
 	}
 }
