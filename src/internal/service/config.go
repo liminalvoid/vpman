@@ -116,6 +116,18 @@ func (s *ConfigService) CreateConfig(
 	return resultCfg, nil
 }
 
+func (s *ConfigService) UpdateConfigName(
+	ctx context.Context,
+	publicID, name string,
+) error {
+	_, err := s.configRepository.UpdateName(ctx, publicID, name)
+	if err != nil {
+		return fmt.Errorf("updating config's %q name: %w", publicID, err)
+	}
+
+	return nil
+}
+
 func (s *ConfigService) RevokeConfig(
 	ctx context.Context,
 	server *model.Server,
