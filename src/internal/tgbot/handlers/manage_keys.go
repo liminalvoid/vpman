@@ -9,7 +9,7 @@ import (
 	tu "github.com/mymmrac/telego/telegoutil"
 )
 
-var manageKeyKb = tu.InlineKeyboard(
+var manageKeyKb = [][]telego.InlineKeyboardButton{
 	tu.InlineKeyboardRow(
 		tu.
 			InlineKeyboardButton("Изменить название").
@@ -20,7 +20,7 @@ var manageKeyKb = tu.InlineKeyboard(
 			InlineKeyboardButton("Удалить").
 			WithCallbackData("manage_keys:delete"),
 	),
-)
+}
 
 func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error {
 	var userID int64
@@ -33,6 +33,7 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 		return nil
 	}
 
+	var draftKb [][]telego.InlineKeyboardButton
 	response := Response{}
 
 	switch {
@@ -72,10 +73,9 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 					),
 				)
 			}
-			keysKb := tu.InlineKeyboard(keysKbButtons...)
 
 			response.Text = "Текущие ключи"
-			response.ReplyMarkup = keysKb
+			draftKb = keysKbButtons
 		case strings.Contains(update.CallbackQuery.Data, "manage_keys:key-"):
 			keyID := strings.ReplaceAll(update.CallbackQuery.Data, "manage_keys:key-", "")
 			cfg, err := h.configService.GetConfigByPublicID(ctx, keyID)
@@ -95,7 +95,7 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 				cfg.Protocol,
 				cfg.Status,
 			)
-			response.ReplyMarkup = manageKeyKb
+			draftKb = manageKeyKb
 		case strings.Contains(update.CallbackQuery.Data, "edit_name"):
 			response.Text = "Введите новое название"
 			h.sessions.Update(userID, func(s *Session) {
@@ -151,10 +151,8 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 	}
 
 	message := tu.Message(response.ChatID, response.Text)
-
-	if response.ReplyMarkup != nil {
-		message = message.WithReplyMarkup(response.ReplyMarkup)
-	}
+	response.ReplyMarkup = buildKbWithExitButton(draftKb...)
+	message = message.WithReplyMarkup(response.ReplyMarkup)
 
 	if _, err := h.bot.SendMessage(ctx, message); err != nil {
 		return fmt.Errorf("sending message: %w", err)

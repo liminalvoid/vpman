@@ -9,7 +9,7 @@ import (
 	tu "github.com/mymmrac/telego/telegoutil"
 )
 
-var submitActionKb = tu.InlineKeyboard(
+var submitActionKb = [][]telego.InlineKeyboardButton{
 	tu.InlineKeyboardRow(
 		tu.
 			InlineKeyboardButton("Да").
@@ -20,20 +20,15 @@ var submitActionKb = tu.InlineKeyboard(
 			InlineKeyboardButton("Изменить").
 			WithCallbackData("generate_key:edit"),
 	),
-)
+}
 
-var finalMenuKb = tu.InlineKeyboard(
-	tu.InlineKeyboardRow(
-		tu.
-			InlineKeyboardButton("В меню").
-			WithCallbackData("menu"),
-	),
+var finalMenuKb = [][]telego.InlineKeyboardButton{
 	tu.InlineKeyboardRow(
 		tu.
 			InlineKeyboardButton("Сгенерировать ещё раз").
 			WithCallbackData("wizard:generate_key"),
 	),
-)
+}
 
 func convertCountryCodeToFlagEmoji(code string) string {
 	if len(code) != 2 {
@@ -59,9 +54,11 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 		return nil
 	}
 
+	var draftKb [][]telego.InlineKeyboardButton
+	response := Response{}
+
 	// Generate keyboard with available servers
-	var kbRows [][]telego.InlineKeyboardButton
-	var selectLocationKb *telego.InlineKeyboardMarkup
+	var serversKbRows [][]telego.InlineKeyboardButton
 	servers, err := h.serverService.ListAll(ctx)
 	if err != nil {
 		return fmt.Errorf("retrieving servers: %w", err)
@@ -71,15 +68,12 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 		keyTitle := fmt.Sprintf("%s %s | %s", flagEmoji, s.LocationCountry, s.LocationCity)
 		callbackData := fmt.Sprintf("generate_key:server-%s", s.PublicID.String())
 
-		kbRows = append(kbRows, tu.InlineKeyboardRow(
+		serversKbRows = append(serversKbRows, tu.InlineKeyboardRow(
 			tu.
 				InlineKeyboardButton(keyTitle).
 				WithCallbackData(callbackData),
 		))
 	}
-	selectLocationKb = tu.InlineKeyboard(kbRows...)
-
-	response := Response{}
 
 	var availableProtocols map[string]struct{}
 
@@ -99,7 +93,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 					s.State = StateCreateConfig
 				})
 				response.Text = "Нет доступных серверов"
-				response.ReplyMarkup = finalMenuKb
+				draftKb = finalMenuKb
 
 				break
 			}
@@ -133,30 +127,28 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 					s.State = StateCreateConfig
 				})
 				response.Text = "Нет доступных протоколов"
-				response.ReplyMarkup = finalMenuKb
+				draftKb = finalMenuKb
 
 				break
 			}
 
 			// Generate keyboard with available protocols
-			var kbRows [][]telego.InlineKeyboardButton
-			var selectProtocolKb *telego.InlineKeyboardMarkup
+			var protocolsKbRows [][]telego.InlineKeyboardButton
 			for name := range availableProtocols {
 				callbackData := fmt.Sprintf("generate_key:protocol-%s", name)
 
-				kbRows = append(kbRows, tu.InlineKeyboardRow(
+				protocolsKbRows = append(protocolsKbRows, tu.InlineKeyboardRow(
 					tu.
 						InlineKeyboardButton(name).
 						WithCallbackData(callbackData),
 				))
 			}
-			selectProtocolKb = tu.InlineKeyboard(kbRows...)
 
 			h.sessions.Update(userId, func(s *Session) {
 				s.State = StateCreateConfigConfirm
 			})
 			response.Text = "Выбери протокол"
-			response.ReplyMarkup = selectProtocolKb
+			draftKb = protocolsKbRows
 		case strings.Contains(update.CallbackQuery.Data, "protocol"):
 			h.sessions.Update(userId, func(s *Session) {
 				s.Create.Protocol = strings.ReplaceAll(update.CallbackQuery.Data, "generate_key:protocol-", "")
@@ -171,7 +163,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 				sess.Create.Protocol,
 				sess.Create.Server.Location,
 			)
-			response.ReplyMarkup = submitActionKb
+			draftKb = submitActionKb
 		case update.CallbackQuery.Data == "generate_key:yes":
 			sess := h.sessions.Get(userId)
 			config, err := h.configService.CreateConfig(
@@ -185,7 +177,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			if err != nil {
 				// TODO: Remove error sent to the user
 				response.Text = fmt.Sprintf("Не удалось создать конфиг: %s", err)
-				response.ReplyMarkup = finalMenuKb
+				draftKb = finalMenuKb
 
 				h.sessions.Update(userId, func(s *Session) {
 					s.State = StateCreateConfig
@@ -195,7 +187,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			}
 
 			response.Text = fmt.Sprintf("Ключ успешно создан\\!\n\n```plain\n%s\n```", config)
-			response.ReplyMarkup = finalMenuKb
+			draftKb = finalMenuKb
 			h.sessions.Update(userId, func(s *Session) {
 				s.State = StateCreateConfig
 			})
@@ -212,15 +204,13 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			})
 
 			response.Text = "Выбери локацию"
-			response.ReplyMarkup = selectLocationKb
+			draftKb = serversKbRows
 		}
 	}
 
 	message := tu.Message(response.ChatID, response.Text).WithParseMode(telego.ModeMarkdownV2)
-
-	if response.ReplyMarkup != nil {
-		message = message.WithReplyMarkup(response.ReplyMarkup)
-	}
+	response.ReplyMarkup = buildKbWithExitButton(draftKb...)
+	message = message.WithReplyMarkup(response.ReplyMarkup)
 
 	h.bot.SendMessage(
 		ctx,

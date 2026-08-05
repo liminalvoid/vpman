@@ -7,6 +7,7 @@ import (
 
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
+	tu "github.com/mymmrac/telego/telegoutil"
 
 	"vpnmanager/internal/service"
 )
@@ -40,6 +41,18 @@ const (
 	StateEditConfigEnterName
 	StateEditConfigDelete
 )
+
+func buildKbWithExitButton(rows ...[]telego.InlineKeyboardButton) *telego.InlineKeyboardMarkup {
+	exitButton := tu.InlineKeyboardRow(
+		tu.
+			InlineKeyboardButton("⬅️ В меню").
+			WithCallbackData("menu"),
+	)
+
+	rows = append(rows, exitButton)
+
+	return tu.InlineKeyboard(rows...)
+}
 
 func NewHandlers(
 	bot *telego.Bot,
