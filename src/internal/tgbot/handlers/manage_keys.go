@@ -97,10 +97,10 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 			)
 			response.ReplyMarkup = manageKeyKb
 		case strings.Contains(update.CallbackQuery.Data, "edit_name"):
+			response.Text = "Введите новое название"
 			h.sessions.Update(userID, func(s *Session) {
 				s.State = StateEditConfigEnterName
 			})
-			response.Text = "Введите новое название"
 		case strings.Contains(update.CallbackQuery.Data, "delete"):
 			h.sessions.Update(userID, func(s *Session) {
 				s.State = StateEditConfigDelete
@@ -129,6 +129,21 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 		}
 	case update.Message != nil:
 		response.ChatID = update.Message.Chat.ChatID()
+		newName := update.Message.Text
+
+		sess := h.sessions.Get(userID)
+		switch sess.State {
+		case StateEditConfigEnterName:
+			err := h.peerService.UpdateConfigName(ctx, sess.Edit.Config.PublicID.String(), newName)
+			if err != nil {
+				return err
+			}
+
+			response.Text = "Название конфига успешно обновлено"
+			h.sessions.Update(userID, func(s *Session) {
+				s.State = StateIdle
+			})
+		}
 	}
 
 	if response.Text == "" {

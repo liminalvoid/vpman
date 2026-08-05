@@ -136,7 +136,7 @@ func (r *Config) UpdateName(
 	const q = `
 		UPDATE configs
 		SET name = $1
-		WHERE id = $2`
+		WHERE public_id = $2`
 
 	tag, err := r.conn.Exec(ctx, q, name, publicID)
 	if err != nil {
