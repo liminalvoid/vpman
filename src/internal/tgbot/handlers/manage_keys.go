@@ -78,7 +78,7 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 			response.ReplyMarkup = keysKb
 		case strings.Contains(update.CallbackQuery.Data, "manage_keys:key-"):
 			keyID := strings.ReplaceAll(update.CallbackQuery.Data, "manage_keys:key-", "")
-			cfg, err := h.peerService.GetByPublicID(ctx, keyID)
+			cfg, err := h.peerService.GetConfigByPublicID(ctx, keyID)
 			if err != nil {
 				return fmt.Errorf("retrieving configs: %w", err)
 			}
@@ -87,7 +87,7 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 				s.State = StateEditConfigSelect
 				s.Edit.Config = cfg
 			})
-			
+
 			response.Text = fmt.Sprintf(
 				"%s\n\nЛокация: %s\nПротокол: %s\nСтатус: %s",
 				cfg.Name,

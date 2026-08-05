@@ -167,7 +167,7 @@ func (s *ConfigService) ListConfigs(
 	return configs, nil
 }
 
-func (s *ConfigService) GetByPublicID(
+func (s *ConfigService) GetConfigByPublicID(
 	ctx context.Context,
 	publicID string,
 ) (*model.ConfigListView, error) {
