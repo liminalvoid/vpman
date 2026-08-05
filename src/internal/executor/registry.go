@@ -2,9 +2,9 @@ package executor
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
-	"errors"
 )
 
 type Registry struct {
@@ -17,21 +17,17 @@ func NewRegistry(factory Factory) *Registry {
 	return &Registry{factory: factory, pool: make(map[string]Executor)}
 }
 
-func (r *Registry) Get(
+func (r *Registry) GetOrCreate(
 	ctx context.Context,
-	key string,
+	cfg *Config,
 ) (Executor, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	if ex, ok := r.pool[key]; ok {
+	if ex, ok := r.pool[cfg.Name]; ok {
 		return ex, nil
 	}
 
-	return nil, fmt.Errorf("no executor for %q", key)
-}
-
-func (r *Registry) Add(ctx context.Context, cfg *Config) (Executor, error) {
 	// TODO: think of should I add custom error
 	if cfg == nil {
 		return nil, fmt.Errorf("no config provided, cannot create new executor")
@@ -39,9 +35,8 @@ func (r *Registry) Add(ctx context.Context, cfg *Config) (Executor, error) {
 
 	ex, err := r.factory(ctx, cfg)
 	if err != nil {
-		return nil, fmt.Errorf("creating executor for %q: %w", cfg.Name, err)
+		return nil, fmt.Errorf("creating new executor %q: %w", cfg.Name, err)
 	}
-	r.pool[cfg.Name] = ex
 
 	return ex, nil
 }

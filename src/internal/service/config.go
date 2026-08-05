@@ -44,7 +44,13 @@ func (s *ConfigService) CreateConfig(
 		return "", fmt.Errorf("looking up for %q protocol: %w", name, err)
 	}
 
-	ex, err := s.containerRegistry.Get(ctx, server.PublicID.String())
+	cfg := &executor.Config{
+		Name:     server.PublicID.String(),
+		User:     "root",
+		HostAddr: server.InternalAddress,
+		HostPort: "2375",
+	}
+	ex, err := s.containerRegistry.GetOrCreate(ctx, cfg)
 	if err != nil {
 		return "", fmt.Errorf(
 			"getting server %q from registry: %w",
@@ -133,7 +139,13 @@ func (s *ConfigService) RevokeConfig(
 	server *model.Server,
 	config *model.ConfigListView,
 ) error {
-	ex, err := s.containerRegistry.Get(ctx, server.PublicID.String())
+	cfg := &executor.Config{
+		Name:     server.PublicID.String(),
+		User:     "root",
+		HostAddr: server.InternalAddress,
+		HostPort: "2375",
+	}
+	ex, err := s.containerRegistry.GetOrCreate(ctx, cfg)
 	if err != nil {
 		return fmt.Errorf(
 			"retrieving server %q from registry: %w",
@@ -192,19 +204,16 @@ func (s *ConfigService) GetConfigByPublicID(
 }
 
 func (s *ConfigService) GetAvailableProtocols(ctx context.Context, server *model.Server) (map[string]struct{}, error) {
-	var ex executor.Executor
-	ex, err := s.containerRegistry.Get(ctx, server.PublicID.String())
+	cfg := &executor.Config{
+		Name:     server.PublicID.String(),
+		User:     "root",
+		HostAddr: server.InternalAddress,
+		HostPort: "2375",
+	}
+
+	ex, err := s.containerRegistry.GetOrCreate(ctx, cfg)
 	if err != nil {
-		cfg := executor.Config{
-			Name:     server.PublicID.String(),
-			User:     "root",
-			HostAddr: server.InternalAddress,
-			HostPort: "2375",
-		}
-		ex, err = s.containerRegistry.Add(ctx, &cfg)
-		if err != nil {
-			return nil, fmt.Errorf("connecting to host %q: %w", server.InternalAddress, err)
-		}
+		return nil, fmt.Errorf("retrieving executor from server %q: %w", server.InternalAddress, err)
 	}
 
 	containers, err := ex.ListContainers(ctx)
