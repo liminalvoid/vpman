@@ -23,3 +23,6 @@ ansible
 go.work
 
 *.sql
+
+# Do not share my precious settings
+.claude
