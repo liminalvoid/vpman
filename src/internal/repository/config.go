@@ -26,17 +26,6 @@ func (r *Config) Create(ctx context.Context, config *model.Config) error {
 		Scan(&config.ID, &config.PublicID, &config.Status, &config.CreatedAt)
 }
 
-func (r *Config) Delete(ctx context.Context, publicID uuid.UUID) error {
-	const q = `DELETE FROM configs WHERE public_id = $1`
-	
-	_, err := r.conn.Exec(ctx, q, publicID)
-	if err != nil {
-		return fmt.Errorf("deleting config %d: %w", publicID, err)
-	}
-
-	return nil
-}
-
 func (r *Config) ListByUserID(ctx context.Context, userID int64) ([]model.Config, error) {
 	const q = `
 		SELECT id, public_id, name, user_id, protocol_id, status, location, created_at
@@ -138,4 +127,15 @@ func (r *Config) GetByPublicID(
 	}
 
 	return &resultConfig, nil
+}
+
+func (r *Config) Delete(ctx context.Context, publicID uuid.UUID) error {
+	const q = `DELETE FROM configs WHERE public_id = $1`
+	
+	_, err := r.conn.Exec(ctx, q, publicID)
+	if err != nil {
+		return fmt.Errorf("deleting config %d: %w", publicID, err)
+	}
+
+	return nil
 }
