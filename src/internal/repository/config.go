@@ -129,6 +129,23 @@ func (r *Config) GetByPublicID(
 	return &resultConfig, nil
 }
 
+func (r *Config) UpdateName(
+	ctx context.Context,
+	publicID, name string,
+) (int64, error) {
+	const q = `
+		UPDATE configs
+		SET name = $1
+		WHERE id = $2`
+
+	tag, err := r.conn.Exec(ctx, q, name, publicID)
+	if err != nil {
+		return -1, fmt.Errorf("updating config %q: %w", publicID, err)
+	}
+
+	return tag.RowsAffected(), nil
+}
+
 func (r *Config) Delete(ctx context.Context, publicID uuid.UUID) error {
 	const q = `DELETE FROM configs WHERE public_id = $1`
 	
