@@ -35,7 +35,6 @@ var finalMenuKb = tu.InlineKeyboard(
 	),
 )
 
-
 func convertCountryCodeToFlagEmoji(code string) string {
 	if len(code) != 2 {
 		return ""
@@ -124,7 +123,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 
 			sess := h.sessions.Get(userId)
 
-			availableProtocols, err = h.peerService.GetAvailableProtocols(ctx, sess.Create.Server)
+			availableProtocols, err = h.configService.GetAvailableProtocols(ctx, sess.Create.Server)
 			if err != nil {
 				return fmt.Errorf("getting available protocols: %w", err)
 			}
@@ -175,7 +174,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			response.ReplyMarkup = submitActionKb
 		case update.CallbackQuery.Data == "generate_key:yes":
 			sess := h.sessions.Get(userId)
-			config, err := h.peerService.CreateConfig(
+			config, err := h.configService.CreateConfig(
 				ctx,
 				update.CallbackQuery.From.ID,
 				sess.Create.Server,

@@ -56,7 +56,7 @@ func (h *Handlers) HandleStart(ctx *th.Context, update telego.Update) error {
 		formattedServers = append(formattedServers, formattedString)
 	}
 
-	configs, err := h.peerService.ListConfigs(ctx, chatID.ID)
+	configs, err := h.configService.ListConfigs(ctx, chatID.ID)
 	if err != nil {
 		return fmt.Errorf("querying configs: %w", err)
 	}

@@ -1,9 +1,9 @@
 package handlers
 
 import (
+	"context"
 	"slices"
 	"sync"
-	"context"
 
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
@@ -17,11 +17,10 @@ type Response struct {
 	ChatID      telego.ChatID
 }
 
-
 type Handlers struct {
 	bot           *telego.Bot
 	sessions      *Sessions
-	peerService   *service.ConfigService
+	configService *service.ConfigService
 	serverService *service.ServerService
 }
 
@@ -53,7 +52,7 @@ func NewHandlers(
 			mu: sync.Mutex{},
 			m:  make(map[int64]*Session),
 		},
-		peerService:   ps,
+		configService: ps,
 		serverService: ss,
 	}
 }

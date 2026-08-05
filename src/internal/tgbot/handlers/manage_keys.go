@@ -50,7 +50,7 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 				s.State = StateEditConfig
 			})
 
-			configs, err := h.peerService.ListConfigs(ctx, response.ChatID.ID)
+			configs, err := h.configService.ListConfigs(ctx, response.ChatID.ID)
 			if err != nil {
 				return fmt.Errorf("querying configs: %w", err)
 			}
@@ -78,7 +78,7 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 			response.ReplyMarkup = keysKb
 		case strings.Contains(update.CallbackQuery.Data, "manage_keys:key-"):
 			keyID := strings.ReplaceAll(update.CallbackQuery.Data, "manage_keys:key-", "")
-			cfg, err := h.peerService.GetConfigByPublicID(ctx, keyID)
+			cfg, err := h.configService.GetConfigByPublicID(ctx, keyID)
 			if err != nil {
 				return fmt.Errorf("retrieving configs: %w", err)
 			}
@@ -116,7 +116,7 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 				return fmt.Errorf("retrieving server %q: %w", serverPublicID, err)
 			}
 
-			err = h.peerService.RevokeConfig(ctx, server, sess.Edit.Config)
+			err = h.configService.RevokeConfig(ctx, server, sess.Edit.Config)
 			if err != nil {
 				return fmt.Errorf(
 					"revoking config %q: %w",
@@ -134,7 +134,7 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 		sess := h.sessions.Get(userID)
 		switch sess.State {
 		case StateEditConfigEnterName:
-			err := h.peerService.UpdateConfigName(ctx, sess.Edit.Config.PublicID.String(), newName)
+			err := h.configService.UpdateConfigName(ctx, sess.Edit.Config.PublicID.String(), newName)
 			if err != nil {
 				return err
 			}

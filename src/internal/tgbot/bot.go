@@ -24,7 +24,7 @@ type Bot struct {
 func New(
 	ctx context.Context,
 	cfg Config,
-	ps *service.ConfigService,
+	cs *service.ConfigService,
 	ss *service.ServerService,
 ) (*Bot, error) {
 	// FIXME: Remove this and think how to handle logs in prod
@@ -38,7 +38,7 @@ func New(
 	bh, _ := th.NewBotHandler(bot, updates)
 	h := handlers.NewHandlers(
 		bot,
-		ps,
+		cs,
 		ss,
 	)
 
