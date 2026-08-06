@@ -13,12 +13,12 @@ var startKb = tu.InlineKeyboard(
 	tu.InlineKeyboardRow(
 		tu.
 			InlineKeyboardButton("Сгенерировать ключ").
-			WithCallbackData("wizard:generate_key"),
+			WithCallbackData("generate_key"),
 	),
 	tu.InlineKeyboardRow(
 		tu.
 			InlineKeyboardButton("Управление ключами").
-			WithCallbackData("wizard:manage_keys"),
+			WithCallbackData("manage_keys"),
 	),
 )
 

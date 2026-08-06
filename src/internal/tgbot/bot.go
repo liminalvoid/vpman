@@ -10,6 +10,7 @@ import (
 	"vpnmanager/internal/service"
 	"vpnmanager/internal/tgbot/handlers"
 	"vpnmanager/internal/tgbot/middleware"
+	"vpnmanager/internal/tgbot/session"
 )
 
 type Config struct {
@@ -36,14 +37,17 @@ func New(
 	updates, _ := bot.UpdatesViaLongPolling(ctx, nil)
 
 	bh, _ := th.NewBotHandler(bot, updates)
+	sessions := session.NewStore()
 	h := handlers.NewHandlers(
 		bot,
 		cs,
 		ss,
+		sessions,
 	)
 
 	bh.Use(th.PanicRecovery())
 	bh.Use(middleware.IsAdmin(bot, cfg.AdminID))
+	bh.Use(middleware.GoBack(bot, sessions))
 
 	bh.Handle(
 		h.HandleStart,
@@ -56,14 +60,14 @@ func New(
 		h.HandleNewConfig,
 		th.Or(
 			th.CallbackDataContains("generate_key"),
-			th.And(th.AnyMessage(), h.InState(handlers.StateCreateConfigEnterName)),
+			th.And(th.AnyMessage(), h.InState(session.StateCreateConfigEnterName)),
 		),
 	)
 	bh.Handle(
 		h.HandleManageKeys,
 		th.Or(
 			th.CallbackDataContains("manage_keys"),
-			th.And(th.AnyMessage(), h.InState(handlers.StateEditConfigEnterName)),
+			th.And(th.AnyMessage(), h.InState(session.StateEditConfigEnterName)),
 		),
 	)
 

@@ -3,13 +3,13 @@ package handlers
 import (
 	"context"
 	"slices"
-	"sync"
 
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
 	tu "github.com/mymmrac/telego/telegoutil"
 
 	"vpnmanager/internal/service"
+	"vpnmanager/internal/tgbot/session"
 )
 
 type Response struct {
@@ -20,36 +20,27 @@ type Response struct {
 
 type Handlers struct {
 	bot           *telego.Bot
-	sessions      *Sessions
+	sessions      *session.Sessions
 	configService *service.ConfigService
 	serverService *service.ServerService
 }
 
-type WizardState int
-
-const (
-	StateIdle WizardState = iota
-
-	StateCreateConfig
-	StateCreateConfigEnterName
-	StateCreateConfigSelectLocation
-	StateCreateConfigSelectProtocol
-	StateCreateConfigConfirm
-
-	StateEditConfig
-	StateEditConfigSelect
-	StateEditConfigEnterName
-	StateEditConfigDelete
-)
 
 func buildKbWithExitButton(rows ...[]telego.InlineKeyboardButton) *telego.InlineKeyboardMarkup {
-	exitButton := tu.InlineKeyboardRow(
-		tu.
-			InlineKeyboardButton("⬅️ В меню").
-			WithCallbackData("menu"),
-	)
+	exitButton := [][]telego.InlineKeyboardButton{
+		tu.InlineKeyboardRow(
+			tu.
+				InlineKeyboardButton("Назад").
+				WithCallbackData("back"),
+		),
+		tu.InlineKeyboardRow(
+			tu.
+				InlineKeyboardButton("⬅️ В меню").
+				WithCallbackData("menu"),
+		),
+	}
 
-	rows = append(rows, exitButton)
+	rows = append(rows, exitButton...)
 
 	return tu.InlineKeyboard(rows...)
 }
@@ -58,24 +49,24 @@ func NewHandlers(
 	bot *telego.Bot,
 	ps *service.ConfigService,
 	ss *service.ServerService,
+	sess *session.Sessions,
 ) *Handlers {
 	return &Handlers{
 		bot: bot,
-		sessions: &Sessions{
-			mu: sync.Mutex{},
-			m:  make(map[int64]*Session),
-		},
+		sessions: sess,
 		configService: ps,
 		serverService: ss,
 	}
 }
 
-func (h *Handlers) InState(states ...WizardState) th.Predicate {
+func (h *Handlers) InState(states ...session.WizardState) th.Predicate {
 	return func(_ context.Context, update telego.Update) bool {
 		if update.Message == nil || update.Message.From == nil {
 			return false
 		}
 
-		return slices.Contains(states, h.sessions.Get(update.Message.From.ID).State)
+		userId := update.Message.From.ID
+		sess := h.sessions.Get(userId)
+		return slices.Contains(states, sess.State)
 	}
 }

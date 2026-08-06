@@ -7,6 +7,8 @@ import (
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
 	tu "github.com/mymmrac/telego/telegoutil"
+
+	"vpnmanager/internal/tgbot/session"
 )
 
 var manageKeyKb = [][]telego.InlineKeyboardButton{
@@ -45,105 +47,123 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 			tu.CallbackQuery(update.CallbackQuery.ID),
 		)
 
+		callbackData := update.CallbackQuery.Data
 		switch {
-		case update.CallbackQuery.Data == "wizard:manage_keys":
-			h.sessions.Update(userID, func(s *Session) {
-				s.State = StateEditConfig
+		case callbackData == "manage_keys":
+			h.sessions.Update(userID, func(s *session.Session) {
+				s.State = session.StateEditConfig
 			})
-
-			configs, err := h.configService.ListConfigs(ctx, response.ChatID.ID)
-			if err != nil {
-				return fmt.Errorf("querying configs: %w", err)
-			}
-
-			keysKbButtons := make([][]telego.InlineKeyboardButton, 0)
-			for _, c := range configs {
-				buttonText := fmt.Sprintf(
-					"%s, %s",
-					c.Name,
-					c.Protocol,
-				)
-
-				keysKbButtons = append(
-					keysKbButtons,
-					tu.InlineKeyboardRow(
-						tu.
-							InlineKeyboardButton(buttonText).
-							WithCallbackData(fmt.Sprintf("manage_keys:key-%s", c.PublicID.String())),
-					),
-				)
-			}
-
-			response.Text = "Текущие ключи"
-			draftKb = keysKbButtons
-		case strings.Contains(update.CallbackQuery.Data, "manage_keys:key-"):
-			keyID := strings.ReplaceAll(update.CallbackQuery.Data, "manage_keys:key-", "")
-			cfg, err := h.configService.GetConfigByPublicID(ctx, keyID)
-			if err != nil {
-				return fmt.Errorf("retrieving configs: %w", err)
-			}
-
-			h.sessions.Update(userID, func(s *Session) {
-				s.State = StateEditConfigSelect
-				s.Edit.Config = cfg
+		case callbackData == "manage_keys:edit_name":
+			h.sessions.Update(userID, func(s *session.Session) {
+				s.State = session.StateEditConfigEditName
 			})
-
-			response.Text = fmt.Sprintf(
-				"%s\n\nЛокация: %s\nПротокол: %s\nСтатус: %s",
-				cfg.Name,
-				convertCountryCodeToFlagEmoji(cfg.Location),
-				cfg.Protocol,
-				cfg.Status,
-			)
-			draftKb = manageKeyKb
-		case strings.Contains(update.CallbackQuery.Data, "edit_name"):
-			response.Text = "Введите новое название"
-			h.sessions.Update(userID, func(s *Session) {
-				s.State = StateEditConfigEnterName
+		case callbackData == "manage_keys:delete":
+			h.sessions.Update(userID, func(s *session.Session) {
+				s.State = session.StateEditConfigDelete
 			})
-		case strings.Contains(update.CallbackQuery.Data, "delete"):
-			h.sessions.Update(userID, func(s *Session) {
-				s.State = StateEditConfigDelete
+		case strings.Contains(callbackData, "manage_keys:key-"):
+			h.sessions.Update(userID, func(s *session.Session) {
+				s.State = session.StateEditConfigSelect
 			})
-
-			sess := h.sessions.Get(userID)
-			serverPublicID := sess.Edit.Config.ServerPublicID.String()
-			server, err := h.serverService.GetByPublicID(
-				ctx,
-				serverPublicID,
-			)
-			if err != nil {
-				return fmt.Errorf("retrieving server %q: %w", serverPublicID, err)
-			}
-
-			err = h.configService.RevokeConfig(ctx, server, sess.Edit.Config)
-			if err != nil {
-				return fmt.Errorf(
-					"revoking config %q: %w",
-					sess.Edit.Config.PublicID.String(),
-					err,
-				)
-			}
-
-			response.Text = "Конфиг удален"
 		}
 	case update.Message != nil:
 		response.ChatID = update.Message.Chat.ChatID()
-		newName := update.Message.Text
-
+		
 		sess := h.sessions.Get(userID)
 		switch sess.State {
-		case StateEditConfigEnterName:
+		case session.StateEditConfigEnterName:
+			newName := update.Message.Text
 			err := h.configService.UpdateConfigName(ctx, sess.Edit.Config.PublicID.String(), newName)
 			if err != nil {
 				return err
 			}
 
 			response.Text = "Название конфига успешно обновлено"
-			h.sessions.Update(userID, func(s *Session) {
-				s.State = StateIdle
+			h.sessions.Update(userID, func(s *session.Session) {
+				s.State = session.StateIdle
 			})
 		}
+	}
+
+	sess := h.sessions.Get(userID)
+	switch sess.State {
+	case session.StateEditConfig:
+		configs, err := h.configService.ListConfigs(ctx, response.ChatID.ID)
+		if err != nil {
+			return fmt.Errorf("querying configs: %w", err)
+		}
+
+		keysKbButtons := make([][]telego.InlineKeyboardButton, 0)
+		for _, c := range configs {
+			buttonText := fmt.Sprintf(
+				"%s, %s",
+				c.Name,
+				c.Protocol,
+			)
+
+			keysKbButtons = append(
+				keysKbButtons,
+				tu.InlineKeyboardRow(
+					tu.
+						InlineKeyboardButton(buttonText).
+						WithCallbackData(fmt.Sprintf("manage_keys:key-%s", c.PublicID.String())),
+				),
+			)
+		}
+
+		response.Text = "Текущие ключи"
+		draftKb = keysKbButtons
+		h.sessions.Update(userID, func(s *session.Session) {
+			s.State, s.PreviousState = session.StateEditConfigSelect, s.State
+		})
+	case session.StateEditConfigSelect:
+		keyID := strings.ReplaceAll(update.CallbackQuery.Data, "manage_keys:key-", "")
+		cfg, err := h.configService.GetConfigByPublicID(ctx, keyID)
+		if err != nil {
+			return fmt.Errorf("retrieving configs: %w", err)
+		}
+
+		h.sessions.Update(userID, func(s *session.Session) {
+			s.Edit.Config = cfg
+		})
+
+		response.Text = fmt.Sprintf(
+			"%s\n\nЛокация: %s\nПротокол: %s\nСтатус: %s",
+			cfg.Name,
+			convertCountryCodeToFlagEmoji(cfg.Location),
+			cfg.Protocol,
+			cfg.Status,
+		)
+		draftKb = manageKeyKb
+	case session.StateEditConfigEditName:
+		response.Text = "Введите новое название"
+		h.sessions.Update(userID, func(s *session.Session) {
+			s.State = session.StateEditConfigEnterName
+		})
+	case session.StateEditConfigDelete:
+		sess := h.sessions.Get(userID)
+		serverPublicID := sess.Edit.Config.ServerPublicID.String()
+		server, err := h.serverService.GetByPublicID(
+			ctx,
+			serverPublicID,
+		)
+		if err != nil {
+			return fmt.Errorf("retrieving server %q: %w", serverPublicID, err)
+		}
+
+		err = h.configService.RevokeConfig(ctx, server, sess.Edit.Config)
+		if err != nil {
+			return fmt.Errorf(
+				"revoking config %q: %w",
+				sess.Edit.Config.PublicID.String(),
+				err,
+			)
+		}
+
+		response.Text = "Конфиг удален"
+		h.sessions.Update(userID, func(s *session.Session) {
+			s.State = session.StateIdle
+		})
 	}
 
 	if response.Text == "" {

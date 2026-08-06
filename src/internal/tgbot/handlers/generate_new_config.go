@@ -7,6 +7,8 @@ import (
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
 	tu "github.com/mymmrac/telego/telegoutil"
+
+	"vpnmanager/internal/tgbot/session"
 )
 
 var submitActionKb = [][]telego.InlineKeyboardButton{
@@ -44,12 +46,12 @@ func convertCountryCodeToFlagEmoji(code string) string {
 }
 
 func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error {
-	var userId int64
+	var userID int64
 	switch {
 	case update.CallbackQuery != nil:
-		userId = update.CallbackQuery.From.ID
+		userID = update.CallbackQuery.From.ID
 	case update.Message != nil:
-		userId = update.Message.From.ID
+		userID = update.Message.From.ID
 	default:
 		return nil
 	}
@@ -75,8 +77,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 		))
 	}
 
-	var availableProtocols map[string]struct{}
-
+	sess := h.sessions.Get(userID)
 	switch {
 	case update.CallbackQuery != nil:
 		response.ChatID = update.CallbackQuery.Message.GetChat().ChatID()
@@ -86,126 +87,147 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			tu.CallbackQuery(update.CallbackQuery.ID),
 		)
 
-		switch {
-		case update.CallbackQuery.Data == "wizard:generate_key" || update.CallbackQuery.Data == "generate_key:edit":
-			if len(servers) == 0 {
-				h.sessions.Update(userId, func(s *Session) {
-					s.State = StateCreateConfig
-				})
-				response.Text = "Нет доступных серверов"
-				draftKb = finalMenuKb
-
-				break
-			}
-
-			response.Text = "Введи название ключа"
-			h.sessions.Update(userId, func(s *Session) {
-				s.State = StateCreateConfigEnterName
+		callbackData := update.CallbackQuery.Data
+		switch callbackData {
+		case "wizard:generate_key":
+			h.sessions.Update(userID, func(s *session.Session) {
+				s.State = session.StateCreateConfig
 			})
-		case strings.Contains(update.CallbackQuery.Data, "server"):
-			selectedServer := strings.ReplaceAll(update.CallbackQuery.Data, "generate_key:server-", "")
-
-			for _, serv := range servers {
-				if serv.PublicID.String() == selectedServer {
-					h.sessions.Update(userId, func(s *Session) {
-						s.Create.Server = &serv
-					})
-
-					break
-				}
-			}
-
-			sess := h.sessions.Get(userId)
-
-			availableProtocols, err = h.configService.GetAvailableProtocols(ctx, sess.Create.Server)
-			if err != nil {
-				return fmt.Errorf("getting available protocols: %w", err)
-			}
-
-			if len(availableProtocols) == 0 {
-				h.sessions.Update(userId, func(s *Session) {
-					s.State = StateCreateConfig
-				})
-				response.Text = "Нет доступных протоколов"
-				draftKb = finalMenuKb
-
-				break
-			}
-
-			// Generate keyboard with available protocols
-			var protocolsKbRows [][]telego.InlineKeyboardButton
-			for name := range availableProtocols {
-				callbackData := fmt.Sprintf("generate_key:protocol-%s", name)
-
-				protocolsKbRows = append(protocolsKbRows, tu.InlineKeyboardRow(
-					tu.
-						InlineKeyboardButton(name).
-						WithCallbackData(callbackData),
-				))
-			}
-
-			h.sessions.Update(userId, func(s *Session) {
-				s.State = StateCreateConfigConfirm
+		case "generate_key:yes":
+			h.sessions.Update(userID, func(s *session.Session) {
+				s.State = session.StateCreateConfigConfirm
 			})
-			response.Text = "Выбери протокол"
-			draftKb = protocolsKbRows
-		case strings.Contains(update.CallbackQuery.Data, "protocol"):
-			h.sessions.Update(userId, func(s *Session) {
-				s.Create.Protocol = strings.ReplaceAll(update.CallbackQuery.Data, "generate_key:protocol-", "")
-				s.State = StateCreateConfigSelectProtocol
-			})
-
-			sess := h.sessions.Get(userId)
-
-			response.Text = fmt.Sprintf(
-				"Название: %s\nПротокол: %s\nЛокация: %s\n\nСоздать ключ?",
-				sess.Create.Name,
-				sess.Create.Protocol,
-				sess.Create.Server.Location,
-			)
-			draftKb = submitActionKb
-		case update.CallbackQuery.Data == "generate_key:yes":
-			sess := h.sessions.Get(userId)
-			config, err := h.configService.CreateConfig(
-				ctx,
-				update.CallbackQuery.From.ID,
-				sess.Create.Server,
-				sess.Create.Name,
-				sess.Create.Protocol,
-				sess.Create.Protocol,
-			)
-			if err != nil {
-				// TODO: Remove error sent to the user
-				response.Text = fmt.Sprintf("Не удалось создать конфиг: %s", err)
-				draftKb = finalMenuKb
-
-				h.sessions.Update(userId, func(s *Session) {
-					s.State = StateCreateConfig
-				})
-
-				break
-			}
-
-			response.Text = fmt.Sprintf("Ключ успешно создан\\!\n\n```plain\n%s\n```", config)
-			draftKb = finalMenuKb
-			h.sessions.Update(userId, func(s *Session) {
-				s.State = StateCreateConfig
+		case "generate_key:edit":
+			h.sessions.Update(userID, func(s *session.Session) {
+				s.State = session.StateCreateConfigEdit
 			})
 		}
 	case update.Message != nil:
 		response.ChatID = update.Message.Chat.ChatID()
 
-		sess := h.sessions.Get(userId)
 		switch sess.State {
-		case StateCreateConfigEnterName:
-			h.sessions.Update(userId, func(s *Session) {
-				s.State = StateCreateConfigSelectProtocol
-				s.Create.Name = update.Message.Text
-			})
-
+		case session.StateCreateConfigEnterName:
 			response.Text = "Выбери локацию"
 			draftKb = serversKbRows
+			configName := update.Message.Text
+			h.sessions.Update(userID, func(s *session.Session) {
+				s.State = session.StateCreateConfigSelectLocation
+				s.Create.Name = configName
+			})
 		}
+	}
+
+	var availableProtocols map[string]struct{}
+	sess = h.sessions.Get(userID)
+	switch sess.State {
+	case session.StateCreateConfig, session.StateCreateConfigEdit:
+		if len(servers) == 0 {
+			response.Text = "Нет доступных серверов"
+			draftKb = finalMenuKb
+			h.sessions.Update(userID, func(s *session.Session) {
+				s.State = session.StateIdle
+			})
+
+			break
+		}
+
+		response.Text = "Введи название ключа"
+		h.sessions.Update(userID, func(s *session.Session) {
+			s.State = session.StateCreateConfigEnterName
+		})
+	case session.StateCreateConfigSelectLocation:
+		if update.CallbackQuery == nil {
+			break
+		}
+
+		selectedServer := strings.ReplaceAll(update.CallbackQuery.Data, "generate_key:server-", "")
+		for _, serv := range servers {
+			if serv.PublicID.String() == selectedServer {
+				sess = h.sessions.Update(userID, func(s *session.Session) {
+					s.Create.Server = &serv
+				})
+
+				break
+			}
+		}
+
+		if sess.Create.Server == nil {
+			return fmt.Errorf("unknown server %q", selectedServer)
+		}
+
+		availableProtocols, err = h.configService.GetAvailableProtocols(ctx, sess.Create.Server)
+		if err != nil {
+			return fmt.Errorf("getting available protocols: %w", err)
+		}
+
+		if len(availableProtocols) == 0 {
+			response.Text = "Нет доступных протоколов"
+			draftKb = finalMenuKb
+			h.sessions.Update(userID, func(s *session.Session) {
+				s.State = session.StateIdle
+			})
+
+			break
+		}
+
+		// Generate keyboard with available protocols
+		var protocolsKbRows [][]telego.InlineKeyboardButton
+		for name := range availableProtocols {
+			callbackData := fmt.Sprintf("generate_key:protocol-%s", name)
+
+			protocolsKbRows = append(protocolsKbRows, tu.InlineKeyboardRow(
+				tu.
+					InlineKeyboardButton(name).
+					WithCallbackData(callbackData),
+			))
+		}
+
+		response.Text = "Выбери протокол"
+		draftKb = protocolsKbRows
+		h.sessions.Update(userID, func(s *session.Session) {
+			s.State = session.StateCreateConfigSelectProtocol
+		})
+	case session.StateCreateConfigSelectProtocol:
+		sess = h.sessions.Update(userID, func(s *session.Session) {
+			s.Create.Protocol = strings.ReplaceAll(update.CallbackQuery.Data, "generate_key:protocol-", "")
+		})
+
+		response.Text = fmt.Sprintf(
+			"Название: %s\nПротокол: %s\nЛокация: %s\n\nСоздать ключ?",
+			sess.Create.Name,
+			sess.Create.Protocol,
+			sess.Create.Server.Location,
+		)
+		draftKb = submitActionKb
+	case session.StateCreateConfigConfirm:
+		config, err := h.configService.CreateConfig(
+			ctx,
+			update.CallbackQuery.From.ID,
+			sess.Create.Server,
+			sess.Create.Name,
+			sess.Create.Protocol,
+			sess.Create.Protocol,
+		)
+		if err != nil {
+			// TODO: Remove error sent to the user
+			response.Text = fmt.Sprintf("Не удалось создать конфиг: %s", err)
+			draftKb = finalMenuKb
+			h.sessions.Update(userID, func(s *session.Session) {
+				s.State = session.StateIdle
+			})
+
+			break
+		}
+
+		response.Text = fmt.Sprintf("Ключ успешно создан\\!\n\n```plain\n%s\n```", config)
+		draftKb = finalMenuKb
+		h.sessions.Update(userID, func(s *session.Session) {
+			s.State = session.StateIdle
+		})
+	}
+
+	if response.Text == "" {
+		return nil
 	}
 
 	message := tu.Message(response.ChatID, response.Text).WithParseMode(telego.ModeMarkdownV2)
