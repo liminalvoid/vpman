@@ -11,16 +11,18 @@ import (
 	"vpnmanager/internal/tgbot/session"
 )
 
+const prefix = "manage_keys"
+
 var manageKeyKb = [][]telego.InlineKeyboardButton{
 	tu.InlineKeyboardRow(
 		tu.
 			InlineKeyboardButton("Изменить название").
-			WithCallbackData("manage_keys:edit_name"),
+			WithCallbackData(fmt.Sprintf("%s:edit_name", prefix)),
 	),
 	tu.InlineKeyboardRow(
 		tu.
 			InlineKeyboardButton("Удалить").
-			WithCallbackData("manage_keys:delete"),
+			WithCallbackData(fmt.Sprintf("%s:delete", prefix)),
 	),
 }
 
@@ -49,19 +51,19 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 
 		callbackData := update.CallbackQuery.Data
 		switch {
-		case callbackData == "manage_keys":
+		case callbackData == prefix:
 			h.sessions.Update(userID, func(s *session.Session) {
 				s.State = session.StateEditConfig
 			})
-		case callbackData == "manage_keys:edit_name":
+		case callbackData == fmt.Sprintf("%s:edit_name", prefix):
 			h.sessions.Update(userID, func(s *session.Session) {
 				s.State = session.StateEditConfigEditName
 			})
-		case callbackData == "manage_keys:delete":
+		case callbackData == fmt.Sprintf("%s:delete", prefix):
 			h.sessions.Update(userID, func(s *session.Session) {
 				s.State = session.StateEditConfigDelete
 			})
-		case strings.Contains(callbackData, "manage_keys:key-"):
+		case strings.Contains(callbackData, fmt.Sprintf("%s:key-", prefix)):
 			h.sessions.Update(userID, func(s *session.Session) {
 				s.State = session.StateEditConfigSelect
 			})
@@ -106,7 +108,7 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 				tu.InlineKeyboardRow(
 					tu.
 						InlineKeyboardButton(buttonText).
-						WithCallbackData(fmt.Sprintf("manage_keys:key-%s", c.PublicID.String())),
+						WithCallbackData(fmt.Sprintf("%s:key-%s", prefix, c.PublicID.String())),
 				),
 			)
 		}
@@ -117,7 +119,7 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 			s.State = session.StateEditConfigSelect
 		})
 	case session.StateEditConfigSelect:
-		keyID := strings.ReplaceAll(update.CallbackQuery.Data, "manage_keys:key-", "")
+		keyID := strings.ReplaceAll(update.CallbackQuery.Data, fmt.Sprintf("%s:key-", prefix), "")
 		cfg, err := h.configService.GetConfigByPublicID(ctx, keyID)
 		if err != nil {
 			return fmt.Errorf("retrieving configs: %w", err)
