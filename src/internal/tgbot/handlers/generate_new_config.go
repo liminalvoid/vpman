@@ -11,16 +11,18 @@ import (
 	"vpnmanager/internal/tgbot/session"
 )
 
+const GenerateNewConfigPrefix = "generate_key"
+
 var submitActionKb = [][]telego.InlineKeyboardButton{
 	tu.InlineKeyboardRow(
 		tu.
 			InlineKeyboardButton("Да").
-			WithCallbackData("generate_key:yes"),
+			WithCallbackData(fmt.Sprintf("%s:yes", GenerateNewConfigPrefix)),
 	),
 	tu.InlineKeyboardRow(
 		tu.
 			InlineKeyboardButton("Изменить").
-			WithCallbackData("generate_key:edit"),
+			WithCallbackData(fmt.Sprintf("%s:edit", GenerateNewConfigPrefix)),
 	),
 }
 
@@ -28,7 +30,7 @@ var finalMenuKb = [][]telego.InlineKeyboardButton{
 	tu.InlineKeyboardRow(
 		tu.
 			InlineKeyboardButton("Сгенерировать ещё раз").
-			WithCallbackData("generate_key"),
+			WithCallbackData(GenerateNewConfigPrefix),
 	),
 }
 
@@ -68,7 +70,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 	for _, s := range servers {
 		flagEmoji := convertCountryCodeToFlagEmoji(s.Location)
 		keyTitle := fmt.Sprintf("%s %s | %s", flagEmoji, s.LocationCountry, s.LocationCity)
-		callbackData := fmt.Sprintf("generate_key:server-%s", s.PublicID.String())
+		callbackData := fmt.Sprintf("%s:server-%s", GenerateNewConfigPrefix, s.PublicID.String())
 
 		serversKbRows = append(serversKbRows, tu.InlineKeyboardRow(
 			tu.
@@ -89,15 +91,15 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 
 		callbackData := update.CallbackQuery.Data
 		switch callbackData {
-		case "generate_key":
+		case GenerateNewConfigPrefix:
 			h.sessions.Update(userID, func(s *session.Session) {
 				s.State = session.StateCreateConfig
 			})
-		case "generate_key:yes":
+		case fmt.Sprintf("%s:yes", GenerateNewConfigPrefix):
 			h.sessions.Update(userID, func(s *session.Session) {
 				s.State = session.StateCreateConfigConfirm
 			})
-		case "generate_key:edit":
+		case fmt.Sprintf("%s:edit", GenerateNewConfigPrefix):
 			h.sessions.Update(userID, func(s *session.Session) {
 				s.State = session.StateCreateConfigEdit
 			})
@@ -140,7 +142,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			break
 		}
 
-		selectedServer := strings.ReplaceAll(update.CallbackQuery.Data, "generate_key:server-", "")
+		selectedServer := strings.ReplaceAll(update.CallbackQuery.Data, fmt.Sprintf("%s:server-", GenerateNewConfigPrefix), "")
 		for _, serv := range servers {
 			if serv.PublicID.String() == selectedServer {
 				sess = h.sessions.Update(userID, func(s *session.Session) {
@@ -173,7 +175,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 		// Generate keyboard with available protocols
 		var protocolsKbRows [][]telego.InlineKeyboardButton
 		for name := range availableProtocols {
-			callbackData := fmt.Sprintf("generate_key:protocol-%s", name)
+			callbackData := fmt.Sprintf("%s:protocol-%s", GenerateNewConfigPrefix, name)
 
 			protocolsKbRows = append(protocolsKbRows, tu.InlineKeyboardRow(
 				tu.
@@ -189,7 +191,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 		})
 	case session.StateCreateConfigSelectProtocol:
 		sess = h.sessions.Update(userID, func(s *session.Session) {
-			s.Create.Protocol = strings.ReplaceAll(update.CallbackQuery.Data, "generate_key:protocol-", "")
+			s.Create.Protocol = strings.ReplaceAll(update.CallbackQuery.Data, fmt.Sprintf("%s:protocol-", GenerateNewConfigPrefix), "")
 		})
 
 		response.Text = fmt.Sprintf(
