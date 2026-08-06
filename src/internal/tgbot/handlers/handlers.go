@@ -29,11 +29,6 @@ func buildKbWithExitButton(rows ...[]telego.InlineKeyboardButton) *telego.Inline
 	exitButton := [][]telego.InlineKeyboardButton{
 		tu.InlineKeyboardRow(
 			tu.
-				InlineKeyboardButton("Назад").
-				WithCallbackData("back"),
-		),
-		tu.InlineKeyboardRow(
-			tu.
 				InlineKeyboardButton("⬅️ В меню").
 				WithCallbackData("menu"),
 		),
