@@ -21,7 +21,6 @@ type WizardState int
 
 type Session struct {
 	State         WizardState
-	PreviousState WizardState
 	Create        CreateDraft
 	Edit          EditDraft
 	updatedAt     time.Time

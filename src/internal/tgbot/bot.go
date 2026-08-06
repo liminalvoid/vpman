@@ -47,7 +47,6 @@ func New(
 
 	bh.Use(th.PanicRecovery())
 	bh.Use(middleware.IsAdmin(bot, cfg.AdminID))
-	bh.Use(middleware.GoBack(bot, sessions))
 
 	bh.Handle(
 		h.HandleStart,

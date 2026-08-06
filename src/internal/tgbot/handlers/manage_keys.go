@@ -114,7 +114,7 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 		response.Text = "Текущие ключи"
 		draftKb = keysKbButtons
 		h.sessions.Update(userID, func(s *session.Session) {
-			s.State, s.PreviousState = session.StateEditConfigSelect, s.State
+			s.State = session.StateEditConfigSelect
 		})
 	case session.StateEditConfigSelect:
 		keyID := strings.ReplaceAll(update.CallbackQuery.Data, "manage_keys:key-", "")

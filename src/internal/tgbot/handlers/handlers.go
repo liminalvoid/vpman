@@ -25,7 +25,6 @@ type Handlers struct {
 	serverService *service.ServerService
 }
 
-
 func buildKbWithExitButton(rows ...[]telego.InlineKeyboardButton) *telego.InlineKeyboardMarkup {
 	exitButton := [][]telego.InlineKeyboardButton{
 		tu.InlineKeyboardRow(

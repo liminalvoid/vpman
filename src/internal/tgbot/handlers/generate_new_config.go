@@ -28,7 +28,7 @@ var finalMenuKb = [][]telego.InlineKeyboardButton{
 	tu.InlineKeyboardRow(
 		tu.
 			InlineKeyboardButton("Сгенерировать ещё раз").
-			WithCallbackData("wizard:generate_key"),
+			WithCallbackData("generate_key"),
 	),
 }
 
@@ -89,7 +89,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 
 		callbackData := update.CallbackQuery.Data
 		switch callbackData {
-		case "wizard:generate_key":
+		case "generate_key":
 			h.sessions.Update(userID, func(s *session.Session) {
 				s.State = session.StateCreateConfig
 			})

@@ -1,8 +1,6 @@
 package middleware
 
 import (
-	"vpnmanager/internal/tgbot/session"
-
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
 )
@@ -34,17 +32,6 @@ func IsAdmin(
 		}
 
 		bot.Logger().Debugf("Access granted")
-
-		return ctx.Next(update)
-	}
-}
-
-func GoBack(bot *telego.Bot, sessions *session.Sessions) th.Handler {
-	return func(ctx *th.Context, update telego.Update) error {
-		cq := update.CallbackQuery
-		if cq == nil || cq.Data != "back" {
-			return ctx.Next(update)
-		}
 
 		return ctx.Next(update)
 	}
