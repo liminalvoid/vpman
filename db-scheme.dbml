@@ -43,7 +43,7 @@ Table users {
     telegram_id   bigint  [unique]
     password_hash text
     is_admin      boolean [not null, default: false]
-    configs_limit int     [note: "Per-user override of the key quota (NULL = use plan/default)"]
+    configs_limit int     [default: 1, note: "Per-user override of the key quota"]
 
     checks {
         `(username IS NOT NULL AND password_hash IS NOT NULL) OR telegram_id IS NOT NULL` [name: "chk_has_identity"]
