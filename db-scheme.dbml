@@ -62,7 +62,7 @@ Table subscriptions {
     updated_at           timestamptz
     plan_id              int         [not null]
     quantity             int         [not null, note: "Keys bought"]
-    unit_amount_cents    int         [not null, note: "Price snapshot at purchase time"]
+    unit_amount_minor    int         [not null, note: "Price snapshot at purchase time"]
 
     checks {
         `status IN ('active', 'past_due', 'canceled', 'incomplete')` [name: "chk_status_is_known"]
