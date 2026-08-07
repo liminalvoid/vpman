@@ -103,6 +103,10 @@ Table servers {
     location         varchar(2) [not null]
     location_country text       [not null]
     location_city    text       [not null]
+
+    indexes {
+        (public_address, internal_address) [unique, name: "uq_config_ip_per_server"]
+    }
 }
 
 Table access_codes {
