@@ -65,7 +65,7 @@ Table subscriptions {
     max_configs          int         [not null, note: "Keys included in the plan"]
 
     checks {
-        `status IN ('active', 'trialing', 'past_due', 'canceled', 'incomplete')` [name: "chk_status_is_known"]
+        `status IN ('active', 'past_due', 'canceled', 'incomplete')` [name: "chk_status_is_known"]
     }
 
     indexes {
