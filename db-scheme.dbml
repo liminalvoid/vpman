@@ -52,20 +52,6 @@ Table users {
     }
 }
 
-Table sessions {
-    id         bigint      [pk, increment]
-    user_id    bigint      [not null]
-    token_hash text        [not null, unique, note: "Session token"]
-    created_at timestamptz [not null, default: `now()`]
-    expires_at timestamptz [not null]
-
-    indexes {
-        user_id
-    }
-}
-
-Ref: sessions.user_id > users.id [delete: cascade, update: no action]
-
 Table subscriptions {
     id                   bigint      [pk, increment]
     user_id              bigint      [not null]
