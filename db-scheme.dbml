@@ -72,7 +72,6 @@ Table subscriptions {
     }
 
     indexes {
-        (`(case when status in ('active','trialing') then user_id end)`) [unique, name: "uq_one_active_sub_per_user"]
         user_id
     }
 }
