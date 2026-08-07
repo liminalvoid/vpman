@@ -171,9 +171,12 @@ func (s *ConfigService) RevokeConfig(
 		return fmt.Errorf("deleting peer: %w", err)
 	}
 
-	err = s.configRepository.Delete(ctx, config.PublicID)
+	rowsAffected, err := s.configRepository.MarkAsRevoked(ctx, config.PublicID)
 	if err != nil {
 		return fmt.Errorf("deleting config %q from DB: %w", config.PublicID, err)
+	}
+	if rowsAffected == 0 {
+		return fmt.Errorf("config wasn't revoked")
 	}
 
 	return nil
