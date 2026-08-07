@@ -76,6 +76,15 @@ Table subscriptions {
 
 Ref: subscriptions.user_id > users.id [delete: cascade, update: no action]
 
+Table plans {
+    id             int        [pk, increment]
+    public_id      uuid       [not null, default: `get_random_uuid()`]
+    amount_cents   int        [not null]
+    currency       varchar(3) [not null]
+    interval       text       [not null]
+    interval_count int        [not null, default: 1]
+}
+
 Table servers {
     id               smallint   [pk, increment]
     public_id        uuid       [not null, unique, default: `gen_random_uuid()`]
