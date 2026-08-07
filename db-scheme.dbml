@@ -81,6 +81,7 @@ Ref: subscriptions.plan_id > plans.id [delete: restrict, update: no action]
 Table plans {
     id                int        [pk, increment]
     public_id         uuid       [not null, unique, default: `gen_random_uuid()`]
+    name              text       [not null, unique]
     unit_amount_cents int        [not null]
     currency          varchar(3) [not null]
     interval          text       [not null]
