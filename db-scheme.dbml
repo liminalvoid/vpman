@@ -82,7 +82,7 @@ Table plans {
     id                int        [pk, increment]
     public_id         uuid       [not null, unique, default: `gen_random_uuid()`]
     name              text       [not null, unique]
-    unit_amount_cents int        [not null]
+    unit_amount_minor int        [not null]
     currency          varchar(3) [not null]
     interval          text       [not null]
     interval_count    int        [not null, default: 1]
@@ -90,7 +90,7 @@ Table plans {
 
     checks {
         `interval IN ('day', 'week', 'month', 'year')` [name: "chk_interval_is_known"]
-        `unit_amount_cents >= 0`                       [name: "chk_unit_amount_non_negative"]
+        `unit_amount_minor >= 0`                       [name: "chk_unit_amount_non_negative"]
         `interval_count > 0`                           [name: "chk_interval_count_greater_than_zero"]
     }
 }
