@@ -72,6 +72,7 @@ Table subscriptions {
     }
 
     indexes {
+        (`(CASE WHEN status IN ('active', 'past_due') THEN user_id END`) [unique, name: "uq_one_active_sub_per_user"]
         user_id
     }
 }
