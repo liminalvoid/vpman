@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"vpnmanager/internal/model"
 )
@@ -68,6 +69,22 @@ func (r *Subscription) ChangeKeysLimitCount(
 	tag, err := r.conn.Exec(ctx, q, count, userID)
 	if err != nil {
 		return 0, fmt.Errorf("changing keys limit value: %w", err)
+	}
+
+	return tag.RowsAffected(), nil
+}
+
+func (r *Subscription) SetEndPeriodForAll(
+	ctx context.Context,
+	timestamp time.Time,
+) (int64, error) {
+	const q = `
+		UPDATE configs
+		SET current_period_end = $1`
+	
+	tag, err := r.conn.Exec(ctx, q, timestamp)
+	if err != nil {
+		return 0, fmt.Errorf("setting end period: %w", err)
 	}
 
 	return tag.RowsAffected(), nil
