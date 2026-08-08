@@ -54,3 +54,21 @@ func (r *Subscription) Create(ctx context.Context, subscription *model.Subscript
 
 	return &result, nil
 }
+
+func (r *Subscription) ChangeKeysLimitCount(
+	ctx context.Context,
+	count int,
+	userID int64,
+) (int64, error) {
+	const q =`
+		UPDATE subscriptions
+		SET quantity = $1
+		WHERE user_id = $2`
+
+	tag, err := r.conn.Exec(ctx, q, count, userID)
+	if err != nil {
+		return 0, fmt.Errorf("changing keys limit value: %w", err)
+	}
+
+	return tag.RowsAffected(), nil
+}
