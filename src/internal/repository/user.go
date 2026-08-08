@@ -20,7 +20,7 @@ func (r *User) Create(ctx context.Context, user *model.User) error {
 
 	return r.conn.
 		QueryRow(ctx, q, user.Username, user.TelegramID, user.PasswordHash).
-		Scan(&user.ID, &user.PublicID, &user.Username, &user.TelegramID)
+		Scan(&user.ID, &user.PublicID, &user.Username)
 }
 
 func (r *User) FindByTelegramID(ctx context.Context, user *model.User) error {
