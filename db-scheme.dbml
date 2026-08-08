@@ -13,28 +13,31 @@ Table protocols {
 }
 
 Table configs {
-    id           bigint       [pk, increment]
-    public_id    uuid         [not null, unique, default: `gen_random_uuid()`]
-    name         varchar(255) [not null]
-    ip_address   varchar(15)  [not null]
-    user_id      bigint       [not null, note: "Config's owner"]
-    protocol_id  smallint     [not null]
-    server_id    smallint     [not null]
-    status       text         [not null, default: 'active', note: "Config's status"]
-    created_at   timestamptz  [not null, default: `now()`]
+    id              bigint       [pk, increment]
+    public_id       uuid         [not null, unique, default: `gen_random_uuid()`]
+    name            varchar(255) [not null]
+    ip_address      varchar(15)  [not null]
+    user_id         bigint       [not null, note: "Config's owner"]
+    protocol_id     smallint     [not null]
+    server_id       smallint     [not null]
+    subscription_id bigint       [not null, note: "Which subscription related to this config"]
+    status          text         [not null, default: 'active', note: "Config's status"]
+    created_at      timestamptz  [not null, default: `now()`]
 
     checks {
         `status IN ('active', 'suspended')` [name: "chk_status_is_known"]
     }
 
     indexes {
+        (server_id, protocol_id, ip_address) [unique, name: "unq_config_ip_per_server"]
         user_id
     }
 }
 
-Ref: configs.user_id     > users.id     [delete: cascade,  update: no action]
-Ref: configs.protocol_id > protocols.id [delete: restrict, update: no action]
-Ref: configs.server_id   > servers.id   [delete: restrict, update: no action]
+Ref: configs.user_id         > users.id         [delete: cascade,  update: no action]
+Ref: configs.protocol_id     > protocols.id     [delete: restrict, update: no action]
+Ref: configs.server_id       > servers.id       [delete: restrict, update: no action]
+Ref: configs.subscription_id > subscriptions.id [delete: restrict, update: no action]
 
 Table users {
     id            bigint  [pk, increment]
@@ -64,10 +67,6 @@ Table subscriptions {
         `status IN ('active', 'past_due', 'canceled', 'deleted')` [name: "chk_status_is_known"]
         `quantity >= 1`                                           [name: "chk_quantity_positive"]
     }
-
-    indexes {
-        user_id
-    }
 }
 
 Ref: subscriptions.user_id > users.id [delete: cascade,  update: no action]
@@ -80,10 +79,6 @@ Table servers {
     location         varchar(2) [not null]
     location_country text       [not null]
     location_city    text       [not null]
-
-    indexes {
-        (public_address, internal_address) [unique, name: "uq_config_ip_per_server"]
-    }
 }
 
 Table access_codes {

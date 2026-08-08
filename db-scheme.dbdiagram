@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "darkMode": false,
+  "darkMode": true,
   "gridEnabling": false,
   "currentViewName": null,
   "defaultView": {
@@ -318,6 +318,36 @@
           "id"
         ],
         "secondTableName": "servers",
+        "secondSchemaName": "public",
+        "secondRelation": "1",
+        "checkPoints": []
+      },
+      {
+        "firstFieldNames": [
+          "subscription_id"
+        ],
+        "firstTableName": "configs",
+        "firstSchemaName": "public",
+        "firstRelation": "*",
+        "secondFieldNames": [
+          "id"
+        ],
+        "secondTableName": "servers",
+        "secondSchemaName": "public",
+        "secondRelation": "1",
+        "checkPoints": []
+      },
+      {
+        "firstFieldNames": [
+          "subscription_id"
+        ],
+        "firstTableName": "configs",
+        "firstSchemaName": "public",
+        "firstRelation": "*",
+        "secondFieldNames": [
+          "id"
+        ],
+        "secondTableName": "subscriptions",
         "secondSchemaName": "public",
         "secondRelation": "1",
         "checkPoints": []
