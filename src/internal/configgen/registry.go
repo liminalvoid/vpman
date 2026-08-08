@@ -10,6 +10,8 @@ import (
 type Protocol interface {
 	create(ctx context.Context, cli *executor.ContainerExecutor, containerID string) (string, error)
 	revoke(ctx context.Context, cli *executor.ContainerExecutor, containerID string, addr string) error
+	suspend(ctx context.Context, cli *executor.ContainerExecutor, containerID string, addr string) error
+	resume(ctx context.Context, cli *executor.ContainerExecutor, containerID string, addr string) error
 }
 
 type ConfigGenerator struct {
@@ -52,6 +54,32 @@ func (cg *ConfigGenerator) Revoke(ctx context.Context, containerID string, addr 
 	err := cg.protocol.revoke(ctx, cg.executor, containerID, addr)
 	if err != nil {
 		return fmt.Errorf("revoking config: %w", err)
+	}
+
+	return nil
+}
+
+func (cg *ConfigGenerator) Suspend(
+	ctx context.Context,
+	cli *executor.ContainerExecutor,
+	containerID, addr string,
+) error {
+	err := cg.protocol.suspend(ctx, cg.executor, containerID, addr)
+	if err != nil {
+		return fmt.Errorf("suspending config: %w", err)
+	}
+
+	return nil
+}
+
+func (cg *ConfigGenerator) Resume(
+	ctx context.Context,
+	cli *executor.ContainerExecutor,
+	containerID, addr string,
+) error {
+	err := cg.protocol.resume(ctx, cg.executor, containerID, addr)
+	if err != nil {
+		return fmt.Errorf("resuming config: %w", err)
 	}
 
 	return nil
