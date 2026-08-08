@@ -20,7 +20,7 @@ type Config struct {
 	IPAddress  string
 	UserID     int64
 	ProtocolID int16
-	ServerID   int64
+	ServerID   int16
 	Status     ConfigStatus
 	CreatedAt  time.Time
 }
