@@ -216,7 +216,7 @@ func (s *ConfigService) SuspendConfig(
 		return fmt.Errorf("suspending peer: %w", err)
 	}
 
-	err = s.configRepository.MarkSuspended(ctx, config.PublicID)
+	_, err = s.configRepository.MarkSuspended(ctx, config.PublicID.String())
 	if err != nil {
 		return fmt.Errorf("marking config %q as suspended: %w", config.PublicID, err)
 	}

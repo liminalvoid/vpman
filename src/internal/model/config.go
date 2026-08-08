@@ -9,8 +9,8 @@ import (
 type ConfigStatus string
 
 const (
-	ConfigStatusActive  ConfigStatus = "active"
-	ConfigStatusExpired ConfigStatus = "suspended"
+	ConfigStatusActive    ConfigStatus = "active"
+	ConfigStatusSuspended ConfigStatus = "suspended"
 )
 
 type Config struct {

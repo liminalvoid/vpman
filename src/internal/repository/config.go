@@ -119,7 +119,7 @@ func (r *Config) GetByPublicID(
 			&resultConfig.ServerPublicID,
 			&resultConfig.Status,
 			&resultConfig.CreatedAt,
-		)	
+		)
 	if err != nil {
 		return nil, fmt.Errorf("retrieving config by public ID %q: %w", publicID, err)
 	}
@@ -146,11 +146,25 @@ func (r *Config) UpdateName(
 
 func (r *Config) Delete(ctx context.Context, publicID string) error {
 	const q = `DELETE FROM configs WHERE public_id = $1`
-	
+
 	_, err := r.conn.Exec(ctx, q, publicID)
 	if err != nil {
 		return fmt.Errorf("deleting config %q: %w", publicID, err)
 	}
 
 	return nil
+}
+
+func (r *Config) MarkSuspended(ctx context.Context, publicID string) (int64, error) {
+	const q = `
+		UPDATE configs
+		SET status = $2
+		WHERE public_id = $1`
+
+	tag, err := r.conn.Exec(ctx, q, publicID, model.ConfigStatusSuspended)
+	if err != nil {
+		return -1, fmt.Errorf("marking config %q as suspended: %w", publicID, err)
+	}
+
+	return tag.RowsAffected(), nil
 }
