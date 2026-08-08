@@ -6,5 +6,5 @@ type AccessCode struct {
 	ID        int64
 	Code      string
 	CreatedAt time.Time
-	UsedAt    time.Time
+	UsedAt    *time.Time
 }

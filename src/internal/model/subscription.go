@@ -15,9 +15,9 @@ type Subscription struct {
 	ID               int64
 	UserID           int64
 	Status           SubscriptionStatus
-	CurrentPeriodEnd time.Time
-	CanceledAt       time.Time
+	CurrentPeriodEnd *time.Time
+	CanceledAt       *time.Time
 	CreatedAt        time.Time
-	UpdatedAt        time.Time
+	UpdatedAt        *time.Time
 	Quantity         int32
 }
