@@ -99,7 +99,7 @@ func (s *ConfigService) CreateConfig(
 	}
 
 	user := model.User{
-		TelegramID: ownerID,
+		TelegramID: &ownerID,
 	}
 	err = s.userRepository.FindByTelegramID(ctx, &user)
 	if err != nil {
@@ -111,7 +111,7 @@ func (s *ConfigService) CreateConfig(
 		IPAddress:  ipAddr,
 		UserID:     user.ID,
 		ProtocolID: protocolStruct.ID,
-		ServerID:   int64(server.ID),
+		ServerID:   server.ID,
 		Status:     model.ConfigStatusActive,
 	}
 	err = s.configRepository.Create(ctx, &cfgData)
