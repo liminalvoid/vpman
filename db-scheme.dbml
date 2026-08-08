@@ -24,7 +24,7 @@ Table configs {
     created_at   timestamptz  [not null, default: `now()`]
 
     checks {
-        `status IN ('active', 'expired')` [name: "chk_status_is_known"]
+        `status IN ('active', 'suspended')` [name: "chk_status_is_known"]
     }
 
     indexes {

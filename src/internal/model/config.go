@@ -10,7 +10,7 @@ type ConfigStatus string
 
 const (
 	ConfigStatusActive  ConfigStatus = "active"
-	ConfigStatusExpired ConfigStatus = "expired"
+	ConfigStatusExpired ConfigStatus = "suspended"
 )
 
 type Config struct {
