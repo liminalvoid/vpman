@@ -186,3 +186,19 @@ func (w *Awg) revoke(
 ) error {
 	return nil
 }
+
+func (w *Awg) suspend(
+	ctx context.Context,
+	cli *executor.ContainerExecutor,
+	containerID, addr string,
+) error {
+	return nil
+}
+
+func (w *Awg) resume(
+	ctx context.Context,
+	cli *executor.ContainerExecutor,
+	containerID, addr string,
+) error {
+	return nil
+}

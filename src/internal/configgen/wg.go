@@ -177,3 +177,19 @@ rm -f "$conf.tmp"
 
 	return nil
 }
+
+func (w *Wg) suspend(
+	ctx context.Context,
+	cli *executor.ContainerExecutor,
+	containerID, addr string,
+) error {
+	return nil
+}
+
+func (w *Wg) resume(
+	ctx context.Context,
+	cli *executor.ContainerExecutor,
+	containerID, addr string,
+) error {
+	return nil
+}
