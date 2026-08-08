@@ -17,7 +17,7 @@ func (r *Subscription) Create(ctx context.Context, subscription *model.Subscript
 	const q = `
 		INSERT INTO subscriptions (
 			user_id,
-			quantity,
+			quantity
 		)
 		VALUES ($1, $2)
 		RETURNING
