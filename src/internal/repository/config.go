@@ -146,20 +146,6 @@ func (r *Config) UpdateName(
 	return tag.RowsAffected(), nil
 }
 
-func (r *Config) MarkAsRevoked(ctx context.Context, publicID uuid.UUID) (int64, error) {
-	const q = `
-		UPDATE configs
-		SET status = $2
-		WHERE public_id = $1`
-
-	tag, err := r.conn.Exec(ctx, q, publicID, "revoked")
-	if err != nil {
-		return -1, fmt.Errorf("marking config %q as revoked: %w", publicID, err)
-	}
-
-	return tag.RowsAffected(), nil
-}
-
 func (r *Config) Delete(ctx context.Context, publicID uuid.UUID) error {
 	const q = `DELETE FROM configs WHERE public_id = $1`
 	
