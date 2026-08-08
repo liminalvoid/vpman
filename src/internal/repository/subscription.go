@@ -21,7 +21,6 @@ func (r *Subscription) Create(ctx context.Context, subscription *model.Subscript
 			current_period_start,
 			current_period_end,
 			cancel_at_period_end,
-			plan_id,
 			quantity,
 			unit_amount_minor
 		)
@@ -36,7 +35,6 @@ func (r *Subscription) Create(ctx context.Context, subscription *model.Subscript
 			canceled_at,
 			created_at,
 			updated_at,
-			plan_id,
 			quantity,
 			unit_amount_minor`
 
@@ -50,7 +48,6 @@ func (r *Subscription) Create(ctx context.Context, subscription *model.Subscript
 			subscription.CurrentPeriodStart,
 			subscription.CurrentPeriodEnd,
 			subscription.CancelAtPeriodEnd,
-			subscription.PlanID,
 			subscription.Quantity,
 			subscription.UnitAmountMinor,
 		).
@@ -64,7 +61,6 @@ func (r *Subscription) Create(ctx context.Context, subscription *model.Subscript
 			&result.CanceledAt,
 			&result.CreatedAt,
 			&result.UpdatedAt,
-			&result.PlanID,
 			&result.Quantity,
 			&result.UnitAmountMinor,
 		)

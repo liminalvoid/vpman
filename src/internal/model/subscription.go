@@ -12,7 +12,6 @@ type Subscription struct {
 	CanceledAt         time.Time
 	CreatedAt          time.Time
 	UpdatedAt          time.Time
-	PlanID             int32
 	Quantity           int32
 	UnitAmountMinor    int32
 }
