@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/google/uuid"
-
 	"vpnmanager/internal/model"
 )
 
@@ -146,12 +144,12 @@ func (r *Config) UpdateName(
 	return tag.RowsAffected(), nil
 }
 
-func (r *Config) Delete(ctx context.Context, publicID uuid.UUID) error {
+func (r *Config) Delete(ctx context.Context, publicID string) error {
 	const q = `DELETE FROM configs WHERE public_id = $1`
 	
 	_, err := r.conn.Exec(ctx, q, publicID)
 	if err != nil {
-		return fmt.Errorf("deleting config %d: %w", publicID, err)
+		return fmt.Errorf("deleting config %q: %w", publicID, err)
 	}
 
 	return nil

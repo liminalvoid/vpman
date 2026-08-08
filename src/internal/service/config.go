@@ -171,9 +171,54 @@ func (s *ConfigService) RevokeConfig(
 		return fmt.Errorf("deleting peer: %w", err)
 	}
 
-	err = s.configRepository.Delete(ctx, config.PublicID)
+	err = s.configRepository.Delete(ctx, config.PublicID.String())
 	if err != nil {
 		return fmt.Errorf("deleting config %q from DB: %w", config.PublicID, err)
+	}
+
+	return nil
+}
+
+func (s *ConfigService) SuspendConfig(
+	ctx context.Context,
+	server *model.Server,
+	config *model.ConfigListView,
+) error {
+	cfg := &executor.Config{
+		Name:     server.PublicID.String(),
+		User:     "root",
+		HostAddr: server.InternalAddress,
+		HostPort: "2375",
+	}
+	ex, err := s.containerRegistry.GetOrCreate(ctx, cfg)
+	if err != nil {
+		return fmt.Errorf(
+			"retrieving server %q from registry: %w",
+			server.PublicID.String(),
+			err,
+		)
+	}
+
+	ce, ok := ex.(*executor.ContainerExecutor)
+	if !ok {
+		return fmt.Errorf("unexpected executor type %T", ex)
+	}
+
+	p, err := configgen.GetProtocol(config.Protocol)
+	if err != nil {
+		return fmt.Errorf("mapping protocol %q to object: %w", config.Protocol, err)
+	}
+
+	cg := configgen.New(p, ce)
+
+	err = cg.Suspend(ctx, config.Protocol, config.IPAddress)
+	if err != nil {
+		return fmt.Errorf("suspending peer: %w", err)
+	}
+
+	err = s.configRepository.MarkSuspended(ctx, config.PublicID)
+	if err != nil {
+		return fmt.Errorf("marking config %q as suspended: %w", config.PublicID, err)
 	}
 
 	return nil

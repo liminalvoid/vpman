@@ -61,7 +61,6 @@ func (cg *ConfigGenerator) Revoke(ctx context.Context, containerID string, addr 
 
 func (cg *ConfigGenerator) Suspend(
 	ctx context.Context,
-	cli *executor.ContainerExecutor,
 	containerID, addr string,
 ) error {
 	err := cg.protocol.suspend(ctx, cg.executor, containerID, addr)
@@ -74,7 +73,6 @@ func (cg *ConfigGenerator) Suspend(
 
 func (cg *ConfigGenerator) Resume(
 	ctx context.Context,
-	cli *executor.ContainerExecutor,
 	containerID, addr string,
 ) error {
 	err := cg.protocol.resume(ctx, cg.executor, containerID, addr)
