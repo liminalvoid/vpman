@@ -20,7 +20,7 @@ Table configs {
     user_id      bigint       [not null, note: "Config's owner"]
     protocol_id  smallint     [not null]
     server_id    smallint     [not null]
-    status       text         [not null, default: 'active', note: "Config's status (active, expired, or revoked)"]
+    status       text         [not null, default: 'active', note: "Config's status"]
     created_at   timestamptz  [not null, default: `now()`]
 
     checks {
