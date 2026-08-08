@@ -24,39 +24,6 @@ func (r *Config) Create(ctx context.Context, config *model.Config) error {
 		Scan(&config.ID, &config.PublicID, &config.Status, &config.CreatedAt)
 }
 
-func (r *Config) ListByUserID(ctx context.Context, userID int64) ([]model.Config, error) {
-	const q = `
-		SELECT id, public_id, name, user_id, protocol_id, status, location, created_at
-		FROM configs WHERE user_id = $1`
-
-	rows, err := r.conn.Query(ctx, q, userID)
-	if err != nil {
-		return nil, fmt.Errorf("querying configs: %w", err)
-	}
-	defer rows.Close()
-
-	var out []model.Config
-	for rows.Next() {
-		var c model.Config
-		if err := rows.Scan(
-			&c.ID,
-			&c.PublicID,
-			&c.Name,
-			&c.UserID,
-			&c.ProtocolID,
-			&c.ServerID,
-			&c.Status,
-			&c.CreatedAt,
-		); err != nil {
-			return nil, fmt.Errorf("scanning config: %w", err)
-		}
-
-		out = append(out, c)
-	}
-
-	return out, rows.Err()
-}
-
 func (r *Config) ListByTelegramID(ctx context.Context, userID int64) ([]model.ConfigListView, error) {
 	const q = `
 		SELECT c.id, c.public_id, c.name, c.ip_address, p.name, s.location, c.status, c.created_at
