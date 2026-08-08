@@ -80,7 +80,7 @@ func (r *Subscription) SetEndPeriodForAll(
 ) (int64, error) {
 	const q = `
 		UPDATE configs
-		SET current_period_end = $1
+		SET current_period_end = $1, updated_at = now()
 		WHERE status = 'active'`
 	
 	tag, err := r.conn.Exec(ctx, q, timestamp)
