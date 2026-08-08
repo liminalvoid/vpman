@@ -17,26 +17,18 @@ func (r *Subscription) Create(ctx context.Context, subscription *model.Subscript
 	const q = `
 		INSERT INTO subscriptions (
 			user_id,
-			status,
-			current_period_start,
-			current_period_end,
-			cancel_at_period_end,
 			quantity,
-			unit_amount_minor
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		VALUES ($1, $2)
 		RETURNING
 			id,
 			user_id,
 			status,
-			current_period_start,
 			current_period_end,
-			cancel_at_period_end,
 			canceled_at,
 			created_at,
 			updated_at,
-			quantity,
-			unit_amount_minor`
+			quantity`
 
 	var result model.Subscription
 	err := r.conn.
@@ -44,25 +36,17 @@ func (r *Subscription) Create(ctx context.Context, subscription *model.Subscript
 			ctx,
 			q,
 			subscription.UserID,
-			subscription.Status,
-			subscription.CurrentPeriodStart,
-			subscription.CurrentPeriodEnd,
-			subscription.CancelAtPeriodEnd,
 			subscription.Quantity,
-			subscription.UnitAmountMinor,
 		).
 		Scan(
 			&result.ID,
 			&result.UserID,
 			&result.Status,
-			&result.CurrentPeriodStart,
 			&result.CurrentPeriodEnd,
-			&result.CancelAtPeriodEnd,
 			&result.CanceledAt,
 			&result.CreatedAt,
 			&result.UpdatedAt,
 			&result.Quantity,
-			&result.UnitAmountMinor,
 		)
 	if err != nil {
 		return nil, fmt.Errorf("creating subscription %d: %w", subscription.ID, err)

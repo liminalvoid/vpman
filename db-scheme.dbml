@@ -52,24 +52,20 @@ Table users {
 
 Table subscriptions {
     id                   bigint      [pk, increment]
-    user_id              bigint      [not null]
-    status               text        [not null]
-    current_period_start timestamptz [not null, note: "Start of the subscription period"]
-    current_period_end   timestamptz [not null, note: "End of the subscription period"]
-    cancel_at_period_end boolean     [not null, default: false, note: "Is subscription cancelled on period end"]
+    user_id              bigint      [not null, unique, note: "One user per subscription"]
+    status               text        [not null, default: 'active']
+    current_period_end   timestamptz [note: "End of the subscription period"]
     canceled_at          timestamptz
     created_at           timestamptz [not null, default: `now()`]
     updated_at           timestamptz
     quantity             int         [not null, note: "Keys bought"]
-    unit_amount_minor    int         [not null, note: "Price snapshot at purchase time"]
 
     checks {
-        `status IN ('active', 'past_due', 'canceled', 'incomplete')` [name: "chk_status_is_known"]
-        `quantity >= 1`                                              [name: "chk_quantity_positive"]
+        `status IN ('active', 'past_due', 'canceled', 'deleted')` [name: "chk_status_is_known"]
+        `quantity >= 1`                                           [name: "chk_quantity_positive"]
     }
 
     indexes {
-        (`(CASE WHEN status IN ('active', 'past_due') THEN user_id END`) [unique, name: "uq_one_active_sub_per_user"]
         user_id
     }
 }
