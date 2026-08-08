@@ -14,8 +14,8 @@ func NewUser(conn conn) *User { return &User{conn: conn} }
 
 func (r *User) Create(ctx context.Context, user *model.User) error {
 	const q = `
-		INSERT INTO users (public_id, username, telegram_id, password_hash)
-		VALUES (get_random_uuid(), $1, $2, $3)
+		INSERT INTO users (username, telegram_id, password_hash)
+		VALUES ($1, $2, $3)
 		RETURNING id, public_id, username`
 
 	return r.conn.
