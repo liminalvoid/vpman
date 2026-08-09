@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 
 	"vpnmanager/internal/model"
 )
@@ -23,12 +24,18 @@ func (r *User) Create(ctx context.Context, user *model.User) error {
 		Scan(&user.ID, &user.PublicID, &user.Username)
 }
 
-func (r *User) FindByTelegramID(ctx context.Context, user *model.User) error {
+func (r *User) FindByTelegramID(ctx context.Context, telegramID int64) (*model.User, error) {
 	const q = `
 		SELECT id, public_id, telegram_id, is_admin
 		FROM users WHERE telegram_id = $1`
 	
-	return r.conn.	
+	var user model.User
+	err := r.conn.	
 		QueryRow(ctx, q, user.TelegramID).
 		Scan(&user.ID, &user.PublicID, &user.TelegramID, &user.IsAdmin)
+	if err != nil {
+		return nil, fmt.Errorf("looking for user: %w", err)
+	}
+
+	return &user, nil
 }

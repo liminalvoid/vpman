@@ -98,10 +98,7 @@ func (s *ConfigService) CreateConfig(
 		return "", fmt.Errorf("querying protocol %q: %w", protocolStruct.Name, err)
 	}
 
-	user := model.User{
-		TelegramID: &ownerID,
-	}
-	err = s.userRepository.FindByTelegramID(ctx, &user)
+	user, err := s.userRepository.FindByTelegramID(ctx, ownerID)
 	if err != nil {
 		return "", fmt.Errorf("querying user by Telegram ID (%d): %w", ownerID, err)
 	}

@@ -14,7 +14,7 @@ type Subscription struct {
 
 func NewSubscription(conn conn) *Subscription { return &Subscription{conn} }
 
-func (r *Subscription) Create(ctx context.Context, subscription *model.Subscription) (*model.Subscription, error) {
+func (r *Subscription) Create(ctx context.Context, userID int64, quantity int) (*model.Subscription, error) {
 	const q = `
 		INSERT INTO subscriptions (
 			user_id,
@@ -36,8 +36,8 @@ func (r *Subscription) Create(ctx context.Context, subscription *model.Subscript
 		QueryRow(
 			ctx,
 			q,
-			subscription.UserID,
-			subscription.Quantity,
+			userID,
+			quantity,
 		).
 		Scan(
 			&result.ID,
@@ -50,7 +50,7 @@ func (r *Subscription) Create(ctx context.Context, subscription *model.Subscript
 			&result.Quantity,
 		)
 	if err != nil {
-		return nil, fmt.Errorf("creating subscription %d: %w", subscription.ID, err)
+		return nil, fmt.Errorf("creating subscription for user %d: %w", userID, err)
 	}
 
 	return &result, nil
