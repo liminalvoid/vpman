@@ -52,3 +52,14 @@ func (s *SubscriptionService) SetPeriodEnd(
 
 	return rowsAffected, nil
 }
+
+func (s *SubscriptionService) SetPastDue(
+	ctx context.Context,
+) (int64, error) {
+	rowsAffected, err := s.subscriptionRepository.SetPastDue(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	return rowsAffected, nil
+}
