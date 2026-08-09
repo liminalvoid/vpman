@@ -90,3 +90,19 @@ func (r *Subscription) SetEndPeriodForAll(
 
 	return tag.RowsAffected(), nil
 }
+
+func (r *Subscription) SetPastDue(
+	ctx context.Context,
+) (int64, error) {
+	const q = `
+		UPDATE subscriptions
+		SET status = 'past_due', updated_at = now()
+		WHERE now() > current_period_end`
+
+	tag, err := r.conn.Exec(ctx, q)
+	if err != nil {
+		return 0, fmt.Errorf("setting past due status: %w", err)
+	}
+
+	return tag.RowsAffected(), nil
+}
