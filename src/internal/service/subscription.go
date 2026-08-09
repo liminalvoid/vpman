@@ -20,13 +20,18 @@ func NewSubscription() *SubscriptionService {
 
 func (s *SubscriptionService) AddSubscription(
 	ctx context.Context,
-	userPublicID uuid.UUID,
+	telegramID int64,
 	configQuantity int,
 ) error {
-	user, err := s.userRepository.FindByTelegramID(ctx, userPublicID, configQuantity)
+	user, err := s.userRepository.FindByTelegramID(ctx, telegramID)
 	if err != nil {
-		return fmt.Errorf("finding user %q: %w", userPublicID, configQuantity)
+		return fmt.Errorf("finding user %q: %w", telegramID, configQuantity)
 	}
 
-	_, err := s.subscriptionRepository.Create(ctx, int64(userPublicID[]))
+	_, err = s.subscriptionRepository.Create(ctx, user.ID, configQuantity)
+	if err != nil {
+		return fmt.Errorf("creating subscription: %w", err)
+	}
+
+	return nil
 }
