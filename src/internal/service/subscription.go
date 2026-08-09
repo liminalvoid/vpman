@@ -3,8 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
-
-	"github.com/google/uuid"
+	"time"
 
 	"vpnmanager/internal/repository"
 )
@@ -25,7 +24,7 @@ func (s *SubscriptionService) AddSubscription(
 ) error {
 	user, err := s.userRepository.FindByTelegramID(ctx, telegramID)
 	if err != nil {
-		return fmt.Errorf("finding user %q: %w", telegramID, configQuantity)
+		return fmt.Errorf("finding user %d: %w", telegramID, err)
 	}
 
 	_, err = s.subscriptionRepository.Create(ctx, user.ID, configQuantity)
@@ -34,4 +33,16 @@ func (s *SubscriptionService) AddSubscription(
 	}
 
 	return nil
+}
+
+func (s *SubscriptionService) SetPeriodEnd(
+	ctx context.Context,
+	endDate time.Time,
+) (int64, error) {
+	rowsAffected, err := s.subscriptionRepository.SetEndPeriodForAll(ctx, endDate)
+	if err != nil {
+		return 0, fmt.Errorf("setting period end for each user: %w", err)
+	}
+
+	return rowsAffected, nil
 }
