@@ -13,8 +13,14 @@ type SubscriptionService struct {
 	userRepository         *repository.User
 }
 
-func NewSubscription() *SubscriptionService {
-	return &SubscriptionService{}
+func NewSubscription(
+	subscriptionRepository *repository.Subscription,
+	userRepository         *repository.User,
+) *SubscriptionService {
+	return &SubscriptionService{
+		subscriptionRepository,
+		userRepository,
+	}
 }
 
 func (s *SubscriptionService) AddSubscription(

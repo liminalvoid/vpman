@@ -22,13 +22,7 @@
         "name": "protocols",
         "schemaName": "public",
         "x": 633.1363926995767,
-        "y": 88.47534298885859
-      },
-      {
-        "name": "plans",
-        "schemaName": "public",
-        "x": 640.1483555902017,
-        "y": 547.6241568344547
+        "y": 171.80911571996387
       },
       {
         "name": "subscriptions",
@@ -40,7 +34,7 @@
         "name": "servers",
         "schemaName": "public",
         "x": 633.1363926995767,
-        "y": 235.80911571996387
+        "y": 363.6443629878828
       },
       {
         "name": "access_codes",
