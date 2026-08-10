@@ -7,7 +7,6 @@ import (
 
 	"vpnmanager/internal/executor"
 	"vpnmanager/internal/repository"
-	"vpnmanager/internal/configgen"
 )
 
 type SubscriptionService struct {
@@ -73,62 +72,4 @@ func (s *SubscriptionService) SetPastDue(
 	}
 
 	return rowsAffected, nil
-}
-
-func (s *SubscriptionService) RemoveStale(
-	ctx context.Context,
-	batch int,
-	period time.Duration,
-) error {
-	staleConfigs, err := s.configRepository.ListStaleConfigs(ctx, period, batch)
-	if err != nil {
-		return fmt.Errorf("retrieving stale configs: %w", err)
-	}
-
-	servers, err := s.serverRepository.ListAll(ctx)
-	if err != nil {
-		return fmt.Errorf("requesting servers: %w", err)
-	}
-
-	serverAddrMap := make(map[string]string, 0)
-	for _, svr := range servers {
-		if _, ok := serverAddrMap[svr.PublicID.String()]; !ok {
-			serverAddrMap[svr.PublicID.String()] = svr.InternalAddress
-		}
-	}
-
-	for _, c := range staleConfigs {
-		privateAddr, ok := serverAddrMap[c.ServerPublicID.String()]
-		if !ok {
-			continue
-		}
-
-		ex, err := s.containerRegistry.GetOrCreate(ctx, &executor.Config{
-			Name: c.ServerPublicID.String(),
-			User: "root",
-			HostAddr: privateAddr,
-			HostPort: "2375",
-		})
-		if err != nil {
-			return fmt.Errorf("retrieving container %q: %w", c.ServerPublicID, err)
-		}
-
-		ce, ok := ex.(*executor.ContainerExecutor)
-		if !ok {
-			return fmt.Errorf("unexpected executor type %T", ex)
-		}
-
-		p, err := configgen.GetProtocol(c.Protocol)
-		if err != nil {
-			return fmt.Errorf("retrieving protocol %q: %w", c.Protocol, err)
-		}
-		cg := configgen.New(p, ce)
-
-		err = cg.Revoke(ctx, c.Protocol, c.IPAddress)
-		if err != nil {
-			return fmt.Errorf("revoking protocol with IP address %q: %w", c.IPAddress, err)
-		}
-	}
-
-	return nil
 }
