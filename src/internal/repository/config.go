@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"vpnmanager/internal/model"
 )
@@ -134,4 +135,48 @@ func (r *Config) MarkSuspended(ctx context.Context, publicID string) (int64, err
 	}
 
 	return tag.RowsAffected(), nil
+}
+
+func (r *Config) ListStaleConfigs(
+	ctx context.Context,
+	period time.Duration,
+	batch int,
+) ([]model.ConfigListView, error) {
+	const q = `
+		SELECT c.id, c.public_id, c.name, c.ip_address, p.name, s.location, s.public_id, c.status, c.created_at
+		FROM configs c
+		JOIN protocols p ON c.protocol_id = p.id
+		JOIN servers s ON c.server_id = s.id
+		JOIN subscriptions sb ON c.subscription_id = sb.id
+		WHERE now() > sb.current_period_end + $1 AND c.status = $3
+		ORDER BY c.id
+		LIMIT $2`
+	
+	rows, err := r.conn.Query(ctx, q, period, batch, model.ConfigStatusSuspended)
+	if err != nil {
+		return nil, fmt.Errorf("retrieving configs from stale subscriptions: %w", err)
+	}
+	defer rows.Close()
+
+	var out []model.ConfigListView
+	for rows.Next() {
+		var c model.ConfigListView
+		if err := rows.Scan(
+			&c.ID,
+			&c.PublicID,
+			&c.Name,
+			&c.IPAddress,
+			&c.Protocol,
+			&c.Location,
+			&c.ServerPublicID,
+			&c.Status,
+			&c.CreatedAt,
+		); err != nil {
+			return nil, fmt.Errorf("scanning config list view: %w", err)
+		}
+
+		out = append(out, c)
+	}
+
+	return out, rows.Err()
 }
