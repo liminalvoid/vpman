@@ -106,19 +106,3 @@ func (r *Subscription) SetPastDue(
 
 	return tag.RowsAffected(), nil
 }
-
-func (r *Subscription) SetCancelled(
-	ctx context.Context,
-) (int64, error) {
-	const q = `
-		UPDATE subscriptions
-		SET status = 'cancelled', canceled_at = now(), updated_at = now()
-		WHERE now() > current_period_end + INTERVAL '30 days'`
-
-	tag, err := r.conn.Exec(ctx, q)
-	if err != nil {
-		return 0, fmt.Errorf("setting cancelled status: %w", err)
-	}
-
-	return tag.RowsAffected(), nil
-}
