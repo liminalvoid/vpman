@@ -7,8 +7,6 @@ type SubscriptionStatus string
 const (
 	SubscriptionStatusActive    SubscriptionStatus = "active"
 	SubscriptionStatusPastDue   SubscriptionStatus = "past_due"
-	SubscriptionStatusCancelled SubscriptionStatus = "cancelled"
-	SubscriptionStatusDeleted   SubscriptionStatus = "deleted"
 )
 
 type Subscription struct {
