@@ -120,9 +120,8 @@ func (w *Awg) create(
 		presKey,
 		"allowed-ips",
 		newPeerAddr.String(),
-		"endpoint",
-		fmt.Sprintf("%s:%s", cli.HostAddr, serverPort),
-		"persistent-keepalive 25",
+		"persistent-keepalive",
+		"25",
 	}
 	output, err = cli.Run(ctx, containerID, createNewPeerCmd, []byte{})
 	if err != nil {
