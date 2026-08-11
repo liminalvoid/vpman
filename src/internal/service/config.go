@@ -13,22 +13,25 @@ import (
 )
 
 type ConfigService struct {
-	configRepository   *repository.Config
-	protocolRepository *repository.Protocol
-	userRepository     *repository.User
-	containerRegistry  *executor.Registry
+	configRepository       *repository.Config
+	protocolRepository     *repository.Protocol
+	userRepository         *repository.User
+	subscriptionRepository *repository.Subscription
+	containerRegistry      *executor.Registry
 }
 
 func NewConfig(
 	configRepository *repository.Config,
 	protocolRepository *repository.Protocol,
 	userRepository *repository.User,
+	subscriptionRepository *repository.Subscription,
 	containerRegistry *executor.Registry,
 ) *ConfigService {
 	return &ConfigService{
 		configRepository,
 		protocolRepository,
 		userRepository,
+		subscriptionRepository,
 		containerRegistry,
 	}
 }
@@ -306,8 +309,8 @@ func (s *SubscriptionService) RemoveStale(
 		}
 
 		ex, err := s.containerRegistry.GetOrCreate(ctx, &executor.Config{
-			Name: c.ServerPublicID.String(),
-			User: "root",
+			Name:     c.ServerPublicID.String(),
+			User:     "root",
 			HostAddr: privateAddr,
 			HostPort: "2375",
 		})
