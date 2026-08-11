@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"vpnmanager/internal/configgen"
 	"vpnmanager/internal/executor"
 	"vpnmanager/internal/repository"
 )
@@ -72,4 +73,73 @@ func (s *SubscriptionService) SetPastDue(
 	}
 
 	return rowsAffected, nil
+}
+
+func (s *SubscriptionService) HandleCancelled(
+	ctx context.Context,
+	period time.Duration,
+	batch int,
+) error {
+	staleConfigs, err := s.configRepository.ListStaleConfigs(ctx, period, batch)
+	if err != nil {
+		return fmt.Errorf("retrieving stale configs: %w", err)
+	}
+
+	if len(staleConfigs) == 0 {
+		return nil
+	}
+
+	servers, err := s.serverRepository.ListAll(ctx)
+	if err != nil {
+		return fmt.Errorf("retrieving servers: %w", err)
+	}
+
+	serverMap := make(map[string]string, 0)
+	for _, srv := range servers {
+		publicID := srv.PublicID.String()
+		if _, ok := serverMap[publicID]; !ok {
+			serverMap[publicID] = srv.InternalAddress
+		}
+	}
+
+	for _, c := range staleConfigs {
+		addr, ok := serverMap[c.ServerPublicID.String()]
+		if !ok {
+			continue
+		}
+
+		ex, err := s.containerRegistry.GetOrCreate(ctx, &executor.Config{
+			Name: c.ServerPublicID.String(),
+			User: "root",
+			HostAddr: addr,
+			HostPort: "2375",
+		})
+		if err != nil {
+			continue
+		}
+
+		ce, ok := ex.(*executor.ContainerExecutor)
+		if !ok {
+			continue
+		}
+
+		protocol, err := configgen.GetProtocol(c.Protocol)
+		if err != nil {
+			continue
+		}
+
+		cg := configgen.New(protocol, ce)
+
+		err = cg.Revoke(ctx, c.Protocol, c.IPAddress)
+		if err != nil {
+			continue
+		}
+	}
+
+	_, err = s.subscriptionRepository.DeleteStale(ctx, period, batch)
+	if err != nil {
+		return fmt.Errorf("deleting stale subscriptions: %w", err)
+	}
+
+	return nil
 }
