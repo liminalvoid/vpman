@@ -31,7 +31,7 @@ func (r *User) FindByTelegramID(ctx context.Context, telegramID int64) (*model.U
 	
 	var user model.User
 	err := r.conn.	
-		QueryRow(ctx, q, user.TelegramID).
+		QueryRow(ctx, q, telegramID).
 		Scan(&user.ID, &user.PublicID, &user.TelegramID, &user.IsAdmin)
 	if err != nil {
 		return nil, fmt.Errorf("looking for user: %w", err)
