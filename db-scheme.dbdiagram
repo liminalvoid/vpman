@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "darkMode": false,
+  "darkMode": true,
   "gridEnabling": false,
   "currentViewName": null,
   "defaultView": {
@@ -9,38 +9,38 @@
       {
         "name": "configs",
         "schemaName": "public",
-        "x": 267.3963268406868,
-        "y": 171.80911571996387
+        "x": 594.1363926995767,
+        "y": -139.19088428003607
       },
       {
         "name": "users",
         "schemaName": "public",
-        "x": -81.8636073004233,
-        "y": 171.80911571996387
+        "x": 594.1363926995767,
+        "y": 203.80911571996387
       },
       {
         "name": "protocols",
         "schemaName": "public",
-        "x": 633.1363926995767,
-        "y": 171.80911571996387
+        "x": 906.1363926995767,
+        "y": -11.190884280036073
       },
       {
         "name": "subscriptions",
         "schemaName": "public",
-        "x": 267.3963268406868,
-        "y": 547.6241568344547
+        "x": 212.3963268406868,
+        "y": -139.19088428003607
       },
       {
         "name": "servers",
         "schemaName": "public",
-        "x": 633.1363926995767,
-        "y": 363.6443629878828
+        "x": 904.1363926995767,
+        "y": 203.80911571996387
       },
       {
         "name": "access_codes",
         "schemaName": "public",
-        "x": -119.2449549566733,
-        "y": 547.6241568344547
+        "x": -99.5515955816733,
+        "y": -139.19088428003607
       }
     ],
     "tableGroupCollapseStates": [],
