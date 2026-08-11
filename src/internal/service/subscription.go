@@ -66,13 +66,15 @@ func (s *SubscriptionService) SetPeriodEnd(
 
 func (s *SubscriptionService) SetPastDue(
 	ctx context.Context,
-) (int64, error) {
-	rowsAffected, err := s.subscriptionRepository.SetPastDue(ctx)
+	period time.Duration,
+	batch int,
+) error {
+	_, err := s.subscriptionRepository.SetPastDue(ctx)
 	if err != nil {
-		return 0, err
+		return err
 	}
 
-	return rowsAffected, nil
+	return nil
 }
 
 func (s *SubscriptionService) HandleCancelled(

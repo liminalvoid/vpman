@@ -9,9 +9,10 @@ import (
 )
 
 type Scheduler struct {
-	subs     *service.SubscriptionService
-	interval time.Duration
-	batch    int
+	subscriptionService *service.SubscriptionService
+	interval            time.Duration
+	batch               int
+	endPeriod           time.Duration
 }
 
 func (s *Scheduler) Run(ctx context.Context) {
@@ -29,15 +30,14 @@ func (s *Scheduler) Run(ctx context.Context) {
 }
 
 func (s *Scheduler) tick(ctx context.Context) {
-	ctx, cancel := context.WithTimeout(ctx, s.interval * 5)
+	ctx, cancel := context.WithTimeout(ctx, s.interval*5)
 	defer cancel()
 
-	for _, sweep := range []func(context.Context, int) error{
-		s.subs.ExpireDueSubscriptions,
-		s.subs.RetryDunning,
-		s.subs.SuspendExpiredGrace,
+	for _, sweep := range []func(context.Context, time.Duration, int) error{
+		s.subscriptionService.SetPastDue,
+		s.subscriptionService.HandleCancelled,
 	} {
-		if err := sweep(ctx, s.batch); err != nil {
+		if err := sweep(ctx, s.endPeriod, s.batch); err != nil {
 			log.Printf("sweep: %s", err)
 		}
 	}
