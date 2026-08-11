@@ -53,14 +53,14 @@ func (w *Awg) create(
 	if err != nil {
 		return "", fmt.Errorf("failed to get server's public key: %s", err)
 	}
-	serverPubKey := output
+	serverPubKey := strings.TrimSpace(output)
 
 	getServerPortCmd := []string{"awg", "show", "awg0", "listen-port"}
 	output, err = cli.Run(ctx, containerID, getServerPortCmd, []byte{})
 	if err != nil {
 		return "", fmt.Errorf("failed to get server's port: %s", err)
 	}
-	serverPort := output
+	serverPort := strings.TrimSpace(output)
 
 	// Obtain the AmneziaWG obfuscation params (Jc, Jmin, Jmax, S1-S4, H1-H4, I1-I5)
 	// from the [Interface] section of the server's config, since `awg show` doesn't

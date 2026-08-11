@@ -55,14 +55,14 @@ func (w *Wg) create(
 	if err != nil {
 		return "", fmt.Errorf("failed to get server's public key: %s", err)
 	}
-	serverPubKey := output
+	serverPubKey := strings.TrimSpace(output)
 
 	getServerPortCmd := []string{"wg", "show", "wg0", "listen-port"}
 	output, err = cli.Run(ctx, containerID, getServerPortCmd, []byte{})
 	if err != nil {
 		return "", fmt.Errorf("failed to get server's port: %s", err)
 	}
-	serverPort := output
+	serverPort := strings.TrimSpace(output)
 
 	// Get the latest added peer's IP
 	getLatestPeerAddrCmd := []string{
@@ -105,9 +105,9 @@ func (w *Wg) create(
 
 	var sb strings.Builder
 	peerData := map[string]string{
-		"ClientPubKey":       pubKey,
+		"ClientPubKey":  pubKey,
 		"ClientPresKey": presKey,
-		"ClientAddr":         newPeerAddr.String(),
+		"ClientAddr":    newPeerAddr.String(),
 	}
 	if err := peerConfTemplate.Execute(&sb, peerData); err != nil {
 		return "", fmt.Errorf("failed to build peer config from template: %s", err)
