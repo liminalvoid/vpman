@@ -56,6 +56,36 @@ func (r *Subscription) Create(ctx context.Context, userID int64, quantity int) (
 	return &result, nil
 }
 
+func (r *Subscription) GetByTelegramID(
+	ctx context.Context,
+	telegramID int64,
+) (*model.Subscription, error) {
+	const q = `
+		SELECT s.id, s.user_id, s.status, s.current_period_end, s.canceled_at, s.created_at, s.updated_at, s.quantity
+		FROM subscriptions s
+		JOIN users u ON s.user_id = c.id
+		WHERE u.telegram_id = $1`
+
+	var result model.Subscription
+	err := r.conn.
+		QueryRow(ctx, q, telegramID).
+		Scan(
+			&result.ID,
+			&result.UserID,
+			&result.Status,
+			&result.CurrentPeriodEnd,
+			&result.CanceledAt,
+			&result.CreatedAt,
+			&result.UpdatedAt,
+			&result.Quantity,
+		)
+	if err != nil {
+		return nil, fmt.Errorf("retrieving subscription by Telegram ID: %w", err)
+	}
+
+	return &result, nil
+}
+
 func (r *Subscription) ChangeKeysLimitCount(
 	ctx context.Context,
 	count int,

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -8,6 +9,7 @@ import (
 	th "github.com/mymmrac/telego/telegohandler"
 	tu "github.com/mymmrac/telego/telegoutil"
 
+	"vpnmanager/internal/service"
 	"vpnmanager/internal/tgbot/session"
 )
 
@@ -211,8 +213,13 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			sess.Create.Protocol,
 		)
 		if err != nil {
-			// TODO: Remove error sent to the user
-			response.Text = fmt.Sprintf("Не удалось создать конфиг: %s", err)
+			if _, ok := errors.AsType[*service.LimitError](err); ok {
+				response.Text = "Не удалось создать конфиг: превышен допустимый лимит ключей"
+			} else {
+				// TODO: Remove error sent to the user
+				response.Text = fmt.Sprintf("Не удалось создать конфиг: %s", err)
+			}
+
 			draftKb = finalMenuKb
 			h.sessions.Update(userID, func(s *session.Session) {
 				s.State = session.StateIdle

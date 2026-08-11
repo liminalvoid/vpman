@@ -36,12 +36,34 @@ func NewConfig(
 	}
 }
 
+type LimitError struct {
+	limit int
+}
+
+func (e *LimitError) Error() string {
+	return fmt.Sprintf("config limit of %d is exceeded", e.limit)
+}
+
 func (s *ConfigService) CreateConfig(
 	ctx context.Context,
 	ownerID int64,
 	server *model.Server,
 	name, protocol, containerID string,
 ) (string, error) {
+	subscription, err := s.subscriptionRepository.GetByTelegramID(ctx, ownerID)
+	if err != nil {
+		return "", fmt.Errorf("retrieving subscription: %w", err)
+	}
+
+	configs, err := s.configRepository.ListByTelegramID(ctx, ownerID)
+	if err != nil {
+		return "", fmt.Errorf("retrieving configs: %w", err)
+	}
+
+	if len(configs) == int(subscription.Quantity) {
+		return "", &LimitError{limit: int(subscription.Quantity)}
+	}
+
 	// TODO: Add revert of transaction and revocation of config on failure
 	p, err := configgen.GetProtocol(protocol)
 	if err != nil {
