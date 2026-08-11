@@ -140,13 +140,12 @@ func (r *Subscription) SetPastDue(
 func (r *Subscription) DeleteStale(
 	ctx context.Context,
 	period time.Duration,
-	batch int,
 ) (int64, error) {
 	const q = `
 		DELETE FROM subscriptions
 		WHERE now() > current_period_end + $1`
 	
-	tag, err := r.conn.Exec(ctx, q, period, batch, model.ConfigStatusSuspended)
+	tag, err := r.conn.Exec(ctx, q, period)
 	if err != nil {
 		return 0, fmt.Errorf("retrieving configs from stale subscriptions: %w", err)
 	}

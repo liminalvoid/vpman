@@ -138,7 +138,7 @@ func (s *SubscriptionService) HandleCancelled(
 		}
 	}
 
-	_, err = s.subscriptionRepository.DeleteStale(ctx, period, batch)
+	_, err = s.subscriptionRepository.DeleteStale(ctx, period)
 	if err != nil {
 		return fmt.Errorf("deleting stale subscriptions: %w", err)
 	}
