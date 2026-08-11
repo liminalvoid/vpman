@@ -266,5 +266,46 @@ func (w *Awg) resume(
 	cli *executor.ContainerExecutor,
 	containerID, addr string,
 ) error {
+	const script = `set -e
+allowed="%s/32"
+conf="/config/wg_confs/wg0.conf"
+
+awk -v ip="$allowed" '
+	function flush(  i) {
+		for (i = 0; i < n; i++) { if (hit) sub(/^#/, "", buf[i]); print buf[i] }
+		n = 0; hit = 0
+	}
+	/^#?\[/ { flush() }
+	{ buf[n++] = $0 }
+	$0 ~ /AllowedIPs/ && $NF == ip { hit = 1 }
+	END { flush() }
+' "$conf" > "$conf.tmp"
+cat "$conf.tmp" > "$conf"
+rm -f "$conf.tmp"
+
+set -- $(awk -v ip="$allowed" '
+	/^\[/ { pk = ""; psk = "" }
+	$1 == "PublicKey" { pk = $NF }
+	$1 == "PresharedKey" { psk = $NF }
+	$1 == "AllowedIPs" && $NF == ip { print pk, psk; exit }
+' "$conf")
+[ -n "$1" ] || { echo "no peer for $allowed" >&2; exit 1; }
+
+if [ -n "$2" ]; then
+	printf '%%s\n' "$2" | wg set wg0 peer "$1" preshared-key /dev/stdin allowed-ips "$allowed"
+else
+	wg set wg0 peer "$1" allowed-ips "$allowed"
+fi
+`
+
+	resumeConfigCmd := []string{
+		"sh", "-c",
+		fmt.Sprintf(script, addr),
+	}
+	_, err := cli.Run(ctx, containerID, resumeConfigCmd, nil)
+	if err != nil {
+		return fmt.Errorf("resuming config on server: %w", err)
+	}
+
 	return nil
 }
