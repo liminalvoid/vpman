@@ -75,7 +75,7 @@ func main() {
 		100,
 		30 * 24 * time.Hour,
 	)
-	s.Run(ctx)
+	go s.Run(ctx)
 
 	botToken := os.Getenv("TG_TOKEN")
 	idSizeBytes := 64
