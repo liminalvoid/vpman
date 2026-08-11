@@ -20,7 +20,6 @@ Table configs {
     user_id         bigint       [not null, note: "Config's owner"]
     protocol_id     smallint     [not null]
     server_id       smallint     [not null]
-    subscription_id bigint       [not null, note: "Which subscription related to this config"]
     status          text         [not null, default: 'active', note: "Config's status"]
     created_at      timestamptz  [not null, default: `now()`]
 
@@ -37,7 +36,6 @@ Table configs {
 Ref: configs.user_id         > users.id         [delete: cascade,  update: no action]
 Ref: configs.protocol_id     > protocols.id     [delete: restrict, update: no action]
 Ref: configs.server_id       > servers.id       [delete: restrict, update: no action]
-Ref: configs.subscription_id > subscriptions.id [delete: restrict, update: no action]
 
 Table users {
     id            bigint  [pk, increment]
