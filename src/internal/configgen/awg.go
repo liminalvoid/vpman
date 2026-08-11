@@ -224,6 +224,40 @@ func (w *Awg) suspend(
 	cli *executor.ContainerExecutor,
 	containerID, addr string,
 ) error {
+	const script = `set -e
+allowed="%s/32"
+conf="/config/wg_confs/wg0.conf"
+
+pubkey=$(wg show wg0 allowed-ips | awk -v ip="$allowed" '$2 == ip {print $1; exit}')
+if [ -n "$pubkey" ]; then
+	wg set wg0 peer "$pubkey" remove
+fi
+
+awk -v ip="$allowed" '
+	function flush(  i) {
+		for (i = 0; i < n; i++) {
+			if (hit && buf[i] !~ /^#/) print "#" buf[i]; else print buf[i]
+		}
+		n = 0; hit = 0
+	}
+	/^#?\[/ { flush() }
+	{ buf[n++] = $0 }
+	$0 ~ /AllowedIPs/ && $NF == ip { hit = 1 }
+	END { flush() }
+' "$conf" > "$conf.tmp"
+cat "$conf.tmp" > "$conf"
+rm -f "$conf.tmp"
+`
+
+	suspendConfigCmd := []string{
+		"sh", "-c",
+		fmt.Sprintf(script, addr),
+	}
+	_, err := cli.Run(ctx, containerID, suspendConfigCmd, nil)
+	if err != nil {
+		return fmt.Errorf("suspending config on server: %w", err)
+	}
+
 	return nil
 }
 
