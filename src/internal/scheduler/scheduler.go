@@ -15,6 +15,20 @@ type Scheduler struct {
 	endPeriod           time.Duration
 }
 
+func New(
+	subscriptionService *service.SubscriptionService,
+	interval time.Duration,
+	batch int,
+	endPeriod time.Duration,
+) *Scheduler {
+	return &Scheduler{
+		subscriptionService,
+		interval,
+		batch,
+		endPeriod,
+	}
+}
+
 func (s *Scheduler) Run(ctx context.Context) {
 	t := time.NewTicker(s.interval)
 	defer t.Stop()
@@ -30,7 +44,7 @@ func (s *Scheduler) Run(ctx context.Context) {
 }
 
 func (s *Scheduler) tick(ctx context.Context) {
-	ctx, cancel := context.WithTimeout(ctx, s.interval*5)
+	ctx, cancel := context.WithTimeout(ctx, s.interval * 5)
 	defer cancel()
 
 	for _, sweep := range []func(context.Context, time.Duration, int) error{

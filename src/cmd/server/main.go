@@ -7,12 +7,14 @@ import (
 	"os/signal"
 	"strconv"
 	"syscall"
+	"time"
 
 	"github.com/joho/godotenv"
 
 	"vpnmanager/internal/db"
 	"vpnmanager/internal/executor"
 	"vpnmanager/internal/repository"
+	"vpnmanager/internal/scheduler"
 	"vpnmanager/internal/service"
 	"vpnmanager/internal/tgbot"
 )
@@ -49,6 +51,7 @@ func main() {
 	protocolRepo := repository.NewProtocol(db.Pool())
 	serverRepo := repository.NewServer(db.Pool())
 	userRepo := repository.NewUser(db.Pool())
+	subscriptionRepo := repository.NewSubscription(db.Pool())
 
 	// Initialize services
 	peerService := service.NewConfig(
@@ -58,6 +61,21 @@ func main() {
 		cr,
 	)
 	serverService := service.NewServer(serverRepo, cr)
+	subscriptionService := service.NewSubscription(
+		subscriptionRepo,
+		userRepo,
+		configRepo,
+		serverRepo,
+		cr,
+	)
+
+	s := scheduler.New(
+		subscriptionService,
+		5 * time.Minute,
+		100,
+		30 * 24 * time.Hour,
+	)
+	s.Run(ctx)
 
 	botToken := os.Getenv("TG_TOKEN")
 	idSizeBytes := 64
