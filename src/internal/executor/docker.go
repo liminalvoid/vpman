@@ -11,10 +11,10 @@ import (
 )
 
 type Config struct {
-	Name        string
-	User        string
-	HostAddr    string
-	HostPort    string
+	Name     string
+	User     string
+	HostAddr string
+	HostPort string
 }
 
 type Executor interface {
@@ -24,11 +24,20 @@ type Executor interface {
 }
 
 type ContainerExecutor struct {
-	cli         *client.Client
-	HostAddr    string
+	cli      *client.Client
+	HostAddr string
 }
 
 type Factory func(ctx context.Context, cfg *Config) (Executor, error)
+
+type ExitCodeErr struct {
+	code    int
+	message string
+}
+
+func (e *ExitCodeErr) Error() string {
+	return fmt.Sprintf("exit code: %d error msg: %s", e.code, e.message)
+}
 
 func NewExecutor(ctx context.Context, cfg *Config) (Executor, error) {
 	dockerHost := fmt.Sprintf("tcp://%s:%s", cfg.HostAddr, cfg.HostPort)
@@ -40,7 +49,12 @@ func NewExecutor(ctx context.Context, cfg *Config) (Executor, error) {
 	return &ContainerExecutor{cli: c, HostAddr: cfg.HostAddr}, nil
 }
 
-func (ce *ContainerExecutor) Run(ctx context.Context, containerID string, cmd []string, stdin []byte) (string, error) {
+func (ce *ContainerExecutor) Run(
+	ctx context.Context,
+	containerID string,
+	cmd []string,
+	stdin []byte,
+) (string, error) {
 	execResp, err := ce.cli.ExecCreate(ctx, containerID, client.ExecCreateOptions{
 		Cmd:          cmd,
 		AttachStdout: true,
@@ -62,14 +76,18 @@ func (ce *ContainerExecutor) Run(ctx context.Context, containerID string, cmd []
 		attachResp.CloseWrite()
 	}
 
-	var stdoutBuf bytes.Buffer
-	if _, err := stdcopy.StdCopy(&stdoutBuf, io.Discard, attachResp.Reader); err != nil {
+	var stdoutBuf, stderrBuf bytes.Buffer
+	if _, err := stdcopy.StdCopy(&stdoutBuf, &stderrBuf, attachResp.Reader); err != nil {
 		return "", fmt.Errorf("de-multiplexing stdErr and stdOut: %w", err)
 	}
 
-	_, err = ce.cli.ExecInspect(ctx, execResp.ID, client.ExecInspectOptions{})
+	res, err := ce.cli.ExecInspect(ctx, execResp.ID, client.ExecInspectOptions{})
 	if err != nil {
 		return "", fmt.Errorf("retrieving process info: %w", err)
+	}
+
+	if res.ExitCode != 0 {
+		return "", &ExitCodeErr{code: res.ExitCode, message: stderrBuf.String()}
 	}
 
 	return stdoutBuf.String(), nil
