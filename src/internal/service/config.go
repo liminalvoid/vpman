@@ -124,18 +124,13 @@ func (s *ConfigService) CreateConfig(
 		return "", fmt.Errorf("querying protocol %q: %w", protocolStruct.Name, err)
 	}
 
-	user, err := s.userRepository.FindByTelegramID(ctx, ownerID)
-	if err != nil {
-		return "", fmt.Errorf("querying user by Telegram ID (%d): %w", ownerID, err)
-	}
-
 	cfgData := model.Config{
-		Name:       name,
-		IPAddress:  ipAddr,
-		UserID:     user.ID,
-		ProtocolID: protocolStruct.ID,
-		ServerID:   server.ID,
-		Status:     model.ConfigStatusActive,
+		Name:           name,
+		IPAddress:      ipAddr,
+		ProtocolID:     protocolStruct.ID,
+		ServerID:       server.ID,
+		SubscriptionID: subscription.ID,
+		Status:         model.ConfigStatusActive,
 	}
 	err = s.configRepository.Create(ctx, &cfgData)
 	if err != nil {
