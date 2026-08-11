@@ -58,6 +58,7 @@ func main() {
 		configRepo,
 		protocolRepo,
 		userRepo,
+		subscriptionRepo,
 		cr,
 	)
 	serverService := service.NewServer(serverRepo, cr)
