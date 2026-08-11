@@ -37,6 +37,7 @@ func (r *Registry) GetOrCreate(
 	if err != nil {
 		return nil, fmt.Errorf("creating new executor %q: %w", cfg.Name, err)
 	}
+	r.pool[cfg.Name] = ex
 
 	return ex, nil
 }
