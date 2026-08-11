@@ -16,12 +16,12 @@ func NewConfig(conn conn) *Config { return &Config{conn: conn} }
 
 func (r *Config) Create(ctx context.Context, config *model.Config) error {
 	const q = `
-		INSERT INTO configs (name, ip_address, user_id, protocol_id, server_id)
+		INSERT INTO configs (name, ip_address, subscription_id, protocol_id, server_id)
 		VALUES ($1, $2, $3, $4, $5)
 		RETURNING id, public_id, status, created_at`
 
 	return r.conn.
-		QueryRow(ctx, q, config.Name, config.IPAddress, config.UserID, config.ProtocolID, config.ServerID).
+		QueryRow(ctx, q, config.Name, config.IPAddress, config.SubscriptionID, config.ProtocolID, config.ServerID).
 		Scan(&config.ID, &config.PublicID, &config.Status, &config.CreatedAt)
 }
 
@@ -29,9 +29,10 @@ func (r *Config) ListByTelegramID(ctx context.Context, userID int64) ([]model.Co
 	const q = `
 		SELECT c.id, c.public_id, c.name, c.ip_address, p.name, s.location, c.status, c.created_at
 		FROM configs c
-		JOIN users u ON c.user_id = u.id
+		JOIN subscriptions sb ON c.subscription_id = sb.id
 		JOIN protocols p ON c.protocol_id = p.id
 		JOIN servers s ON c.server_id = s.id
+		JOIN users u ON sb.user_id = u.id
 		WHERE u.telegram_id = $1`
 
 	rows, err := r.conn.Query(ctx, q, userID)
@@ -69,7 +70,6 @@ func (r *Config) GetByPublicID(
 	const q = `
 		SELECT c.id, c.public_id, c.name, c.ip_address, p.name, s.location, s.public_id, c.status, c.created_at
 		FROM configs c
-		JOIN users u ON c.user_id = u.id
 		JOIN protocols p ON c.protocol_id = p.id
 		JOIN servers s ON c.server_id = s.id
 		WHERE c.public_id = $1`

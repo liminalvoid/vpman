@@ -17,9 +17,9 @@ Table configs {
     public_id       uuid         [not null, unique, default: `gen_random_uuid()`]
     name            varchar(255) [not null]
     ip_address      varchar(15)  [not null]
-    user_id         bigint       [not null, note: "Config's owner"]
     protocol_id     smallint     [not null]
     server_id       smallint     [not null]
+    subscription_id bigint       [not null]
     status          text         [not null, default: 'active', note: "Config's status"]
     created_at      timestamptz  [not null, default: `now()`]
 
@@ -29,11 +29,10 @@ Table configs {
 
     indexes {
         (server_id, protocol_id, ip_address) [unique, name: "unq_config_ip_per_server"]
-        user_id
     }
 }
 
-Ref: configs.user_id         > users.id         [delete: cascade,  update: no action]
+Ref: configs.subscription_id > subscriptions.id [delete: cascade,  update: no action]
 Ref: configs.protocol_id     > protocols.id     [delete: restrict, update: no action]
 Ref: configs.server_id       > servers.id       [delete: restrict, update: no action]
 

@@ -14,15 +14,15 @@ const (
 )
 
 type Config struct {
-	ID         int64
-	PublicID   uuid.UUID
-	Name       string
-	IPAddress  string
-	UserID     int64
-	ProtocolID int16
-	ServerID   int16
-	Status     ConfigStatus
-	CreatedAt  time.Time
+	ID             int64
+	PublicID       uuid.UUID
+	Name           string
+	IPAddress      string
+	ProtocolID     int16
+	ServerID       int16
+	SubscriptionID int64
+	Status         ConfigStatus
+	CreatedAt      time.Time
 }
 
 type ConfigListView struct {
