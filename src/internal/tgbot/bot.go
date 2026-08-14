@@ -27,6 +27,7 @@ func New(
 	cfg Config,
 	cs *service.ConfigService,
 	ss *service.ServerService,
+	us *service.UserService,
 ) (*Bot, error) {
 	// FIXME: Remove this and think how to handle logs in prod
 	bot, err := telego.NewBot(cfg.Token, telego.WithDefaultDebugLogger())
@@ -46,7 +47,7 @@ func New(
 	)
 
 	bh.Use(th.PanicRecovery())
-	bh.Use(middleware.IsAdmin(bot, cfg.AdminID))
+	bh.Use(middleware.IsAdmin(bot, us))
 
 	bh.Handle(
 		h.HandleStart,

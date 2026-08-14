@@ -1,13 +1,17 @@
 package middleware
 
 import (
+	"fmt"
+
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
+
+	"vpnmanager/internal/service"
 )
 
 func IsAdmin(
 	bot *telego.Bot,
-	adminId int64,
+	userService *service.UserService,
 ) func(ctx *th.Context, update telego.Update) error {
 	return func(ctx *th.Context, update telego.Update) error {
 		var userId int64
@@ -22,7 +26,12 @@ func IsAdmin(
 			userName = update.CallbackQuery.From.FirstName
 		}
 
-		if userId != adminId {
+		user, err := userService.GetByTelegramID(ctx, userId)
+		if err != nil {
+			return fmt.Errorf("querying user by Telegram ID: %w", err)
+		}
+
+		if user.IsAdmin {
 			bot.Logger().Debugf(
 				"%s is trying to access bot",
 				userName,

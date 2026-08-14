@@ -69,6 +69,7 @@ func main() {
 		serverRepo,
 		cr,
 	)
+	userService := service.NewUser(userRepo)
 
 	s := scheduler.New(
 		subscriptionService,
@@ -94,6 +95,7 @@ func main() {
 		bCfg,
 		peerService,
 		serverService,
+		userService,
 	)
 	if err != nil {
 		fmt.Printf("failed to create Telegram bot: %s\n", err)
