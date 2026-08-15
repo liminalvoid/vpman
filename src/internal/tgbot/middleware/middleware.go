@@ -9,7 +9,7 @@ import (
 	"vpnmanager/internal/service"
 )
 
-func IsAdmin(
+func IsAuthenticated(
 	bot *telego.Bot,
 	userService *service.UserService,
 ) func(ctx *th.Context, update telego.Update) error {
