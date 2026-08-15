@@ -26,17 +26,17 @@ func IsAdmin(
 			userName = update.CallbackQuery.From.FirstName
 		}
 
+		bot.Logger().Debugf(
+			"%s is trying to access bot",
+			userName,
+		)
+
 		user, err := userService.GetByTelegramID(ctx, userId)
 		if err != nil {
 			return fmt.Errorf("querying user by Telegram ID: %w", err)
 		}
 
-		if user.IsAdmin {
-			bot.Logger().Debugf(
-				"%s is trying to access bot",
-				userName,
-			)
-
+		if !user.IsAdmin {
 			return nil
 		}
 
