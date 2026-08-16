@@ -13,15 +13,21 @@ type AccessCode struct {
 
 func NewAccessCode(conn conn) *AccessCode { return &AccessCode{conn: conn} }
 
-func (r *AccessCode) Create(ctx context.Context, accessCode *model.AccessCode) error {
+func (r *AccessCode) Create(ctx context.Context, code string) (*model.AccessCode, error) {
 	const q = `
 		INSERT INTO access_codes (code)
 		VALUES ($1)
 		RETURNING id, code, created_at, used_at`
 
-	return r.conn.
-		QueryRow(ctx, q, accessCode.Code).
-		Scan(&accessCode.ID, &accessCode.Code, &accessCode.CreatedAt, &accessCode.UsedAt)
+	var result model.AccessCode
+	err := r.conn.
+		QueryRow(ctx, q, code).
+		Scan(&result.ID, &result.Code, &result.CreatedAt, &result.UsedAt)
+	if err != nil {
+		return nil, fmt.Errorf("creating access code: %w", err)
+	}
+
+	return &result, nil
 }
 
 func (r *AccessCode) MarkUsed(ctx context.Context, code string) (*model.AccessCode, error) {
