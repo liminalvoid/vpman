@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"vpnmanager/internal/model"
@@ -25,7 +26,9 @@ func (s *UserService) GetByTelegramID(
 	userID int64,
 ) (*model.User, error) {
 	user, err := s.userRepository.FindByTelegramID(ctx, userID)
-	if err != nil {
+	if errors.Is(err, repository.ErrUserNotExist) {
+		return nil, err
+	} else if err != nil {
 		return nil, fmt.Errorf("retrieving user by Telegram ID: %w", err)
 	}
 

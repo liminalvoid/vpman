@@ -2,7 +2,10 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
+
+	"github.com/jackc/pgx/v5"
 
 	"vpnmanager/internal/model"
 )
@@ -10,6 +13,8 @@ import (
 type User struct {
 	conn conn
 }
+
+var ErrUserNotExist = errors.New("user doesn't exist")
 
 func NewUser(conn conn) *User { return &User{conn: conn} }
 
@@ -33,7 +38,9 @@ func (r *User) FindByTelegramID(ctx context.Context, telegramID int64) (*model.U
 	err := r.conn.	
 		QueryRow(ctx, q, telegramID).
 		Scan(&user.ID, &user.PublicID, &user.TelegramID, &user.IsAdmin)
-	if err != nil {
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrUserNotExist
+	} else if err != nil {
 		return nil, fmt.Errorf("looking for user: %w", err)
 	}
 

@@ -7,21 +7,26 @@ import (
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
 
+	"vpnmanager/internal/repository"
 	"vpnmanager/internal/service"
 )
 
 func IsAuthenticated(
 	bot *telego.Bot,
 	userService *service.UserService,
+	accessCodeService *service.AccessCodeService,
 ) func(ctx *th.Context, update telego.Update) error {
 	return func(ctx *th.Context, update telego.Update) error {
 		var userID int64
 		var userName string
+		var accessCode string
 
 		switch {
 		case update.Message != nil:
 			userID = update.Message.From.ID
 			userName = update.Message.From.FirstName
+
+			accessCode = update.Message.Text
 		case update.CallbackQuery != nil:
 			userID = update.CallbackQuery.From.ID
 			userName = update.CallbackQuery.From.FirstName
@@ -33,7 +38,11 @@ func IsAuthenticated(
 		)
 
 		_, err := userService.GetByTelegramID(ctx, userID)
-		if err != nil {
+		if errors.Is(err, repository.ErrUserNotExist) {
+			if accessCode == "" || len(accessCode) > 8 {
+				return ctx.Next(update)
+			}
+		} else if err != nil {
 			return fmt.Errorf("querying user by Telegram ID: %w", err)
 		}
 
