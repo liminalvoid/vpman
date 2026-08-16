@@ -82,5 +82,4 @@ Table access_codes {
     id         bigint      [pk, increment]
     code       varchar(8)  [not null, unique]
     created_at timestamptz [not null, default: `now()`]
-    used_at    timestamptz
 }

@@ -22,7 +22,7 @@ func (r *AccessCode) Create(ctx context.Context, code string) (*model.AccessCode
 	var result model.AccessCode
 	err := r.conn.
 		QueryRow(ctx, q, code).
-		Scan(&result.ID, &result.Code, &result.CreatedAt, &result.UsedAt)
+		Scan(&result.ID, &result.Code, &result.CreatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("creating access code: %w", err)
 	}
