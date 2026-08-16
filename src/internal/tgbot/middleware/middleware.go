@@ -77,8 +77,10 @@ func IsAdmin(
 		)
 
 		user, err := userService.GetByTelegramID(ctx, userID)
-		if err != nil {
-			return fmt.Errorf("querying user by Telegram ID: %w", err)
+		if errors.Is(err, repository.ErrUserNotExist) {
+			return err
+		} else if err != nil {
+			return fmt.Errorf("querying user via Telegram ID: %w", err)
 		}
 
 		if !user.IsAdmin {
