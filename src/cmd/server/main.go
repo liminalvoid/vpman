@@ -51,6 +51,7 @@ func main() {
 	serverRepo := repository.NewServer(db.Pool())
 	userRepo := repository.NewUser(db.Pool())
 	subscriptionRepo := repository.NewSubscription(db.Pool())
+	accessCodeRepo := repository.NewAccessCode(db.Pool())
 
 	// Initialize services
 	peerService := service.NewConfig(
@@ -69,6 +70,7 @@ func main() {
 		cr,
 	)
 	userService := service.NewUser(userRepo)
+	accessCodeService := service.NewAccessCodeService(accessCodeRepo)
 
 	s := scheduler.New(
 		subscriptionService,
@@ -88,6 +90,7 @@ func main() {
 		peerService,
 		serverService,
 		userService,
+		accessCodeService,
 	)
 	if err != nil {
 		fmt.Printf("failed to create Telegram bot: %s\n", err)

@@ -14,7 +14,7 @@ import (
 )
 
 type Config struct {
-	Token   string
+	Token string
 }
 
 type Bot struct {
@@ -27,6 +27,7 @@ func New(
 	cs *service.ConfigService,
 	ss *service.ServerService,
 	us *service.UserService,
+	acs *service.AccessCodeService,
 ) (*Bot, error) {
 	// FIXME: Remove this and think how to handle logs in prod
 	bot, err := telego.NewBot(cfg.Token, telego.WithDefaultDebugLogger())
@@ -40,9 +41,10 @@ func New(
 	sessions := session.NewStore()
 	h := handlers.NewHandlers(
 		bot,
+		sessions,
 		cs,
 		ss,
-		sessions,
+		acs,
 	)
 
 	bh.Use(th.PanicRecovery())

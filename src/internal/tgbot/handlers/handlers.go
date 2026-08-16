@@ -23,6 +23,7 @@ type Handlers struct {
 	sessions      *session.Sessions
 	configService *service.ConfigService
 	serverService *service.ServerService
+	accessCodeService *service.AccessCodeService
 }
 
 const AdminHandlerPrefix = "admin"
@@ -43,15 +44,17 @@ func buildKbWithExitButton(rows ...[]telego.InlineKeyboardButton) *telego.Inline
 
 func NewHandlers(
 	bot *telego.Bot,
+	sess *session.Sessions,
 	ps *service.ConfigService,
 	ss *service.ServerService,
-	sess *session.Sessions,
+	acs *service.AccessCodeService,
 ) *Handlers {
 	return &Handlers{
 		bot: bot,
 		sessions: sess,
 		configService: ps,
 		serverService: ss,
+		accessCodeService: acs,
 	}
 }
 
