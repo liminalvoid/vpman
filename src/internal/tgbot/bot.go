@@ -71,6 +71,12 @@ func New(
 		),
 	)
 
+	admin := bh.Group(th.Or(
+		th.CommandPrefix("admin_"),
+		th.CallbackDataPrefix("admin:"),
+	))
+	admin.Use(middleware.IsAdmin(bot, us))
+
 	return &Bot{handler: bh}, nil
 }
 
