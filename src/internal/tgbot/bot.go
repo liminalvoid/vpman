@@ -15,7 +15,6 @@ import (
 
 type Config struct {
 	Token   string
-	AdminID int64
 }
 
 type Bot struct {

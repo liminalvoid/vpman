@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
 	"time"
 
@@ -80,15 +79,8 @@ func main() {
 	go s.Run(ctx)
 
 	botToken := os.Getenv("TG_TOKEN")
-	idSizeBytes := 64
-	adminId, err := strconv.ParseInt(os.Getenv("ME_ID"), 10, idSizeBytes)
-	if err != nil {
-		fmt.Println("The administrator ID wasn't parsed")
-		os.Exit(1)
-	}
 	bCfg := tgbot.Config{
 		Token:   botToken,
-		AdminID: adminId,
 	}
 	b, err := tgbot.New(
 		ctx,
