@@ -79,7 +79,7 @@ func New(
 	admin.Use(middleware.IsAdmin(bot, us))
 
 	admin.Handle(
-		h.HandleGenerateInviteCode,
+		h.HandleGenerateAccessCode,
 		th.CallbackDataContains(
 			fmt.Sprintf(
 				"%s:%s",

@@ -14,7 +14,7 @@ import (
 
 const CreateInviteCodePrefix = "generate_invite"
 
-func (h *Handlers) HandleGenerateInviteCode(
+func (h *Handlers) HandleGenerateAccessCode(
 	ctx *th.Context,
 	update telego.Update,
 ) error {
