@@ -43,14 +43,19 @@ func (h *Handlers) HandleGenerateAccessCode(
 		)
 		switch callbackData {
 		case CreateInviteCodePrefix:
-			inviteCode, err := random.GenerateAccessCode(12)
+			accessCode, err := random.GenerateAccessCode(8)
 			if err != nil {
 				return fmt.Errorf("trying generate invite code: %w", err)
 			}
 
+			err = h.accessCodeService.Create(ctx, accessCode)
+			if err != nil {
+				return fmt.Errorf("creating access code: %w", err)
+			}
+
 			response.Text = fmt.Sprintf(
 				"Инвайт\\-код создан\\!\n\n```plain\n%s\n```",
-				inviteCode,
+				accessCode,
 			)
 			h.sessions.Update(userID, func(s *session.Session) {
 				s.State = session.StateIdle
