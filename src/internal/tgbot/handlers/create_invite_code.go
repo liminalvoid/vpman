@@ -1,11 +1,11 @@
 package handlers
 
 import (
-	"context"
 	"fmt"
 	"strings"
-	
+
 	"github.com/mymmrac/telego"
+	th "github.com/mymmrac/telego/telegohandler"
 	tu "github.com/mymmrac/telego/telegoutil"
 
 	"vpnmanager/internal/random"
@@ -14,24 +14,8 @@ import (
 
 const CreateInviteCodePrefix = "generate_invite"
 
-var createCodeKb = [][]telego.InlineKeyboardButton{
-	tu.InlineKeyboardRow(
-		tu.
-			InlineKeyboardButton("Создать код").
-			WithCallbackData(
-				strings.Join([]string{
-					AdminHandlerPrefix,
-					CreateInviteCodePrefix,
-					"create",
-				},
-				":",
-			),
-		),
-	),
-}
-
 func (h *Handlers) HandleGenerateInviteCode(
-	ctx context.Context,
+	ctx *th.Context,
 	update telego.Update,
 ) error {
 	var userID int64
@@ -65,7 +49,7 @@ func (h *Handlers) HandleGenerateInviteCode(
 			}
 
 			response.Text = fmt.Sprintf(
-				"Инвайт-код создан\\!\n\n```plain\n%s\n```",
+				"Инвайт\\-код создан\\!\n\n```plain\n%s\n```",
 				inviteCode,
 			)
 			h.sessions.Update(userID, func(s *session.Session) {
@@ -79,7 +63,7 @@ func (h *Handlers) HandleGenerateInviteCode(
 	}
 
 	message := tu.Message(response.ChatID, response.Text).WithParseMode(telego.ModeMarkdownV2)
-	response.ReplyMarkup = buildKbWithExitButton(createCodeKb...)
+	response.ReplyMarkup = buildKbWithExitButton()
 	message = message.WithReplyMarkup(response.ReplyMarkup)
 
 	h.bot.SendMessage(ctx, message)

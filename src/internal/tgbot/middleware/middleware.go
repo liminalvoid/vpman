@@ -76,6 +76,11 @@ func IsAdmin(
 			return ErrUserNotAdmin
 		}
 
-		return nil
+		bot.Logger().Debugf(
+			"Access granted for admin-protected routes for %s",
+			userName,
+		)
+
+		return ctx.Next(update)
 	}
 }

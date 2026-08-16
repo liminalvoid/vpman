@@ -77,6 +77,17 @@ func New(
 	))
 	admin.Use(middleware.IsAdmin(bot, us))
 
+	admin.Handle(
+		h.HandleGenerateInviteCode,
+		th.CallbackDataContains(
+			fmt.Sprintf(
+				"%s:%s",
+				handlers.AdminHandlerPrefix,
+				handlers.CreateInviteCodePrefix,
+			),
+		),
+	)
+
 	return &Bot{handler: bh}, nil
 }
 

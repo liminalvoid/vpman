@@ -20,6 +20,11 @@ var startKb = tu.InlineKeyboard(
 			InlineKeyboardButton("Управление ключами").
 			WithCallbackData("manage_keys"),
 	),
+	tu.InlineKeyboardRow(
+		tu.
+			InlineKeyboardButton("Сгенерировать инвайт-код").
+			WithCallbackData("admin:generate_invite"),
+	),
 )
 
 func (h *Handlers) HandleStart(ctx *th.Context, update telego.Update) error {
