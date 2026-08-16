@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/mymmrac/telego"
@@ -14,15 +15,15 @@ func IsAuthenticated(
 	userService *service.UserService,
 ) func(ctx *th.Context, update telego.Update) error {
 	return func(ctx *th.Context, update telego.Update) error {
-		var userId int64
+		var userID int64
 		var userName string
 
 		switch {
 		case update.Message != nil:
-			userId = update.Message.From.ID
+			userID = update.Message.From.ID
 			userName = update.Message.From.FirstName
 		case update.CallbackQuery != nil:
-			userId = update.CallbackQuery.From.ID
+			userID = update.CallbackQuery.From.ID
 			userName = update.CallbackQuery.From.FirstName
 		}
 
@@ -31,7 +32,7 @@ func IsAuthenticated(
 			userName,
 		)
 
-		_, err := userService.GetByTelegramID(ctx, userId)
+		_, err := userService.GetByTelegramID(ctx, userID)
 		if err != nil {
 			return fmt.Errorf("querying user by Telegram ID: %w", err)
 		}
@@ -39,5 +40,42 @@ func IsAuthenticated(
 		bot.Logger().Debugf("Access granted")
 
 		return ctx.Next(update)
+	}
+}
+
+var ErrUserNotAdmin = errors.New("user is not admin")
+
+func IsAdmin(
+	bot *telego.Bot,
+	userService *service.UserService,
+) func(ctx *th.Context, update telego.Update) error {
+	return func(ctx *th.Context, update telego.Update) error {
+		var userID int64
+		var userName string
+
+		switch {
+		case update.Message != nil:
+			userID = update.Message.From.ID
+			userName = update.Message.From.FirstName
+		case update.CallbackQuery != nil:
+			userID = update.CallbackQuery.From.ID
+			userName = update.CallbackQuery.From.FirstName
+		}
+
+		bot.Logger().Debugf(
+			"%s is trying to access protected handlers",
+			userName,
+		)
+
+		user, err := userService.GetByTelegramID(ctx, userID)
+		if err != nil {
+			return fmt.Errorf("querying user by Telegram ID: %w", err)
+		}
+
+		if !user.IsAdmin {
+			return ErrUserNotAdmin
+		}
+
+		return nil
 	}
 }
