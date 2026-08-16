@@ -21,6 +21,19 @@ func NewUser(
 	}
 }
 
+func (s *UserService) CreateWithAccessCode(
+	ctx context.Context,
+	telegramID int64,
+	code string,
+) error {
+	err := s.userRepository.CreateWithAccessCode(ctx, telegramID, code)
+	if err != nil {
+		return fmt.Errorf("marking code as used: %w", err)
+	}
+
+	return nil
+}
+
 func (s *UserService) GetByTelegramID(
 	ctx context.Context,
 	userID int64,

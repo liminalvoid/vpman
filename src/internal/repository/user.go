@@ -29,6 +29,33 @@ func (r *User) Create(ctx context.Context, user *model.User) error {
 		Scan(&user.ID, &user.PublicID, &user.Username)
 }
 
+var ErrNoAccessCode = errors.New("code doesn't exist")
+
+func (r *User) CreateWithAccessCode(
+	ctx context.Context,
+	telegramID int64,
+	code string,
+) error {
+	const q = `
+		WITH redeemed AS (
+			DELETE FROM access_codes WHERE code = $1
+			RETURNING id
+		)
+		INSERT INTO users (telegram_id)
+		SELECT $2 FROM redeemed
+		RETURNING id, public_id, telegram_id`
+
+	var user model.User
+	err := r.conn.
+		QueryRow(ctx, q, code, telegramID).
+		Scan(&user.ID, &user.PublicID, &user.TelegramID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return ErrNoAccessCode
+	}
+
+	return err
+}
+
 func (r *User) FindByTelegramID(ctx context.Context, telegramID int64) (*model.User, error) {
 	const q = `
 		SELECT id, public_id, telegram_id, is_admin

@@ -43,11 +43,11 @@ func IsAuthenticated(
 				return ctx.Next(update)
 			}
 
-			err := accessCodeService.Delete(ctx, accessCode)
-			if errors.Is(err, service.ErrNoAccessCode) {
+			err := userService.CreateWithAccessCode(ctx, userID, accessCode)
+			if errors.Is(err, repository.ErrNoAccessCode) {
 				return fmt.Errorf("no such access code %s: %w", accessCode, err)
 			} else if err != nil {
-				return fmt.Errorf("removing access code: %w", err)
+				return fmt.Errorf("removing access code and creating user: %w", err)
 			}
 		} else if err != nil {
 			return fmt.Errorf("querying user by Telegram ID: %w", err)
