@@ -55,6 +55,7 @@ func New(
 		th.Or(
 			th.CommandEqual("start"),
 			th.CallbackDataContains("menu"),
+			middleware.HasAuthState(middleware.AuthOK),
 		),
 	)
 	bh.Handle(

@@ -49,6 +49,8 @@ func IsAuthenticated(
 			} else if err != nil {
 				return fmt.Errorf("removing access code and creating user: %w", err)
 			}
+
+			return ctx.WithValue(authStateKey{}, AuthOK).Next(update)
 		} else if err != nil {
 			return fmt.Errorf("querying user by Telegram ID: %w", err)
 		}
