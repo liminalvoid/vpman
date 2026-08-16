@@ -31,13 +31,9 @@ func IsAuthenticated(
 			userName,
 		)
 
-		user, err := userService.GetByTelegramID(ctx, userId)
+		_, err := userService.GetByTelegramID(ctx, userId)
 		if err != nil {
 			return fmt.Errorf("querying user by Telegram ID: %w", err)
-		}
-
-		if !user.IsAdmin {
-			return nil
 		}
 
 		bot.Logger().Debugf("Access granted")
