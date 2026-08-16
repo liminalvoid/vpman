@@ -48,7 +48,7 @@ func New(
 	)
 
 	bh.Use(th.PanicRecovery())
-	bh.Use(middleware.IsAuthenticated(bot, us))
+	bh.Use(middleware.IsAuthenticated(bot, us, acs))
 
 	bh.Handle(
 		h.HandleStart,

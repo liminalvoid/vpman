@@ -34,7 +34,7 @@ func (s *AccessCodeService) Create(
 
 var ErrNoAccessCode = errors.New("code doesn't exist")
 
-func (s *AccessCodeService) MarkUsed(
+func (s *AccessCodeService) Delete(
 	ctx context.Context,
 	code string,
 ) error {

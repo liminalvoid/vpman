@@ -42,6 +42,13 @@ func IsAuthenticated(
 			if accessCode == "" || len(accessCode) > 8 {
 				return ctx.Next(update)
 			}
+
+			err := accessCodeService.Delete(ctx, accessCode)
+			if errors.Is(err, service.ErrNoAccessCode) {
+				return fmt.Errorf("no such access code %s: %w", accessCode, err)
+			} else if err != nil {
+				return fmt.Errorf("removing access code: %w", err)
+			}
 		} else if err != nil {
 			return fmt.Errorf("querying user by Telegram ID: %w", err)
 		}
