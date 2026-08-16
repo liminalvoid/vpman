@@ -46,6 +46,9 @@ const (
 	StateEditConfigEditName
 	StateEditConfigEnterName
 	StateEditConfigDelete
+
+	StateCreateInviteCode
+	StateCreateInviteCodeGenerate
 )
 
 func NewStore() *Sessions {

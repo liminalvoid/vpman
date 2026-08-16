@@ -72,8 +72,8 @@ func New(
 	)
 
 	admin := bh.Group(th.Or(
-		th.CommandPrefix("admin_"),
-		th.CallbackDataPrefix("admin:"),
+		th.CommandPrefix(fmt.Sprintf("%s_", handlers.AdminHandlerPrefix)),
+		th.CallbackDataPrefix(fmt.Sprintf("%s:", handlers.AdminHandlerPrefix)),
 	))
 	admin.Use(middleware.IsAdmin(bot, us))
 
