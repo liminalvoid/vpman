@@ -30,20 +30,15 @@ func (r *AccessCode) Create(ctx context.Context, code string) (*model.AccessCode
 	return &result, nil
 }
 
-func (r *AccessCode) MarkUsed(ctx context.Context, code string) (*model.AccessCode, error) {
+func (r *AccessCode) Delete(ctx context.Context, code string) (int64, error) {
 	const q = `
-		UPDATE access_codes
-		SET used_at = CURRENT_TIMESTAMP
-		WHERE code = $1 AND used_at IS NULL
-		RETURNING id, code, created_at, used_at`
+		DELETE FROM access_codes
+		WHERE code = $1`
 
-	var ac model.AccessCode
-	err := r.conn.
-		QueryRow(ctx, q, code).
-		Scan(&ac.ID, &ac.Code, &ac.CreatedAt, &ac.UsedAt)
+	tag, err := r.conn.Exec(ctx, q, code)
 	if err != nil {
-		return nil, fmt.Errorf("marking access code used: %w", err)
+		return 0, fmt.Errorf("marking code as used: %w", err)
 	}
 	
-	return &ac, nil
+	return tag.RowsAffected(), nil
 }

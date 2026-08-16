@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"vpnmanager/internal/repository"
@@ -26,6 +27,24 @@ func (s *AccessCodeService) Create(
 	_, err := s.accessCodeRepository.Create(ctx, code)
 	if err != nil {
 		return fmt.Errorf("creating access code: %w", err)
+	}
+
+	return nil
+}
+
+var ErrNoAccessCode = errors.New("code doesn't exist")
+
+func (s *AccessCodeService) MarkUsed(
+	ctx context.Context,
+	code string,
+) error {
+	count, err := s.accessCodeRepository.Delete(ctx, code)
+	if err != nil {
+		return fmt.Errorf("marking code as used: %w", err)
+	}
+
+	if count == 0 {
+		return ErrNoAccessCode
 	}
 
 	return nil
