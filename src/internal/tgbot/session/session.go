@@ -49,6 +49,9 @@ const (
 
 	StateCreateInviteCode
 	StateCreateInviteCodeGenerate
+
+	StateSetPastDue
+	StateSetPastDueConfirm
 )
 
 func NewStore() *Sessions {
