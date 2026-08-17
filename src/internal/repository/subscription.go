@@ -63,7 +63,7 @@ func (r *Subscription) GetByTelegramID(
 	const q = `
 		SELECT s.id, s.user_id, s.status, s.current_period_end, s.canceled_at, s.created_at, s.updated_at, s.quantity
 		FROM subscriptions s
-		JOIN users u ON s.user_id = s.id
+		JOIN users u ON s.user_id = u.id
 		WHERE u.telegram_id = $1`
 
 	var result model.Subscription
