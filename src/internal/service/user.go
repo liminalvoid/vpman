@@ -10,14 +10,17 @@ import (
 )
 
 type UserService struct {
-	userRepository *repository.User
+	userRepository         *repository.User
+	subscriptionRepository *repository.Subscription
 }
 
 func NewUser(
 	userRepository *repository.User,
+	subscriptionRepository *repository.Subscription,
 ) *UserService {
 	return &UserService{
 		userRepository,
+		subscriptionRepository,
 	}
 }
 

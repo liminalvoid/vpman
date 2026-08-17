@@ -74,7 +74,7 @@ func main() {
 		cr,
 	)
 	serverService := service.NewServer(serverRepo, cr)
-	userService := service.NewUser(userRepo)
+	userService := service.NewUser(userRepo, subscriptionRepo)
 	accessCodeService := service.NewAccessCodeService(accessCodeRepo)
 	subscriptionService := service.NewSubscription(
 		cr,
