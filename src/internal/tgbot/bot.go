@@ -19,6 +19,7 @@ type Config struct {
 
 type Bot struct {
 	handler *th.BotHandler
+	bot     *telego.Bot
 }
 
 func New(
@@ -90,7 +91,7 @@ func New(
 		),
 	)
 
-	return &Bot{handler: bh}, nil
+	return &Bot{handler: bh, bot: bot}, nil
 }
 
 func (b *Bot) Start() error { return b.handler.Start() }
