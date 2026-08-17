@@ -29,9 +29,14 @@ func (s *UserService) CreateWithAccessCode(
 	telegramID int64,
 	code string,
 ) error {
-	_, err := s.userRepository.CreateWithAccessCode(ctx, telegramID, code)
+	user, err := s.userRepository.CreateWithAccessCode(ctx, telegramID, code)
 	if err != nil {
 		return fmt.Errorf("marking code as used: %w", err)
+	}
+
+	_, err = s.subscriptionRepository.Create(ctx, user.ID, 5)
+	if err != nil {
+		return fmt.Errorf("creating subscription for new user: %w", err)
 	}
 
 	return nil
