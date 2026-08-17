@@ -84,19 +84,13 @@ func (w *Wg) create(
 
 	// Add peer to interface config
 	createNewPeerCmd := []string{
-		"wg",
-		"set",
-		"wg0",
-		"peer",
-		pubKey,
-		"preshared-key",
-		presKey,
-		"allowed-ips",
-		newPeerAddr.String(),
-		"persistent-keepalive",
-		"25",
+		"sh", "-c",
+		fmt.Sprintf(
+			`wg set wg0 peer %q preshared-key /dev/stdin allowed-ips %q persistent-keepalive 25`,
+			pubKey, newPeerAddr.String(),
+		),
 	}
-	output, err = cli.Run(ctx, containerID, createNewPeerCmd, []byte{})
+	output, err = cli.Run(ctx, containerID, createNewPeerCmd, []byte(presKey + "\n"))
 	if err != nil {
 		return "", fmt.Errorf("failed to create new peer: %s", err)
 	}
