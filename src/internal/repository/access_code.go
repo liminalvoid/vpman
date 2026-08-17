@@ -17,7 +17,7 @@ func (r *AccessCode) Create(ctx context.Context, code string) (*model.AccessCode
 	const q = `
 		INSERT INTO access_codes (code)
 		VALUES ($1)
-		RETURNING id, code, created_at, used_at`
+		RETURNING id, code, created_at`
 
 	var result model.AccessCode
 	err := r.conn.
