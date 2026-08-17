@@ -29,7 +29,7 @@ func (s *UserService) CreateWithAccessCode(
 	telegramID int64,
 	code string,
 ) error {
-	err := s.userRepository.CreateWithAccessCode(ctx, telegramID, code)
+	_, err := s.userRepository.CreateWithAccessCode(ctx, telegramID, code)
 	if err != nil {
 		return fmt.Errorf("marking code as used: %w", err)
 	}

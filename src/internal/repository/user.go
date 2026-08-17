@@ -35,7 +35,7 @@ func (r *User) CreateWithAccessCode(
 	ctx context.Context,
 	telegramID int64,
 	code string,
-) error {
+) (*model.User, error) {
 	const q = `
 		WITH redeemed AS (
 			DELETE FROM access_codes WHERE code = $1
@@ -50,10 +50,10 @@ func (r *User) CreateWithAccessCode(
 		QueryRow(ctx, q, code, telegramID).
 		Scan(&user.ID, &user.PublicID, &user.TelegramID)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return ErrNoAccessCode
+		return nil, ErrNoAccessCode
 	}
 
-	return err
+	return &user, err
 }
 
 func (r *User) FindByTelegramID(ctx context.Context, telegramID int64) (*model.User, error) {
