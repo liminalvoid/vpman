@@ -47,8 +47,6 @@ func (w *Wg) create(
 	}
 	privKey, pubKey, presKey := keys[0], keys[1], keys[2]
 
-	fmt.Println(presKey)
-
 	// Obtain server's credentials
 	getServerPubKeyCmd := []string{"wg", "show", "wg0", "public-key"}
 	output, err = cli.Run(ctx, containerID, getServerPubKeyCmd, []byte{})
