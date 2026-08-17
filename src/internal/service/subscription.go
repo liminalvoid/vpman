@@ -8,29 +8,33 @@ import (
 	"vpnmanager/internal/configgen"
 	"vpnmanager/internal/executor"
 	"vpnmanager/internal/repository"
+	"vpnmanager/internal/tgbot/newsletter"
 )
 
 type SubscriptionService struct {
+	containerRegistry      *executor.Registry
+	newsletter             *newsletter.Newsletter
 	subscriptionRepository *repository.Subscription
 	userRepository         *repository.User
 	configRepository       *repository.Config
 	serverRepository       *repository.Server
-	containerRegistry      *executor.Registry
 }
 
 func NewSubscription(
+	containerRegistry *executor.Registry,
+	newsletter *newsletter.Newsletter,
 	subscriptionRepository *repository.Subscription,
-	userRepository         *repository.User,
-	configRepository       *repository.Config,
-	serverRepository       *repository.Server,
-	containerRegistry      *executor.Registry,
+	userRepository *repository.User,
+	configRepository *repository.Config,
+	serverRepository *repository.Server,
 ) *SubscriptionService {
 	return &SubscriptionService{
+		containerRegistry,
+		newsletter,
 		subscriptionRepository,
 		userRepository,
 		configRepository,
 		serverRepository,
-		containerRegistry,
 	}
 }
 
@@ -111,8 +115,8 @@ func (s *SubscriptionService) HandleCancelled(
 		}
 
 		ex, err := s.containerRegistry.GetOrCreate(ctx, &executor.Config{
-			Name: c.ServerPublicID.String(),
-			User: "root",
+			Name:     c.ServerPublicID.String(),
+			User:     "root",
 			HostAddr: addr,
 			HostPort: "2375",
 		})

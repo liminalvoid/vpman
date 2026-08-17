@@ -62,23 +62,8 @@ func main() {
 		cr,
 	)
 	serverService := service.NewServer(serverRepo, cr)
-	subscriptionService := service.NewSubscription(
-		subscriptionRepo,
-		userRepo,
-		configRepo,
-		serverRepo,
-		cr,
-	)
 	userService := service.NewUser(userRepo)
 	accessCodeService := service.NewAccessCodeService(accessCodeRepo)
-
-	s := scheduler.New(
-		subscriptionService,
-		5 * time.Minute,
-		100,
-		30 * 24 * time.Hour,
-	)
-	go s.Run(ctx)
 
 	botToken := os.Getenv("TG_TOKEN")
 	bCfg := tgbot.Config{
@@ -97,6 +82,23 @@ func main() {
 		os.Exit(1)
 	}
 	defer func() { b.Stop() }()
+
+	subscriptionService := service.NewSubscription(
+		cr,
+		b.Newsletter,
+		subscriptionRepo,
+		userRepo,
+		configRepo,
+		serverRepo,
+	)
+
+	s := scheduler.New(
+		subscriptionService,
+		5 * time.Minute,
+		100,
+		30 * 24 * time.Hour,
+	)
+	go s.Run(ctx)
 
 	// Start bot polling
 	err = b.Start()

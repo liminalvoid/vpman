@@ -10,6 +10,7 @@ import (
 	"vpnmanager/internal/service"
 	"vpnmanager/internal/tgbot/handlers"
 	"vpnmanager/internal/tgbot/middleware"
+	"vpnmanager/internal/tgbot/newsletter"
 	"vpnmanager/internal/tgbot/session"
 )
 
@@ -18,8 +19,8 @@ type Config struct {
 }
 
 type Bot struct {
-	handler *th.BotHandler
-	bot     *telego.Bot
+	handler    *th.BotHandler
+	Newsletter *newsletter.Newsletter
 }
 
 func New(
@@ -35,6 +36,7 @@ func New(
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Telegram bot: %s", err)
 	}
+	newsletter := newsletter.New(bot)
 
 	updates, _ := bot.UpdatesViaLongPolling(ctx, nil)
 
@@ -91,7 +93,7 @@ func New(
 		),
 	)
 
-	return &Bot{handler: bh, bot: bot}, nil
+	return &Bot{handler: bh, Newsletter: newsletter}, nil
 }
 
 func (b *Bot) Start() error { return b.handler.Start() }
