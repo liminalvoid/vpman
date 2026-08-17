@@ -73,3 +73,26 @@ func (r *User) FindByTelegramID(ctx context.Context, telegramID int64) (*model.U
 
 	return &user, nil
 }
+
+func (r *User) ListAll(ctx context.Context) ([]model.User, error) {
+	const q = `
+		SELECT u.id, u.public_id, u.telegram_id, u.is_admin
+		FROM users u`
+
+	rows, err := r.conn.Query(ctx, q)
+	if err != nil {
+		return nil, fmt.Errorf("retrieving all users: %w", err)
+	}
+	defer rows.Close()
+
+	var result []model.User
+	for rows.Next() {
+		var u model.User
+		if err := rows.Scan(&u.ID, &u.PublicID, &u.TelegramID, &u.IsAdmin); err != nil {
+			return nil, fmt.Errorf("scanning users: %w", err)
+		}
+		result = append(result, u)
+	}
+
+	return result, rows.Err()
+}
