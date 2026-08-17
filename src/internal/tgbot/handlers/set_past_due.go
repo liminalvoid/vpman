@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
@@ -60,6 +61,11 @@ func (h *Handlers) HandleSetPastDue(
 		response.Text = "Установить дедлайн по оплате?"
 		draftKb = setPastDueKb
 	case session.StateSetPastDueConfirm:
+		_, err := h.subscriptionService.SetPeriodEnd(ctx, time.Now())
+		if err != nil {
+			return fmt.Errorf("trying to set period end: %w", err)
+		}
+
 		response.Text = "Успешно"
 		h.sessions.Update(userID, func(s *session.Session) {
 			s.State = session.StateIdle
