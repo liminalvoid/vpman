@@ -19,11 +19,12 @@ type Response struct {
 }
 
 type Handlers struct {
-	bot           *telego.Bot
-	sessions      *session.Sessions
-	configService *service.ConfigService
-	serverService *service.ServerService
-	accessCodeService *service.AccessCodeService
+	bot                 *telego.Bot
+	sessions            *session.Sessions
+	configService       *service.ConfigService
+	serverService       *service.ServerService
+	accessCodeService   *service.AccessCodeService
+	subscriptionService *service.SubscriptionService
 }
 
 const AdminHandlerPrefix = "admin"
@@ -48,13 +49,15 @@ func NewHandlers(
 	ps *service.ConfigService,
 	ss *service.ServerService,
 	acs *service.AccessCodeService,
+	sbs *service.SubscriptionService,
 ) *Handlers {
 	return &Handlers{
-		bot: bot,
-		sessions: sess,
-		configService: ps,
-		serverService: ss,
-		accessCodeService: acs,
+		bot:                 bot,
+		sessions:            sess,
+		configService:       ps,
+		serverService:       ss,
+		accessCodeService:   acs,
+		subscriptionService: sbs,
 	}
 }
 

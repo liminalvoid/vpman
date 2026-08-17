@@ -93,6 +93,7 @@ func main() {
 		serverService,
 		userService,
 		accessCodeService,
+		subscriptionService,
 	)
 	if err != nil {
 		fmt.Printf("failed to create Telegram bot: %s\n", err)

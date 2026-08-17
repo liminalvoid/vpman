@@ -29,6 +29,7 @@ func New(
 	ss *service.ServerService,
 	us *service.UserService,
 	acs *service.AccessCodeService,
+	sbs *service.SubscriptionService,
 ) (*Bot, error) {
 	updates, _ := tg.UpdatesViaLongPolling(ctx, nil)
 
@@ -40,6 +41,7 @@ func New(
 		cs,
 		ss,
 		acs,
+		sbs,
 	)
 
 	bh.Use(th.PanicRecovery())
