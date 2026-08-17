@@ -25,6 +25,11 @@ var startKb = tu.InlineKeyboard(
 			InlineKeyboardButton("Сгенерировать инвайт-код").
 			WithCallbackData("admin:generate_invite"),
 	),
+	tu.InlineKeyboardRow(
+		tu.
+			InlineKeyboardButton("Установить дедлайн по оплате").
+			WithCallbackData("admin:set_past_due"),
+	),
 )
 
 func (h *Handlers) HandleStart(ctx *th.Context, update telego.Update) error {

@@ -92,6 +92,12 @@ func New(
 			),
 		),
 	)
+	admin.Handle(
+		h.HandleSetPastDue,
+		th.CallbackDataContains(
+			handlers.SetPastDuePrefix,
+		),
+	)
 
 	return &Bot{handler: bh, Newsletter: newsletter}, nil
 }
