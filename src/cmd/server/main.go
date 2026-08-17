@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
+	"github.com/mymmrac/telego"
 
 	"vpnmanager/internal/db"
 	"vpnmanager/internal/executor"
@@ -16,6 +17,7 @@ import (
 	"vpnmanager/internal/scheduler"
 	"vpnmanager/internal/service"
 	"vpnmanager/internal/tgbot"
+	"vpnmanager/internal/tgbot/newsletter"
 )
 
 func main() {
@@ -45,6 +47,16 @@ func main() {
 	}
 	defer db.Close()
 
+	// Initialize Telegram bot
+	// FIXME: Remove this and think how to handle logs in prod
+	botToken := os.Getenv("TG_TOKEN")
+	bCfg := tgbot.Config{
+		Token:   botToken,
+	}
+	tg, err := telego.NewBot(botToken, telego.WithDefaultDebugLogger())
+
+	nl := newsletter.New(tg)
+
 	// Initialize repos
 	configRepo := repository.NewConfig(db.Pool())
 	protocolRepo := repository.NewProtocol(db.Pool())
@@ -64,13 +76,18 @@ func main() {
 	serverService := service.NewServer(serverRepo, cr)
 	userService := service.NewUser(userRepo)
 	accessCodeService := service.NewAccessCodeService(accessCodeRepo)
+	subscriptionService := service.NewSubscription(
+		cr,
+		nl,
+		subscriptionRepo,
+		userRepo,
+		configRepo,
+		serverRepo,
+	)
 
-	botToken := os.Getenv("TG_TOKEN")
-	bCfg := tgbot.Config{
-		Token:   botToken,
-	}
 	b, err := tgbot.New(
 		ctx,
+		tg,
 		bCfg,
 		peerService,
 		serverService,
@@ -82,15 +99,6 @@ func main() {
 		os.Exit(1)
 	}
 	defer func() { b.Stop() }()
-
-	subscriptionService := service.NewSubscription(
-		cr,
-		b.Newsletter,
-		subscriptionRepo,
-		userRepo,
-		configRepo,
-		serverRepo,
-	)
 
 	s := scheduler.New(
 		subscriptionService,

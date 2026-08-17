@@ -10,7 +10,6 @@ import (
 	"vpnmanager/internal/service"
 	"vpnmanager/internal/tgbot/handlers"
 	"vpnmanager/internal/tgbot/middleware"
-	"vpnmanager/internal/tgbot/newsletter"
 	"vpnmanager/internal/tgbot/session"
 )
 
@@ -20,30 +19,23 @@ type Config struct {
 
 type Bot struct {
 	handler    *th.BotHandler
-	Newsletter *newsletter.Newsletter
 }
 
 func New(
 	ctx context.Context,
+	tg *telego.Bot,
 	cfg Config,
 	cs *service.ConfigService,
 	ss *service.ServerService,
 	us *service.UserService,
 	acs *service.AccessCodeService,
 ) (*Bot, error) {
-	// FIXME: Remove this and think how to handle logs in prod
-	bot, err := telego.NewBot(cfg.Token, telego.WithDefaultDebugLogger())
-	if err != nil {
-		return nil, fmt.Errorf("failed to create Telegram bot: %s", err)
-	}
-	newsletter := newsletter.New(bot)
+	updates, _ := tg.UpdatesViaLongPolling(ctx, nil)
 
-	updates, _ := bot.UpdatesViaLongPolling(ctx, nil)
-
-	bh, _ := th.NewBotHandler(bot, updates)
+	bh, _ := th.NewBotHandler(tg, updates)
 	sessions := session.NewStore()
 	h := handlers.NewHandlers(
-		bot,
+		tg,
 		sessions,
 		cs,
 		ss,
@@ -51,7 +43,7 @@ func New(
 	)
 
 	bh.Use(th.PanicRecovery())
-	bh.Use(middleware.IsAuthenticated(bot, us, acs))
+	bh.Use(middleware.IsAuthenticated(tg, us, acs))
 
 	bh.Handle(
 		h.HandleStart,
@@ -80,7 +72,7 @@ func New(
 		th.CommandPrefix(fmt.Sprintf("%s_", handlers.AdminHandlerPrefix)),
 		th.CallbackDataPrefix(fmt.Sprintf("%s:", handlers.AdminHandlerPrefix)),
 	))
-	admin.Use(middleware.IsAdmin(bot, us))
+	admin.Use(middleware.IsAdmin(tg, us))
 
 	admin.Handle(
 		h.HandleGenerateAccessCode,
@@ -99,7 +91,7 @@ func New(
 		),
 	)
 
-	return &Bot{handler: bh, Newsletter: newsletter}, nil
+	return &Bot{handler: bh}, nil
 }
 
 func (b *Bot) Start() error { return b.handler.Start() }
