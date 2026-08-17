@@ -9,6 +9,9 @@ import (
 	"vpnmanager/internal/executor"
 	"vpnmanager/internal/repository"
 	"vpnmanager/internal/tgbot/newsletter"
+
+	"github.com/mymmrac/telego"
+	th "github.com/mymmrac/telego/telegohandler"
 )
 
 type SubscriptionService struct {
@@ -64,6 +67,18 @@ func (s *SubscriptionService) SetPeriodEnd(
 	if err != nil {
 		return 0, fmt.Errorf("setting period end for each user: %w", err)
 	}
+
+	users, err := s.userRepository.ListAll(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("retrieving all users: %w", err)
+	}
+
+	var recipients []telego.ChatID
+	for _, u := range users {
+		recipients = append(recipients, telego.ChatID{ID: *u.TelegramID})
+	}
+
+	s.newsletter.BroadcastMessage(ctx.(*th.Context), recipients, "You need to pay")
 
 	return rowsAffected, nil
 }
