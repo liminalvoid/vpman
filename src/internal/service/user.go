@@ -42,6 +42,15 @@ func (s *UserService) CreateWithAccessCode(
 	return nil
 }
 
+func (s *UserService) ListAll(ctx context.Context) ([]model.User, error) {
+	users, err := s.userRepository.ListAll(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("retrieving users: %w", err)
+	}
+
+	return users, nil
+}
+
 func (s *UserService) GetByTelegramID(
 	ctx context.Context,
 	userID int64,
