@@ -7,6 +7,7 @@ import (
 
 	"vpnmanager/internal/configgen"
 	"vpnmanager/internal/executor"
+	"vpnmanager/internal/model"
 	"vpnmanager/internal/repository"
 	"vpnmanager/internal/tgbot/newsletter"
 
@@ -57,6 +58,18 @@ func (s *SubscriptionService) AddSubscription(
 	}
 
 	return nil
+}
+
+func (s *SubscriptionService) GetByTelegramID(
+	ctx context.Context,
+	telegramID int64,
+) (*model.Subscription, error) {
+	subscription, err := s.subscriptionRepository.GetByTelegramID(ctx, telegramID)
+	if err != nil {
+		return nil, fmt.Errorf("retrieving subscription via user's Telegram ID: %w", err)
+	}
+
+	return subscription, nil
 }
 
 func (s *SubscriptionService) SetPeriodEnd(

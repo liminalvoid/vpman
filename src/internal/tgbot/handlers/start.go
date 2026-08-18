@@ -84,14 +84,21 @@ func (h *Handlers) HandleStart(ctx *th.Context, update telego.Update) error {
 		return fmt.Errorf("querying configs: %w", err)
 	}
 
+	subscription, err := h.subscriptionService.GetByTelegramID(ctx, userID)
+	if err != nil {
+		return fmt.Errorf("retrieving subscriptions: %w", err)
+	}
+	maxConfigCount := subscription.Quantity
+
 	isAdmin := h.sessions.Get(userID).IsAdmin
 	h.bot.SendMessage(
 		ctx,
 		tu.Messagef(
 			chatID,
-			"Привет, %s\n\nКоличество ключей: %d\n\nДоступные локации:\n\n%s",
+			"Привет, %s\n\nКоличество ключей: %d/%d\n\nДоступные локации:\n\n%s",
 			firstName,
 			len(configs),
+			maxConfigCount,
 			strings.Join(formattedServers, "\n"),
 		).
 			WithReplyMarkup(renderStartKb(isAdmin)),
