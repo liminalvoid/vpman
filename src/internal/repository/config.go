@@ -137,6 +137,26 @@ func (r *Config) MarkSuspended(ctx context.Context, publicID string) (int64, err
 	return tag.RowsAffected(), nil
 }
 
+func (r *Config) MarkSuspendedNLatest(
+	ctx context.Context,
+	subscriptionID int64,
+	count int,
+) (int64, error) {
+	const q = `
+		UPDATE configs
+		SET status = $1
+		WHERE subscription_id = $2
+		ORDER BY created_at DESC
+		LIMIT $3`
+	
+	tag, err := r.conn.Exec(ctx, q, model.ConfigStatusSuspended, subscriptionID, count)
+	if err != nil {
+		return 0, fmt.Errorf("marking %d latest configs as suspended: %w", count, err)
+	}
+
+	return tag.RowsAffected(), nil
+}
+
 func (r *Config) ListStaleConfigs(
 	ctx context.Context,
 	period time.Duration,
