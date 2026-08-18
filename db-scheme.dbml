@@ -62,7 +62,7 @@ Table subscriptions {
 
     checks {
         `status IN ('active', 'past_due')` [name: "chk_status_is_known"]
-        `quantity >= 1`                                           [name: "chk_quantity_positive"]
+        `quantity >= 1`                    [name: "chk_quantity_positive"]
     }
 }
 
