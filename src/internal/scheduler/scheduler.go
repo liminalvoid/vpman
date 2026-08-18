@@ -10,6 +10,7 @@ import (
 
 type Scheduler struct {
 	subscriptionService *service.SubscriptionService
+	configService       *service.ConfigService
 	interval            time.Duration
 	batch               int
 	endPeriod           time.Duration
@@ -17,12 +18,14 @@ type Scheduler struct {
 
 func New(
 	subscriptionService *service.SubscriptionService,
+	configService *service.ConfigService,
 	interval time.Duration,
 	batch int,
 	endPeriod time.Duration,
 ) *Scheduler {
 	return &Scheduler{
 		subscriptionService,
+		configService,
 		interval,
 		batch,
 		endPeriod,
@@ -49,7 +52,7 @@ func (s *Scheduler) tick(ctx context.Context) {
 
 	for _, sweep := range []func(context.Context, time.Duration, int) error{
 		s.subscriptionService.SetPastDue,
-		s.subscriptionService.HandleCancelled,
+		s.configService.RemoveStale,
 	} {
 		if err := sweep(ctx, s.endPeriod, s.batch); err != nil {
 			log.Printf("sweep: %s", err)

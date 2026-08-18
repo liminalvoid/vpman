@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"vpnmanager/internal/configgen"
 	"vpnmanager/internal/executor"
 	"vpnmanager/internal/model"
 	"vpnmanager/internal/repository"
@@ -109,70 +108,23 @@ func (s *SubscriptionService) SetPastDue(
 	return nil
 }
 
-func (s *SubscriptionService) HandleCancelled(
+func (s *SubscriptionService) SetKeysLimit(
 	ctx context.Context,
-	period time.Duration,
-	batch int,
+	userID int64,
+	limit int,
 ) error {
-	staleConfigs, err := s.configRepository.ListStaleConfigs(ctx, period, batch)
+	subscription, err := s.subscriptionRepository.GetByTelegramID(ctx, userID)
 	if err != nil {
-		return fmt.Errorf("retrieving stale configs: %w", err)
+		return fmt.Errorf("retrieving subscription via Telegram ID: %w", err)
 	}
+	prevLimit := subscription.Quantity
 
-	if len(staleConfigs) == 0 {
-		return nil
-	}
-
-	servers, err := s.serverRepository.ListAll(ctx)
+	_, err = s.subscriptionRepository.ChangeKeysLimitCount(ctx, limit, userID)
 	if err != nil {
-		return fmt.Errorf("retrieving servers: %w", err)
+		return fmt.Errorf("trying change keys limit: %w", err)
 	}
 
-	serverMap := make(map[string]string, 0)
-	for _, srv := range servers {
-		publicID := srv.PublicID.String()
-		if _, ok := serverMap[publicID]; !ok {
-			serverMap[publicID] = srv.InternalAddress
-		}
-	}
-
-	for _, c := range staleConfigs {
-		addr, ok := serverMap[c.ServerPublicID.String()]
-		if !ok {
-			continue
-		}
-
-		ex, err := s.containerRegistry.GetOrCreate(ctx, &executor.Config{
-			Name:     c.ServerPublicID.String(),
-			User:     "root",
-			HostAddr: addr,
-			HostPort: "2375",
-		})
-		if err != nil {
-			continue
-		}
-
-		ce, ok := ex.(*executor.ContainerExecutor)
-		if !ok {
-			continue
-		}
-
-		protocol, err := configgen.GetProtocol(c.Protocol)
-		if err != nil {
-			continue
-		}
-
-		cg := configgen.New(protocol, ce)
-
-		err = cg.Revoke(ctx, c.Protocol, c.IPAddress)
-		if err != nil {
-			continue
-		}
-	}
-
-	_, err = s.subscriptionRepository.DeleteStale(ctx, period)
-	if err != nil {
-		return fmt.Errorf("deleting stale subscriptions: %w", err)
+	if int(prevLimit) > limit {
 	}
 
 	return nil

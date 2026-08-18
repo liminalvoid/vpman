@@ -17,6 +17,7 @@ type ConfigService struct {
 	protocolRepository     *repository.Protocol
 	userRepository         *repository.User
 	subscriptionRepository *repository.Subscription
+	serverRepository       *repository.Server
 	containerRegistry      *executor.Registry
 }
 
@@ -25,6 +26,7 @@ func NewConfig(
 	protocolRepository *repository.Protocol,
 	userRepository *repository.User,
 	subscriptionRepository *repository.Subscription,
+	serverRepository *repository.Server,
 	containerRegistry *executor.Registry,
 ) *ConfigService {
 	return &ConfigService{
@@ -32,6 +34,7 @@ func NewConfig(
 		protocolRepository,
 		userRepository,
 		subscriptionRepository,
+		serverRepository,
 		containerRegistry,
 	}
 }
@@ -297,14 +300,18 @@ func (s *ConfigService) GetAvailableProtocols(ctx context.Context, server *model
 	return availableProtocols, nil
 }
 
-func (s *SubscriptionService) RemoveStale(
+func (s *ConfigService) RemoveStale(
 	ctx context.Context,
-	batch int,
 	period time.Duration,
+	batch int,
 ) error {
 	staleConfigs, err := s.configRepository.ListStaleConfigs(ctx, period, batch)
 	if err != nil {
 		return fmt.Errorf("retrieving stale configs: %w", err)
+	}
+
+	if len(staleConfigs) == 0 {
+		return nil
 	}
 
 	servers, err := s.serverRepository.ListAll(ctx)
