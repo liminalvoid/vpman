@@ -25,6 +25,7 @@ type Handlers struct {
 	serverService       *service.ServerService
 	accessCodeService   *service.AccessCodeService
 	subscriptionService *service.SubscriptionService
+	userService         *service.UserService
 }
 
 const AdminHandlerPrefix = "admin"
@@ -50,6 +51,7 @@ func NewHandlers(
 	ss *service.ServerService,
 	acs *service.AccessCodeService,
 	sbs *service.SubscriptionService,
+	us *service.UserService,
 ) *Handlers {
 	return &Handlers{
 		bot:                 bot,
@@ -58,6 +60,7 @@ func NewHandlers(
 		serverService:       ss,
 		accessCodeService:   acs,
 		subscriptionService: sbs,
+		userService:         us,
 	}
 }
 

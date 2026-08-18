@@ -42,6 +42,7 @@ func New(
 		ss,
 		acs,
 		sbs,
+		us,
 	)
 
 	bh.Use(th.PanicRecovery())
