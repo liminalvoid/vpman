@@ -125,6 +125,11 @@ func (s *SubscriptionService) SetKeysLimit(
 	}
 
 	if int(prevLimit) > limit {
+		removalCount := int(prevLimit) - limit
+		_, err := s.configRepository.MarkSuspendedNLatest(ctx, subscription.ID, removalCount)
+		if err != nil {
+			return fmt.Errorf("trying to suspend %d latest configs: %w", removalCount, err)
+		}
 	}
 
 	return nil
