@@ -74,7 +74,7 @@ func New(
 		th.CommandPrefix(fmt.Sprintf("%s_", handlers.AdminHandlerPrefix)),
 		th.CallbackDataPrefix(fmt.Sprintf("%s:", handlers.AdminHandlerPrefix)),
 	))
-	admin.Use(middleware.IsAdmin(tg, us))
+	admin.Use(middleware.IsAdmin(tg, us, sessions))
 
 	admin.Handle(
 		h.HandleGenerateAccessCode,

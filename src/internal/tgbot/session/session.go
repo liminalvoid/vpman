@@ -20,10 +20,11 @@ type EditDraft struct {
 type WizardState int
 
 type Session struct {
-	State         WizardState
-	Create        CreateDraft
-	Edit          EditDraft
-	updatedAt     time.Time
+	State     WizardState
+	Create    CreateDraft
+	Edit      EditDraft
+	IsAdmin   bool
+	updatedAt time.Time
 }
 
 type Sessions struct {

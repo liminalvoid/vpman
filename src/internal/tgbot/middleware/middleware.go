@@ -9,6 +9,7 @@ import (
 
 	"vpnmanager/internal/repository"
 	"vpnmanager/internal/service"
+	"vpnmanager/internal/tgbot/session"
 )
 
 func IsAuthenticated(
@@ -66,6 +67,7 @@ var ErrUserNotAdmin = errors.New("user is not admin")
 func IsAdmin(
 	bot *telego.Bot,
 	userService *service.UserService,
+	sessions *session.Sessions,
 ) func(ctx *th.Context, update telego.Update) error {
 	return func(ctx *th.Context, update telego.Update) error {
 		var userID int64
@@ -85,6 +87,15 @@ func IsAdmin(
 			userName,
 		)
 
+		if sess := sessions.Get(userID); sess.IsAdmin {
+			bot.Logger().Debugf(
+				"Access granted for admin-protected routes for %s",
+				userName,
+			)
+
+			return ctx.Next(update)
+		}
+
 		user, err := userService.GetByTelegramID(ctx, userID)
 		if errors.Is(err, repository.ErrUserNotExist) {
 			return err
@@ -100,6 +111,10 @@ func IsAdmin(
 			"Access granted for admin-protected routes for %s",
 			userName,
 		)
+
+		sessions.Update(userID, func(s *session.Session) {
+			s.IsAdmin = true
+		})
 
 		return ctx.Next(update)
 	}
