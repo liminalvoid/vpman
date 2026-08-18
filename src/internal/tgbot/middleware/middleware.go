@@ -16,6 +16,7 @@ func IsAuthenticated(
 	bot *telego.Bot,
 	userService *service.UserService,
 	accessCodeService *service.AccessCodeService,
+	sessions *session.Sessions,
 ) func(ctx *th.Context, update telego.Update) error {
 	return func(ctx *th.Context, update telego.Update) error {
 		var userID int64
@@ -38,7 +39,7 @@ func IsAuthenticated(
 			userName,
 		)
 
-		_, err := userService.GetByTelegramID(ctx, userID)
+		user, err := userService.GetByTelegramID(ctx, userID)
 		if errors.Is(err, repository.ErrUserNotExist) {
 			if accessCode == "" || len(accessCode) > 8 {
 				return ctx.Next(update)
@@ -54,6 +55,12 @@ func IsAuthenticated(
 			return ctx.WithValue(authStateKey{}, AuthOK).Next(update)
 		} else if err != nil {
 			return fmt.Errorf("querying user by Telegram ID: %w", err)
+		}
+
+		if user.IsAdmin {
+			sessions.Update(userID, func(s *session.Session) {
+				s.IsAdmin = true
+			})
 		}
 
 		bot.Logger().Debugf("Access granted")
@@ -87,34 +94,14 @@ func IsAdmin(
 			userName,
 		)
 
-		if sess := sessions.Get(userID); sess.IsAdmin {
-			bot.Logger().Debugf(
-				"Access granted for admin-protected routes for %s",
-				userName,
-			)
-
-			return ctx.Next(update)
-		}
-
-		user, err := userService.GetByTelegramID(ctx, userID)
-		if errors.Is(err, repository.ErrUserNotExist) {
-			return err
-		} else if err != nil {
-			return fmt.Errorf("querying user via Telegram ID: %w", err)
-		}
-
-		if !user.IsAdmin {
+		if sess := sessions.Get(userID); !sess.IsAdmin {
 			return ErrUserNotAdmin
 		}
-
+		
 		bot.Logger().Debugf(
 			"Access granted for admin-protected routes for %s",
 			userName,
 		)
-
-		sessions.Update(userID, func(s *session.Session) {
-			s.IsAdmin = true
-		})
 
 		return ctx.Next(update)
 	}

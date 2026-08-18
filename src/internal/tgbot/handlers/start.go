@@ -9,31 +9,42 @@ import (
 	tu "github.com/mymmrac/telego/telegoutil"
 )
 
-var startKb = tu.InlineKeyboard(
-	tu.InlineKeyboardRow(
-		tu.
-			InlineKeyboardButton("Сгенерировать ключ").
-			WithCallbackData("generate_key"),
-	),
-	tu.InlineKeyboardRow(
-		tu.
-			InlineKeyboardButton("Управление ключами").
-			WithCallbackData("manage_keys"),
-	),
-	tu.InlineKeyboardRow(
-		tu.
-			InlineKeyboardButton("Сгенерировать инвайт-код").
-			WithCallbackData("admin:generate_invite"),
-	),
-	tu.InlineKeyboardRow(
-		tu.
-			InlineKeyboardButton("Установить дедлайн по оплате").
-			WithCallbackData("admin:set_past_due"),
-	),
-)
+func renderStartKb(isAdmin bool) *telego.InlineKeyboardMarkup {
+	baseKb := [][]telego.InlineKeyboardButton{
+		tu.InlineKeyboardRow(
+			tu.
+				InlineKeyboardButton("Сгенерировать ключ").
+				WithCallbackData("generate_key"),
+		),
+		tu.InlineKeyboardRow(
+			tu.
+				InlineKeyboardButton("Управление ключами").
+				WithCallbackData("manage_keys"),
+		),
+	}
+	adminKb := [][]telego.InlineKeyboardButton{
+		tu.InlineKeyboardRow(
+			tu.
+				InlineKeyboardButton("Сгенерировать инвайт-код").
+				WithCallbackData("admin:generate_invite"),
+		),
+		tu.InlineKeyboardRow(
+			tu.
+				InlineKeyboardButton("Установить дедлайн по оплате").
+				WithCallbackData("admin:set_past_due"),
+		),
+	}
+
+	if isAdmin {
+		baseKb = append(baseKb, adminKb...)
+	}
+
+	return tu.InlineKeyboard(baseKb...)
+}
 
 func (h *Handlers) HandleStart(ctx *th.Context, update telego.Update) error {
 	var chatID telego.ChatID
+	var userID int64
 	var firstName string
 
 	switch {
@@ -45,9 +56,11 @@ func (h *Handlers) HandleStart(ctx *th.Context, update telego.Update) error {
 
 		chatID = update.CallbackQuery.Message.GetChat().ChatID()
 		firstName = update.CallbackQuery.From.FirstName
+		userID = update.CallbackQuery.From.ID
 	case update.Message != nil:
 		chatID = update.Message.Chat.ChatID()
 		firstName = update.Message.From.FirstName
+		userID = update.Message.From.ID
 	}
 
 	availableServers, err := h.serverService.ListAll(ctx)
@@ -71,6 +84,7 @@ func (h *Handlers) HandleStart(ctx *th.Context, update telego.Update) error {
 		return fmt.Errorf("querying configs: %w", err)
 	}
 
+	isAdmin := h.sessions.Get(userID).IsAdmin
 	h.bot.SendMessage(
 		ctx,
 		tu.Messagef(
@@ -80,7 +94,7 @@ func (h *Handlers) HandleStart(ctx *th.Context, update telego.Update) error {
 			len(configs),
 			strings.Join(formattedServers, "\n"),
 		).
-			WithReplyMarkup(startKb),
+			WithReplyMarkup(renderStartKb(isAdmin)),
 	)
 
 	return nil
