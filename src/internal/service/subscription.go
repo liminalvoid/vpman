@@ -112,13 +112,13 @@ func (s *SubscriptionService) SetPastDue(
 	ctx context.Context,
 	period time.Duration,
 	batch int,
-) error {
-	_, err := s.subscriptionRepository.SetPastDue(ctx)
+) (int64, error) {
+	rowsAffected, err := s.subscriptionRepository.SetPastDue(ctx)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	return nil
+	return rowsAffected, nil
 }
 
 func (s *SubscriptionService) SetKeysLimit(

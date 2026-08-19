@@ -304,19 +304,19 @@ func (s *ConfigService) RemoveStale(
 	ctx context.Context,
 	period time.Duration,
 	batch int,
-) error {
+) (int64, error) {
 	staleConfigs, err := s.configRepository.ListStaleConfigs(ctx, period, batch)
 	if err != nil {
-		return fmt.Errorf("retrieving stale configs: %w", err)
+		return 0, fmt.Errorf("retrieving stale configs: %w", err)
 	}
 
 	if len(staleConfigs) == 0 {
-		return nil
+		return 0, nil
 	}
 
 	servers, err := s.serverRepository.ListAll(ctx)
 	if err != nil {
-		return fmt.Errorf("requesting servers: %w", err)
+		return 0, fmt.Errorf("requesting servers: %w", err)
 	}
 
 	serverAddrMap := make(map[string]string, 0)
@@ -326,6 +326,7 @@ func (s *ConfigService) RemoveStale(
 		}
 	}
 
+	var staleCount int64
 	for _, c := range staleConfigs {
 		privateAddr, ok := serverAddrMap[c.ServerPublicID.String()]
 		if !ok {
@@ -339,25 +340,27 @@ func (s *ConfigService) RemoveStale(
 			HostPort: "2375",
 		})
 		if err != nil {
-			return fmt.Errorf("retrieving container %q: %w", c.ServerPublicID, err)
+			return 0, fmt.Errorf("retrieving container %q: %w", c.ServerPublicID, err)
 		}
 
 		ce, ok := ex.(*executor.ContainerExecutor)
 		if !ok {
-			return fmt.Errorf("unexpected executor type %T", ex)
+			return 0, fmt.Errorf("unexpected executor type %T", ex)
 		}
 
 		p, err := configgen.GetProtocol(c.Protocol)
 		if err != nil {
-			return fmt.Errorf("retrieving protocol %q: %w", c.Protocol, err)
+			return 0, fmt.Errorf("retrieving protocol %q: %w", c.Protocol, err)
 		}
 		cg := configgen.New(p, ce)
 
 		err = cg.Revoke(ctx, c.Protocol, c.IPAddress)
 		if err != nil {
-			return fmt.Errorf("revoking protocol with IP address %q: %w", c.IPAddress, err)
+			return 0, fmt.Errorf("revoking protocol with IP address %q: %w", c.IPAddress, err)
 		}
+
+		staleCount += 1
 	}
 
-	return nil
+	return staleCount, nil
 }

@@ -50,12 +50,15 @@ func (s *Scheduler) tick(ctx context.Context) {
 	ctx, cancel := context.WithTimeout(ctx, s.interval * 5)
 	defer cancel()
 
-	for _, sweep := range []func(context.Context, time.Duration, int) error{
-		s.subscriptionService.SetPastDue,
-		s.configService.RemoveStale,
+	for name, sweep := range map[string](func(context.Context, time.Duration, int) (int64, error)){
+		"past_due": s.subscriptionService.SetPastDue,
+		"remove_stale": s.configService.RemoveStale,
 	} {
-		if err := sweep(ctx, s.endPeriod, s.batch); err != nil {
+		affectedEntities, err := sweep(ctx, s.endPeriod, s.batch)
+		if err != nil {
 			log.Printf("sweep: %s", err)
 		}
+
+		log.Printf("successful sweep: %s, affected %d entities", name, affectedEntities)
 	}
 }
