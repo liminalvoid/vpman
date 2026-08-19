@@ -17,12 +17,19 @@ type EditDraft struct {
 	Config *model.ConfigListView
 }
 
+type EditUserDraft struct {
+	User         model.User
+	Username     string
+	NewKeysLimit int
+}
+
 type WizardState int
 
 type Session struct {
 	State     WizardState
 	Create    CreateDraft
 	Edit      EditDraft
+	EditUser  EditUserDraft
 	IsAdmin   bool
 	updatedAt time.Time
 }
@@ -55,6 +62,9 @@ const (
 	StateSetPastDueConfirm
 
 	StateManageUsers
+	StateManageUsersSelect
+	StateManageUsersEditKeysAmount
+	StateManageUsersEnterKeysAmount
 )
 
 func NewStore() *Sessions {

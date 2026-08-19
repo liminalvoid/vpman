@@ -2,9 +2,10 @@ package handlers
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
-	"time"
 
+	"github.com/google/uuid"
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
 	tu "github.com/mymmrac/telego/telegoutil"
@@ -13,6 +14,14 @@ import (
 )
 
 var ManageUsersPrefix = fmt.Sprintf("%s:manage_users", AdminHandlerPrefix)
+
+var manageUsersActionsKb = [][]telego.InlineKeyboardButton{
+	tu.InlineKeyboardRow(
+		tu.
+			InlineKeyboardButton("Изменить количество ключей").
+			WithCallbackData(fmt.Sprintf("%s:edit_keys_amount", ManageUsersPrefix)),
+	),
+}
 
 func (h *Handlers) HandleManageUsers(
 	ctx *th.Context,
@@ -30,19 +39,52 @@ func (h *Handlers) HandleManageUsers(
 			fmt.Sprintf("%s", ManageUsersPrefix),
 			"",
 		)
-		switch callbackData {
-		case "":
+		switch {
+		case callbackData == "":
 			h.sessions.Update(userID, func(s *session.Session) {
 				s.State = session.StateManageUsers
 			})
-		case ":yes":
+		case strings.Contains(callbackData, ":u:"):
+			userUUID, err := uuid.Parse(strings.ReplaceAll(callbackData, ":u:", ""))
+			if err != nil {
+				return fmt.Errorf("parsing user's UUID: %w", err)
+			}
+
+			h.sessions.Update(userID, func(s *session.Session) {
+				s.EditUser.User.PublicID = userUUID
+				s.State = session.StateManageUsersSelect
+			})
+		case callbackData == ":edit_keys_amount":
 			h.sessions.Update(userID, func(s *session.Session) {
 				s.State = session.StateSetPastDueConfirm
+			})
+		case callbackData == ":edit_keys_amount":
+			h.sessions.Update(userID, func(s *session.Session) {
+				s.State = session.StateManageUsersEditKeysAmount
 			})
 		}
 	case update.Message != nil:
 		userID = update.Message.From.ID
 		response.ChatID = update.Message.Chat.ChatID()
+
+		sess := h.sessions.Get(userID)
+		switch sess.State {
+		case session.StateManageUsers:
+			newKeysLimit, err := strconv.Atoi(update.Message.Text)
+			if err != nil {
+				return fmt.Errorf("converting message with new keys amount to int: %w", err)
+			}
+
+			err = h.subscriptionService.SetKeysLimit(ctx, sess.EditUser.User.ID, newKeysLimit)
+			if err != nil {
+				return fmt.Errorf("setting new keys limit: %w", err)
+			}
+
+			response.Text = "Лимит ключей успешно обновлен!"
+			h.sessions.Update(userID, func(s *session.Session) {
+				s.State = session.StateIdle
+			})
+		}
 	}
 
 	var draftKb [][]telego.InlineKeyboardButton
@@ -72,12 +114,11 @@ func (h *Handlers) HandleManageUsers(
 			if err != nil {
 				return fmt.Errorf("retrieving chat via bot: %w", err)
 			}
-			fmt.Println(chat)
 			draftKb = append(draftKb, tu.InlineKeyboardRow(
 				tu.
 					InlineKeyboardButton(chat.FirstName).
 					WithCallbackData(fmt.Sprintf(
-						"%s:%s",
+						"%s:u:%s",
 						ManageUsersPrefix,
 						u.PublicID.String(),
 					)),
@@ -85,15 +126,25 @@ func (h *Handlers) HandleManageUsers(
 		}
 
 		response.Text = "Доступные пользователи"
-	case session.StateSetPastDueConfirm:
-		_, err := h.subscriptionService.SetPeriodEnd(ctx, time.Now())
+		h.sessions.Update(userID, func(s *session.Session) {
+			s.State = session.StateManageUsersEditKeysAmount
+		})
+	case session.StateManageUsersSelect:
+		subscription, err := h.subscriptionService.GetByPublicID(sess.EditUser.User.PublicID.String())
 		if err != nil {
-			return fmt.Errorf("trying to set period end: %w", err)
+			return fmt.Errorf("retrieving user's subscription via its public ID: %w", err)
 		}
 
-		response.Text = "Успешно"
+		response.Text = fmt.Sprintf(
+			"Пользователь %s\n\nЛимит ключей: %d",
+			sess.EditUser.Username,
+			subscription.Quantity,
+		)
+		draftKb = append(draftKb, manageUsersActionsKb...)
+	case session.StateManageUsersEditKeysAmount:
+		response.Text = "Введите новое количество ключей"
 		h.sessions.Update(userID, func(s *session.Session) {
-			s.State = session.StateIdle
+			s.State = session.StateManageUsersEnterKeysAmount
 		})
 	}
 
