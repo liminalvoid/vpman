@@ -66,11 +66,12 @@ func main() {
 	accessCodeRepo := repository.NewAccessCode(db.Pool())
 
 	// Initialize services
-	peerService := service.NewConfig(
+	configService := service.NewConfig(
 		configRepo,
 		protocolRepo,
 		userRepo,
 		subscriptionRepo,
+		serverRepo,
 		cr,
 	)
 	serverService := service.NewServer(serverRepo, cr)
@@ -89,7 +90,7 @@ func main() {
 		ctx,
 		tg,
 		bCfg,
-		peerService,
+		configService,
 		serverService,
 		userService,
 		accessCodeService,
@@ -103,6 +104,7 @@ func main() {
 
 	s := scheduler.New(
 		subscriptionService,
+		configService,
 		5 * time.Minute,
 		100,
 		30 * 24 * time.Hour,

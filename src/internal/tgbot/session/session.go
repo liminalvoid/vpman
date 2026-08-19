@@ -53,6 +53,8 @@ const (
 
 	StateSetPastDue
 	StateSetPastDueConfirm
+
+	StateManageUsers
 )
 
 func NewStore() *Sessions {
