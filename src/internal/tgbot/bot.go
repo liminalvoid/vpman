@@ -93,6 +93,12 @@ func New(
 			handlers.SetPastDuePrefix,
 		),
 	)
+	admin.Handle(
+		h.HandleManageUsers,
+		th.CallbackDataContains(
+			handlers.ManageUsersPrefix,
+		),
+	)
 
 	return &Bot{handler: bh}, nil
 }

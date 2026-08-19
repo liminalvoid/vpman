@@ -33,6 +33,11 @@ func renderStartKb(isAdmin bool) *telego.InlineKeyboardMarkup {
 				InlineKeyboardButton("Установить дедлайн по оплате").
 				WithCallbackData("admin:set_past_due"),
 		),
+		tu.InlineKeyboardRow(
+			tu.
+				InlineKeyboardButton("Управление пользователями").
+				WithCallbackData(ManageUsersPrefix),
+		),
 	}
 
 	if isAdmin {

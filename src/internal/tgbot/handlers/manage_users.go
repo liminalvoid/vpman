@@ -27,7 +27,7 @@ func (h *Handlers) HandleManageUsers(
 
 		callbackData := strings.ReplaceAll(
 			update.CallbackQuery.Data,
-			fmt.Sprintf("%s", SetPastDuePrefix),
+			fmt.Sprintf("%s", ManageUsersPrefix),
 			"",
 		)
 		switch callbackData {
@@ -55,6 +55,12 @@ func (h *Handlers) HandleManageUsers(
 			return fmt.Errorf("retrieving users: %w", err)
 		}
 
+		if len(users) == 0 {
+			response.Text = "Нет доступных пользователей"
+
+			break
+		}
+
 		for _, u := range users {
 			if u.TelegramID == nil {
 				continue
@@ -66,15 +72,19 @@ func (h *Handlers) HandleManageUsers(
 			if err != nil {
 				return fmt.Errorf("retrieving chat via bot: %w", err)
 			}
+			fmt.Println(chat)
 			draftKb = append(draftKb, tu.InlineKeyboardRow(
 				tu.
-					InlineKeyboardButton(chat.LastName).
-					WithCallbackData(fmt.Sprintf("%s:%d", ManageUsersPrefix, telegramID)),
+					InlineKeyboardButton(chat.FirstName).
+					WithCallbackData(fmt.Sprintf(
+						"%s:%s",
+						ManageUsersPrefix,
+						u.PublicID.String(),
+					)),
 			))
 		}
 
 		response.Text = "Доступные пользователи"
-		draftKb = setPastDueKb
 	case session.StateSetPastDueConfirm:
 		_, err := h.subscriptionService.SetPeriodEnd(ctx, time.Now())
 		if err != nil {
