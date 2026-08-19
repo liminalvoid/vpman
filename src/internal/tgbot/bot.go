@@ -72,6 +72,7 @@ func New(
 	)
 
 	admin := bh.Group(th.Or(
+		th.And(th.AnyMessage(), h.InState(session.StateManageUsersEnterKeysAmount)),
 		th.CommandPrefix(fmt.Sprintf("%s_", handlers.AdminHandlerPrefix)),
 		th.CallbackDataPrefix(fmt.Sprintf("%s:", handlers.AdminHandlerPrefix)),
 	))
@@ -95,8 +96,9 @@ func New(
 	)
 	admin.Handle(
 		h.HandleManageUsers,
-		th.CallbackDataContains(
-			handlers.ManageUsersPrefix,
+		th.Or(
+			th.And(th.AnyMessage(), h.InState(session.StateManageUsersEnterKeysAmount)),
+			th.CallbackDataContains(handlers.ManageUsersPrefix),
 		),
 	)
 

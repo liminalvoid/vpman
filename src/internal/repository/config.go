@@ -145,9 +145,13 @@ func (r *Config) MarkSuspendedNLatest(
 	const q = `
 		UPDATE configs
 		SET status = $1
-		WHERE subscription_id = $2
-		ORDER BY created_at DESC
-		LIMIT $3`
+		WHERE id IN (
+			SELECT id
+			FROM configs
+			WHERE subscription_id = $2
+			ORDER BY created_at DESC
+			LIMIT $3
+		)`
 	
 	tag, err := r.conn.Exec(ctx, q, model.ConfigStatusSuspended, subscriptionID, count)
 	if err != nil {

@@ -10,6 +10,7 @@ import (
 	"vpnmanager/internal/repository"
 	"vpnmanager/internal/tgbot/newsletter"
 
+	"github.com/google/uuid"
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
 )
@@ -71,6 +72,18 @@ func (s *SubscriptionService) GetByTelegramID(
 	return subscription, nil
 }
 
+func (s *SubscriptionService) GetByPublicID(
+	ctx context.Context,
+	userPublicID uuid.UUID,
+) (*model.Subscription, error) {
+	subscription, err := s.subscriptionRepository.GetByPublicID(ctx, userPublicID)
+	if err != nil {
+		return nil, fmt.Errorf("retrieving subscription via user's public ID: %w", err)
+	}
+
+	return subscription, nil
+}
+
 func (s *SubscriptionService) SetPeriodEnd(
 	ctx context.Context,
 	endDate time.Time,
@@ -110,16 +123,16 @@ func (s *SubscriptionService) SetPastDue(
 
 func (s *SubscriptionService) SetKeysLimit(
 	ctx context.Context,
-	userID int64,
+	userPublicID uuid.UUID,
 	limit int,
 ) error {
-	subscription, err := s.subscriptionRepository.GetByTelegramID(ctx, userID)
+	subscription, err := s.subscriptionRepository.GetByPublicID(ctx, userPublicID)
 	if err != nil {
-		return fmt.Errorf("retrieving subscription via Telegram ID: %w", err)
+		return fmt.Errorf("retrieving subscription via user ID: %w", err)
 	}
 	prevLimit := subscription.Quantity
 
-	_, err = s.subscriptionRepository.ChangeKeysLimitCount(ctx, limit, userID)
+	_, err = s.subscriptionRepository.ChangeKeysLimitCount(ctx, limit, subscription.UserID)
 	if err != nil {
 		return fmt.Errorf("trying change keys limit: %w", err)
 	}

@@ -56,10 +56,6 @@ func (h *Handlers) HandleManageUsers(
 			})
 		case callbackData == ":edit_keys_amount":
 			h.sessions.Update(userID, func(s *session.Session) {
-				s.State = session.StateSetPastDueConfirm
-			})
-		case callbackData == ":edit_keys_amount":
-			h.sessions.Update(userID, func(s *session.Session) {
 				s.State = session.StateManageUsersEditKeysAmount
 			})
 		}
@@ -69,18 +65,18 @@ func (h *Handlers) HandleManageUsers(
 
 		sess := h.sessions.Get(userID)
 		switch sess.State {
-		case session.StateManageUsers:
+		case session.StateManageUsersEnterKeysAmount:
 			newKeysLimit, err := strconv.Atoi(update.Message.Text)
 			if err != nil {
 				return fmt.Errorf("converting message with new keys amount to int: %w", err)
 			}
 
-			err = h.subscriptionService.SetKeysLimit(ctx, sess.EditUser.User.ID, newKeysLimit)
+			err = h.subscriptionService.SetKeysLimit(ctx, sess.EditUser.User.PublicID, newKeysLimit)
 			if err != nil {
 				return fmt.Errorf("setting new keys limit: %w", err)
 			}
 
-			response.Text = "Лимит ключей успешно обновлен!"
+			response.Text = "Лимит ключей успешно обновлен\\!"
 			h.sessions.Update(userID, func(s *session.Session) {
 				s.State = session.StateIdle
 			})
@@ -130,7 +126,7 @@ func (h *Handlers) HandleManageUsers(
 			s.State = session.StateManageUsersEditKeysAmount
 		})
 	case session.StateManageUsersSelect:
-		subscription, err := h.subscriptionService.GetByPublicID(sess.EditUser.User.PublicID.String())
+		subscription, err := h.subscriptionService.GetByPublicID(ctx, sess.EditUser.User.PublicID)
 		if err != nil {
 			return fmt.Errorf("retrieving user's subscription via its public ID: %w", err)
 		}
