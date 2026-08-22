@@ -124,14 +124,14 @@ func (r *Subscription) IsLimitSurpassedByTelegramID(
 ) (*bool, error) {
 	const q = `
 		SELECT (
-			SELECT COUNT(c.id) FROM configs c WHERE c.subscription_id = s.id
+			SELECT COUNT(c.id) FROM configs c WHERE c.subscription_id = s.id AND c.status = $2
 		) >= s.quantity AS is_over_limit
 		FROM subscriptions s
 		JOIN users u ON s.user_id = u.id
 		WHERE u.telegram_id = $1`
 
 	var isOverLimit bool
-	err := r.conn.QueryRow(ctx, q, telegramID).Scan(&isOverLimit)
+	err := r.conn.QueryRow(ctx, q, telegramID, model.ConfigStatusActive).Scan(&isOverLimit)
 	if err != nil {
 		return nil, fmt.Errorf("calculating the limit overrun: %w", err)
 	}
