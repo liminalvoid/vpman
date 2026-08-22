@@ -50,9 +50,6 @@ func main() {
 	// Initialize Telegram bot
 	// FIXME: Remove this and think how to handle logs in prod
 	botToken := os.Getenv("TG_TOKEN")
-	bCfg := tgbot.Config{
-		Token:   botToken,
-	}
 	tg, err := telego.NewBot(botToken, telego.WithDefaultDebugLogger())
 
 	nl := newsletter.New(tg)
@@ -89,7 +86,6 @@ func main() {
 	b, err := tgbot.New(
 		ctx,
 		tg,
-		bCfg,
 		configService,
 		serverService,
 		userService,

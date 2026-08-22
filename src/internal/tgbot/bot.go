@@ -13,10 +13,6 @@ import (
 	"vpnmanager/internal/tgbot/session"
 )
 
-type Config struct {
-	Token string
-}
-
 type Bot struct {
 	handler    *th.BotHandler
 }
@@ -24,7 +20,6 @@ type Bot struct {
 func New(
 	ctx context.Context,
 	tg *telego.Bot,
-	cfg Config,
 	cs *service.ConfigService,
 	ss *service.ServerService,
 	us *service.UserService,
