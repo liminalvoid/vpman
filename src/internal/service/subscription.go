@@ -112,6 +112,10 @@ func (s *SubscriptionService) SetPeriodEnd(
 
 	var recipients []telego.ChatID
 	for _, u := range users {
+		if u.IsAdmin {
+			continue
+		}
+
 		recipients = append(recipients, telego.ChatID{ID: *u.TelegramID})
 	}
 
