@@ -84,6 +84,18 @@ func (s *SubscriptionService) GetByPublicID(
 	return subscription, nil
 }
 
+func (s *SubscriptionService) IsLimitSurpassedByTelegramID(
+	ctx context.Context,
+	telegramID int64,
+) (*bool, error) {
+	isLimitSurpassed, err := s.subscriptionRepository.IsLimitSurpassedByTelegramID(ctx, telegramID)
+	if err != nil {
+		return nil, fmt.Errorf("retrieving configs limit overrun: %w", err)
+	}
+
+	return isLimitSurpassed, nil
+}
+
 func (s *SubscriptionService) SetPeriodEnd(
 	ctx context.Context,
 	endDate time.Time,
