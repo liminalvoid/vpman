@@ -58,7 +58,7 @@ func (s *ConfigService) CreateConfig(
 		return "", fmt.Errorf("retrieving subscription: %w", err)
 	}
 
-	configs, err := s.configRepository.ListByTelegramID(ctx, ownerID)
+	configs, err := s.configRepository.ListActiveByTelegramID(ctx, ownerID)
 	if err != nil {
 		return "", fmt.Errorf("retrieving configs: %w", err)
 	}
@@ -249,7 +249,7 @@ func (s *ConfigService) ListConfigs(
 	ctx context.Context,
 	ownerID int64,
 ) ([]model.ConfigListView, error) {
-	configs, err := s.configRepository.ListByTelegramID(ctx, ownerID)
+	configs, err := s.configRepository.ListActiveByTelegramID(ctx, ownerID)
 	if err != nil {
 		return nil, fmt.Errorf("querying user's (%d) configs: %w", ownerID, err)
 	}

@@ -57,7 +57,7 @@ func (r *Config) GetByPublicID(
 	return &resultConfig, nil
 }
 
-func (r *Config) ListByTelegramID(ctx context.Context, userID int64) ([]model.ConfigListView, error) {
+func (r *Config) ListActiveByTelegramID(ctx context.Context, userID int64) ([]model.ConfigListView, error) {
 	const q = `
 		SELECT c.id, c.public_id, c.name, c.ip_address, p.name, s.location, c.status, c.created_at
 		FROM configs c
@@ -65,9 +65,9 @@ func (r *Config) ListByTelegramID(ctx context.Context, userID int64) ([]model.Co
 		JOIN protocols p ON c.protocol_id = p.id
 		JOIN servers s ON c.server_id = s.id
 		JOIN users u ON sb.user_id = u.id
-		WHERE u.telegram_id = $1`
+		WHERE u.telegram_id = $1 AND c.status = $2`
 
-	rows, err := r.conn.Query(ctx, q, userID)
+	rows, err := r.conn.Query(ctx, q, userID, model.ConfigStatusActive)
 	if err != nil {
 		return nil, fmt.Errorf("listing configs by Telegram ID %d: %w", userID, err)
 	}
@@ -109,7 +109,7 @@ func (r *Config) ListStaleConfigs(
 		WHERE now() > sb.current_period_end + $1 AND c.status = $3
 		ORDER BY c.id
 		LIMIT $2`
-	
+
 	rows, err := r.conn.Query(ctx, q, period, batch, model.ConfigStatusSuspended)
 	if err != nil {
 		return nil, fmt.Errorf("retrieving configs from stale subscriptions: %w", err)
@@ -196,7 +196,7 @@ func (r *Config) MarkSuspendedNLatest(
 			ORDER BY created_at DESC
 			LIMIT $3
 		)`
-	
+
 	tag, err := r.conn.Exec(ctx, q, model.ConfigStatusSuspended, subscriptionID, count)
 	if err != nil {
 		return 0, fmt.Errorf("marking %d latest configs as suspended: %w", count, err)
