@@ -125,7 +125,7 @@ func (r *Subscription) IsLimitSurpassedByTelegramID(
 	const q = `
 		SELECT (
 			SELECT COUNT(c.id) FROM configs c WHERE c.subscription_id = s.id
-		) > s.quantity AS is_over_limit
+		) >= s.quantity AS is_over_limit
 		FROM subscriptions s
 		JOIN users u ON s.user_id = u.id
 		WHERE u.telegram_id = $1`

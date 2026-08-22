@@ -135,6 +135,17 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			break
 		}
 
+		isLimitSurpassed, err := h.subscriptionService.IsLimitSurpassedByTelegramID(ctx, userID)
+		if err != nil || isLimitSurpassed == nil {
+			return fmt.Errorf("retrieving config limit overrun: %w", err)
+		}
+
+		if *isLimitSurpassed {
+			response.Text = "Не удалось создать конфиг: превышен допустимый лимит ключей"
+
+			break
+		}
+
 		response.Text = "Введи название ключа"
 		h.sessions.Update(userID, func(s *session.Session) {
 			s.State = session.StateCreateConfigEnterName
