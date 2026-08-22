@@ -25,6 +25,38 @@ func (r *Config) Create(ctx context.Context, config *model.Config) error {
 		Scan(&config.ID, &config.PublicID, &config.Status, &config.CreatedAt)
 }
 
+func (r *Config) GetByPublicID(
+	ctx context.Context,
+	publicID string,
+) (*model.ConfigListView, error) {
+	const q = `
+		SELECT c.id, c.public_id, c.name, c.ip_address, p.name, s.location, s.public_id, c.status, c.created_at
+		FROM configs c
+		JOIN protocols p ON c.protocol_id = p.id
+		JOIN servers s ON c.server_id = s.id
+		WHERE c.public_id = $1`
+
+	var resultConfig model.ConfigListView
+	err := r.conn.
+		QueryRow(ctx, q, publicID).
+		Scan(
+			&resultConfig.ID,
+			&resultConfig.PublicID,
+			&resultConfig.Name,
+			&resultConfig.IPAddress,
+			&resultConfig.Protocol,
+			&resultConfig.Location,
+			&resultConfig.ServerPublicID,
+			&resultConfig.Status,
+			&resultConfig.CreatedAt,
+		)
+	if err != nil {
+		return nil, fmt.Errorf("retrieving config by public ID %q: %w", publicID, err)
+	}
+
+	return &resultConfig, nil
+}
+
 func (r *Config) ListByTelegramID(ctx context.Context, userID int64) ([]model.ConfigListView, error) {
 	const q = `
 		SELECT c.id, c.public_id, c.name, c.ip_address, p.name, s.location, c.status, c.created_at
@@ -63,36 +95,48 @@ func (r *Config) ListByTelegramID(ctx context.Context, userID int64) ([]model.Co
 	return out, rows.Err()
 }
 
-func (r *Config) GetByPublicID(
+func (r *Config) ListStaleConfigs(
 	ctx context.Context,
-	publicID string,
-) (*model.ConfigListView, error) {
+	period time.Duration,
+	batch int,
+) ([]model.ConfigListView, error) {
 	const q = `
 		SELECT c.id, c.public_id, c.name, c.ip_address, p.name, s.location, s.public_id, c.status, c.created_at
 		FROM configs c
 		JOIN protocols p ON c.protocol_id = p.id
 		JOIN servers s ON c.server_id = s.id
-		WHERE c.public_id = $1`
-
-	var resultConfig model.ConfigListView
-	err := r.conn.
-		QueryRow(ctx, q, publicID).
-		Scan(
-			&resultConfig.ID,
-			&resultConfig.PublicID,
-			&resultConfig.Name,
-			&resultConfig.IPAddress,
-			&resultConfig.Protocol,
-			&resultConfig.Location,
-			&resultConfig.ServerPublicID,
-			&resultConfig.Status,
-			&resultConfig.CreatedAt,
-		)
+		JOIN subscriptions sb ON c.subscription_id = sb.id
+		WHERE now() > sb.current_period_end + $1 AND c.status = $3
+		ORDER BY c.id
+		LIMIT $2`
+	
+	rows, err := r.conn.Query(ctx, q, period, batch, model.ConfigStatusSuspended)
 	if err != nil {
-		return nil, fmt.Errorf("retrieving config by public ID %q: %w", publicID, err)
+		return nil, fmt.Errorf("retrieving configs from stale subscriptions: %w", err)
+	}
+	defer rows.Close()
+
+	var out []model.ConfigListView
+	for rows.Next() {
+		var c model.ConfigListView
+		if err := rows.Scan(
+			&c.ID,
+			&c.PublicID,
+			&c.Name,
+			&c.IPAddress,
+			&c.Protocol,
+			&c.Location,
+			&c.ServerPublicID,
+			&c.Status,
+			&c.CreatedAt,
+		); err != nil {
+			return nil, fmt.Errorf("scanning config list view: %w", err)
+		}
+
+		out = append(out, c)
 	}
 
-	return &resultConfig, nil
+	return out, rows.Err()
 }
 
 func (r *Config) UpdateName(
@@ -159,48 +203,4 @@ func (r *Config) MarkSuspendedNLatest(
 	}
 
 	return tag.RowsAffected(), nil
-}
-
-func (r *Config) ListStaleConfigs(
-	ctx context.Context,
-	period time.Duration,
-	batch int,
-) ([]model.ConfigListView, error) {
-	const q = `
-		SELECT c.id, c.public_id, c.name, c.ip_address, p.name, s.location, s.public_id, c.status, c.created_at
-		FROM configs c
-		JOIN protocols p ON c.protocol_id = p.id
-		JOIN servers s ON c.server_id = s.id
-		JOIN subscriptions sb ON c.subscription_id = sb.id
-		WHERE now() > sb.current_period_end + $1 AND c.status = $3
-		ORDER BY c.id
-		LIMIT $2`
-	
-	rows, err := r.conn.Query(ctx, q, period, batch, model.ConfigStatusSuspended)
-	if err != nil {
-		return nil, fmt.Errorf("retrieving configs from stale subscriptions: %w", err)
-	}
-	defer rows.Close()
-
-	var out []model.ConfigListView
-	for rows.Next() {
-		var c model.ConfigListView
-		if err := rows.Scan(
-			&c.ID,
-			&c.PublicID,
-			&c.Name,
-			&c.IPAddress,
-			&c.Protocol,
-			&c.Location,
-			&c.ServerPublicID,
-			&c.Status,
-			&c.CreatedAt,
-		); err != nil {
-			return nil, fmt.Errorf("scanning config list view: %w", err)
-		}
-
-		out = append(out, c)
-	}
-
-	return out, rows.Err()
 }
