@@ -118,6 +118,27 @@ func (r *Subscription) GetByPublicID(
 	return &result, nil
 }
 
+func (r *Subscription) IsLimitSurpassedByTelegramID(
+	ctx context.Context,
+	telegramID int64,
+) (*bool, error) {
+	const q = `
+		SELECT (
+			SELECT COUNT(c.id) FROM configs c WHERE c.subscription_id = s.id
+		) > s.quantity AS is_over_limit
+		FROM subscriptions s
+		JOIN users u ON s.user_id = u.id
+		WHERE u.telegram_id = $1`
+
+	var isOverLimit bool
+	err := r.conn.QueryRow(ctx, q, telegramID).Scan(&isOverLimit)
+	if err != nil {
+		return nil, fmt.Errorf("calculating the limit overrun: %w", err)
+	}
+
+	return &isOverLimit, nil
+}
+
 func (r *Subscription) ChangeKeysLimitCount(
 	ctx context.Context,
 	count int,
