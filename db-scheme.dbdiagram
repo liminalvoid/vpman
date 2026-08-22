@@ -1,10 +1,11 @@
 {
-  "version": "2.0.0",
+  "version": "3.0.0",
   "darkMode": true,
   "gridEnabling": false,
   "currentViewName": null,
   "defaultView": {
     "detailLevel": "All",
+    "relationshipMode": "All",
     "tablePositions": [
       {
         "name": "configs",
@@ -33,8 +34,8 @@
       {
         "name": "servers",
         "schemaName": "public",
-        "x": 904.1363926995767,
-        "y": 203.80911571996387
+        "x": 906.1363926995767,
+        "y": 106.83317889464502
       },
       {
         "name": "access_codes",
