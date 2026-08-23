@@ -1,4 +1,4 @@
-package random
+package lib
 
 import (
 	"crypto/rand"

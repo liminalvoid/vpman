@@ -8,7 +8,7 @@ import (
 	th "github.com/mymmrac/telego/telegohandler"
 	tu "github.com/mymmrac/telego/telegoutil"
 
-	"vpnmanager/internal/random"
+	"vpnmanager/internal/lib"
 	"vpnmanager/internal/tgbot/session"
 )
 
@@ -43,7 +43,7 @@ func (h *Handlers) HandleGenerateAccessCode(
 		)
 		switch callbackData {
 		case CreateInviteCodePrefix:
-			accessCode, err := random.GenerateAccessCode(8)
+			accessCode, err := lib.GenerateAccessCode(8)
 			if err != nil {
 				return fmt.Errorf("trying generate invite code: %w", err)
 			}
