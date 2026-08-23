@@ -30,4 +30,3 @@ func (s *AccessCodeService) Create(
 
 	return nil
 }
-
