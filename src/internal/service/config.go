@@ -8,6 +8,7 @@ import (
 
 	"vpnmanager/internal/configgen"
 	"vpnmanager/internal/executor"
+	"vpnmanager/internal/lib"
 	"vpnmanager/internal/model"
 	"vpnmanager/internal/repository"
 )
@@ -51,7 +52,7 @@ func (s *ConfigService) CreateConfig(
 	ctx context.Context,
 	ownerID int64,
 	server *model.Server,
-	name, protocol, containerID string,
+	name, protocol, containerID, format string,
 ) (string, error) {
 	subscription, err := s.subscriptionRepository.GetByTelegramID(ctx, ownerID)
 	if err != nil {
@@ -138,6 +139,13 @@ func (s *ConfigService) CreateConfig(
 	err = s.configRepository.Create(ctx, &cfgData)
 	if err != nil {
 		return "", fmt.Errorf("writing config info to DB: %w", err)
+	}
+
+	if format == "amnezia" {
+		resultCfg, err = lib.CompressConfigForAmnezia([]byte(resultCfg), 8)
+		if err != nil {
+			return "", fmt.Errorf("compressing config: %w", err)
+		}
 	}
 
 	return resultCfg, nil

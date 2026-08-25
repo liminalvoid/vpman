@@ -11,6 +11,7 @@ type CreateDraft struct {
 	Name     string
 	Server   *model.Server
 	Protocol string
+	Format   string
 }
 
 type EditDraft struct {
@@ -46,6 +47,8 @@ const (
 	StateCreateConfigEnterName
 	StateCreateConfigSelectLocation
 	StateCreateConfigSelectProtocol
+	StateCreateConfigSelectFormat
+	StateCreateConfigPreview
 	StateCreateConfigConfirm
 	StateCreateConfigEdit
 

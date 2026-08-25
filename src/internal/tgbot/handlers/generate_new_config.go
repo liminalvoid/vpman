@@ -36,6 +36,19 @@ var finalMenuKb = [][]telego.InlineKeyboardButton{
 	),
 }
 
+var selectConfigTypeKb = [][]telego.InlineKeyboardButton{
+	tu.InlineKeyboardRow(
+		tu.
+			InlineKeyboardButton("Нативный формат").
+			WithCallbackData(fmt.Sprintf("%s:native", GenerateNewConfigPrefix)),
+	),
+	tu.InlineKeyboardRow(
+		tu.
+			InlineKeyboardButton("Для AmneziaVPN").
+			WithCallbackData(fmt.Sprintf("%s:amnezia", GenerateNewConfigPrefix)),
+	),
+}
+
 func convertCountryCodeToFlagEmoji(code string) string {
 	if len(code) != 2 {
 		return ""
@@ -63,22 +76,9 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 	var draftKb [][]telego.InlineKeyboardButton
 	response := Response{}
 
-	// Generate keyboard with available servers
-	var serversKbRows [][]telego.InlineKeyboardButton
 	servers, err := h.serverService.ListAll(ctx)
 	if err != nil {
 		return fmt.Errorf("retrieving servers: %w", err)
-	}
-	for _, s := range servers {
-		flagEmoji := convertCountryCodeToFlagEmoji(s.Location)
-		keyTitle := fmt.Sprintf("%s %s | %s", flagEmoji, s.LocationCountry, s.LocationCity)
-		callbackData := fmt.Sprintf("%s:server-%s", GenerateNewConfigPrefix, s.PublicID.String())
-
-		serversKbRows = append(serversKbRows, tu.InlineKeyboardRow(
-			tu.
-				InlineKeyboardButton(keyTitle).
-				WithCallbackData(callbackData),
-		))
 	}
 
 	sess := h.sessions.Get(userID)
@@ -92,18 +92,32 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 		)
 
 		callbackData := update.CallbackQuery.Data
-		switch callbackData {
-		case GenerateNewConfigPrefix:
+		switch {
+		case callbackData == GenerateNewConfigPrefix:
 			h.sessions.Update(userID, func(s *session.Session) {
 				s.State = session.StateCreateConfig
 			})
-		case fmt.Sprintf("%s:yes", GenerateNewConfigPrefix):
+		case callbackData == fmt.Sprintf("%s:yes", GenerateNewConfigPrefix):
 			h.sessions.Update(userID, func(s *session.Session) {
 				s.State = session.StateCreateConfigConfirm
 			})
-		case fmt.Sprintf("%s:edit", GenerateNewConfigPrefix):
+		case callbackData == fmt.Sprintf("%s:edit", GenerateNewConfigPrefix):
 			h.sessions.Update(userID, func(s *session.Session) {
 				s.State = session.StateCreateConfigEdit
+			})
+		case strings.Contains(callbackData, fmt.Sprintf("%s:protocol-", GenerateNewConfigPrefix)):
+			sess = h.sessions.Update(userID, func(s *session.Session) {
+				s.Create.Protocol = strings.ReplaceAll(update.CallbackQuery.Data, fmt.Sprintf("%s:protocol-", GenerateNewConfigPrefix), "")
+			})
+		case callbackData == fmt.Sprintf("%s:native", GenerateNewConfigPrefix):
+			h.sessions.Update(userID, func(s *session.Session) {
+				s.Create.Format = "native"
+				s.State = session.StateCreateConfigPreview
+			})
+		case callbackData == fmt.Sprintf("%s:amnezia", GenerateNewConfigPrefix):
+			h.sessions.Update(userID, func(s *session.Session) {
+				s.Create.Format = "amnezia"
+				s.State = session.StateCreateConfigPreview
 			})
 		}
 	case update.Message != nil:
@@ -111,9 +125,8 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 
 		switch sess.State {
 		case session.StateCreateConfigEnterName:
-			response.Text = "Выбери локацию"
-			draftKb = serversKbRows
 			configName := update.Message.Text
+
 			h.sessions.Update(userID, func(s *session.Session) {
 				s.State = session.StateCreateConfigSelectLocation
 				s.Create.Name = configName
@@ -151,6 +164,26 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			s.State = session.StateCreateConfigEnterName
 		})
 	case session.StateCreateConfigSelectLocation:
+		// Generate keyboard with available servers
+		var serversKbRows [][]telego.InlineKeyboardButton
+		for _, s := range servers {
+			flagEmoji := convertCountryCodeToFlagEmoji(s.Location)
+			keyTitle := fmt.Sprintf("%s %s | %s", flagEmoji, s.LocationCountry, s.LocationCity)
+			callbackData := fmt.Sprintf("%s:server-%s", GenerateNewConfigPrefix, s.PublicID.String())
+
+			serversKbRows = append(serversKbRows, tu.InlineKeyboardRow(
+				tu.
+					InlineKeyboardButton(keyTitle).
+					WithCallbackData(callbackData),
+			))
+		}
+
+		draftKb = serversKbRows
+		response.Text = "Выбери локацию"
+		h.sessions.Update(userID, func(s *session.Session) {
+			s.State = session.StateCreateConfigSelectProtocol
+		})
+	case session.StateCreateConfigSelectProtocol:
 		if update.CallbackQuery == nil {
 			break
 		}
@@ -200,12 +233,15 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 		response.Text = "Выбери протокол"
 		draftKb = protocolsKbRows
 		h.sessions.Update(userID, func(s *session.Session) {
-			s.State = session.StateCreateConfigSelectProtocol
+			s.State = session.StateCreateConfigSelectFormat
 		})
-	case session.StateCreateConfigSelectProtocol:
-		sess = h.sessions.Update(userID, func(s *session.Session) {
-			s.Create.Protocol = strings.ReplaceAll(update.CallbackQuery.Data, fmt.Sprintf("%s:protocol-", GenerateNewConfigPrefix), "")
+	case session.StateCreateConfigSelectFormat:
+		response.Text = "Выбери формат"
+		draftKb = selectConfigTypeKb
+		h.sessions.Update(userID, func(s *session.Session) {
+			s.State = session.StateCreateConfigPreview
 		})
+	case session.StateCreateConfigPreview:
 
 		response.Text = fmt.Sprintf(
 			"Название: %s\nПротокол: %s\nЛокация: %s\n\nСоздать ключ?",
@@ -222,6 +258,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			sess.Create.Name,
 			sess.Create.Protocol,
 			sess.Create.Protocol,
+			sess.Create.Format,
 		)
 		if err != nil {
 			if _, ok := errors.AsType[*service.LimitError](err); ok {
