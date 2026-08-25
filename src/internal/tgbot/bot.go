@@ -67,7 +67,10 @@ func New(
 	)
 
 	admin := bh.Group(th.Or(
-		th.And(th.AnyMessage(), h.InState(session.StateManageUsersEnterKeysAmount)),
+		th.And(th.AnyMessage(), h.InState(
+			session.StateManageUsersEnterKeysAmount,
+			session.StateSetPastDueEnterMessage,
+		)),
 		th.CommandPrefix(fmt.Sprintf("%s_", handlers.AdminHandlerPrefix)),
 		th.CallbackDataPrefix(fmt.Sprintf("%s:", handlers.AdminHandlerPrefix)),
 	))
@@ -85,8 +88,9 @@ func New(
 	)
 	admin.Handle(
 		h.HandleSetPastDue,
-		th.CallbackDataContains(
-			handlers.SetPastDuePrefix,
+		th.Or(
+			th.And(th.AnyMessage(), h.InState(session.StateSetPastDueEnterMessage)),
+			th.CallbackDataContains(handlers.SetPastDuePrefix),
 		),
 	)
 	admin.Handle(

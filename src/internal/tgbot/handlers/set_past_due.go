@@ -51,17 +51,34 @@ func (h *Handlers) HandleSetPastDue(
 	case update.Message != nil:
 		userID = update.Message.From.ID
 		response.ChatID = update.Message.Chat.ChatID()
+
+		sess := h.sessions.Get(userID)
+		switch sess.State {
+		case session.StateSetPastDueEnterMessage:
+			h.sessions.Update(userID, func(s *session.Session) {
+				s.SetPastDue.Message = update.Message.Text
+				s.State = session.StateSetPastDuePreview
+			})
+		}
 	}
 
 	var draftKb [][]telego.InlineKeyboardButton
 
 	sess := h.sessions.Get(userID)
-	switch sess.State{
+	switch sess.State {
 	case session.StateSetPastDue:
-		response.Text = "Установить дедлайн по оплате?"
+		response.Text = "Введи сообщение для плательщиков"
+		h.sessions.Update(userID, func(s *session.Session) {
+			s.State = session.StateSetPastDueEnterMessage
+		})
+	case session.StateSetPastDuePreview:
+		response.Text = fmt.Sprintf("Текст сообщения\\!\n\n```plain\n%s\n```\n\nПродолжить?", sess.SetPastDue.Message)
 		draftKb = setPastDueKb
+		h.sessions.Update(userID, func(s *session.Session) {
+			s.State = session.StateSetPastDueEnterMessage
+		})
 	case session.StateSetPastDueConfirm:
-		_, err := h.subscriptionService.SetPeriodEnd(ctx, time.Now())
+		_, err := h.subscriptionService.SetPeriodEnd(ctx, time.Now(), sess.SetPastDue.Message)
 		if err != nil {
 			return fmt.Errorf("trying to set period end: %w", err)
 		}

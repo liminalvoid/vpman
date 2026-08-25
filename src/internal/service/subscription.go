@@ -99,6 +99,7 @@ func (s *SubscriptionService) IsLimitSurpassedByTelegramID(
 func (s *SubscriptionService) SetPeriodEnd(
 	ctx context.Context,
 	endDate time.Time,
+	message string,
 ) (int64, error) {
 	rowsAffected, err := s.subscriptionRepository.SetEndPeriodForAll(ctx, endDate)
 	if err != nil {
@@ -119,7 +120,7 @@ func (s *SubscriptionService) SetPeriodEnd(
 		recipients = append(recipients, telego.ChatID{ID: *u.TelegramID})
 	}
 
-	s.newsletter.BroadcastMessage(ctx.(*th.Context), recipients, "You need to pay")
+	s.newsletter.BroadcastMessage(ctx.(*th.Context), recipients, message)
 
 	return rowsAffected, nil
 }

@@ -24,15 +24,20 @@ type EditUserDraft struct {
 	NewKeysLimit int
 }
 
+type SetPastDueDraft struct {
+	Message string
+}
+
 type WizardState int
 
 type Session struct {
-	State     WizardState
-	Create    CreateDraft
-	Edit      EditDraft
-	EditUser  EditUserDraft
-	IsAdmin   bool
-	updatedAt time.Time
+	State      WizardState
+	Create     CreateDraft
+	Edit       EditDraft
+	EditUser   EditUserDraft
+	SetPastDue SetPastDueDraft
+	IsAdmin    bool
+	updatedAt  time.Time
 }
 
 type Sessions struct {
@@ -62,6 +67,8 @@ const (
 	StateCreateInviteCodeGenerate
 
 	StateSetPastDue
+	StateSetPastDueEnterMessage
+	StateSetPastDuePreview
 	StateSetPastDueConfirm
 
 	StateManageUsers
