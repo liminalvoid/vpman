@@ -37,5 +37,5 @@ func CompressConfigForAmnezia(data []byte, level int) (string, error) {
 		return "", err
 	}
 
-	return "vpn://" + base64.RawStdEncoding.EncodeToString(buf.Bytes()), nil
+	return "vpn://" + base64.RawURLEncoding.EncodeToString(buf.Bytes()), nil
 }
