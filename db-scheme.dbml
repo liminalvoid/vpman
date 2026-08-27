@@ -59,10 +59,12 @@ Table subscriptions {
     created_at           timestamptz [not null, default: `now()`]
     updated_at           timestamptz
     quantity             int         [not null, note: "Keys bought"]
+    payment_claimed_at   timestamptz [note: "User asserted payment, awaiting confirmation"]
 
     checks {
-        `status IN ('active', 'past_due')` [name: "chk_status_is_known"]
-        `quantity >= 1`                    [name: "chk_quantity_positive"]
+        `status IN ('active', 'pending', 'past_due')`             [name: "chk_status_is_known"]
+        `(status = 'pending') = (payment_claimed_at IS NOT NULL)` [name: "chk_pending_has_claim"]
+        `quantity >= 1`                                           [name: "chk_quantity_positive"]
     }
 }
 
