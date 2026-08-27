@@ -5,8 +5,9 @@ import "time"
 type SubscriptionStatus string
 
 const (
-	SubscriptionStatusActive    SubscriptionStatus = "active"
-	SubscriptionStatusPastDue   SubscriptionStatus = "past_due"
+	SubscriptionStatusActive  SubscriptionStatus = "active"
+	SubscriptionStatusPending SubscriptionStatus = "pending"
+	SubscriptionStatusPastDue SubscriptionStatus = "past_due"
 )
 
 type Subscription struct {

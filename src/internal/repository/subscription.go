@@ -163,10 +163,16 @@ func (r *Subscription) SetEndPeriodForAll(
 ) (int64, error) {
 	const q = `
 		UPDATE subscriptions
-		SET current_period_end = $1, updated_at = now()
-		WHERE status = 'active'`
+		SET current_period_end = $1, status = $2, updated_at = now()
+		WHERE status = $3`
 	
-	tag, err := r.conn.Exec(ctx, q, timestamp)
+	tag, err := r.conn.Exec(
+		ctx,
+		q,
+		timestamp,
+		model.SubscriptionStatusPending,
+		model.SubscriptionStatusActive,
+	)
 	if err != nil {
 		return 0, fmt.Errorf("setting end period: %w", err)
 	}
