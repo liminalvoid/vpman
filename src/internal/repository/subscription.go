@@ -180,9 +180,9 @@ func (r *Subscription) SetPastDue(
 	const q = `
 		UPDATE subscriptions
 		SET status = 'past_due', updated_at = now()
-		WHERE now() > current_period_end`
+		WHERE now() > current_period_end AND status = $1`
 
-	tag, err := r.conn.Exec(ctx, q)
+	tag, err := r.conn.Exec(ctx, q, model.ConfigStatusActive)
 	if err != nil {
 		return 0, fmt.Errorf("setting past due status: %w", err)
 	}
