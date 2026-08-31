@@ -65,6 +65,10 @@ func New(
 			th.And(th.AnyMessage(), h.InState(session.StateEditConfigEnterName)),
 		),
 	)
+	bh.Handle(
+		h.HandleConfirmPayment,
+		th.CallbackDataContains(handlers.ConfirmPaymentPrefix),
+	)
 
 	admin := bh.Group(th.Or(
 		th.And(th.AnyMessage(), h.InState(
