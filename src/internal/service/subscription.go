@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
+	tu "github.com/mymmrac/telego/telegoutil"
 )
 
 type SubscriptionService struct {
@@ -120,7 +121,20 @@ func (s *SubscriptionService) SetPeriodEnd(
 		recipients = append(recipients, telego.ChatID{ID: *u.TelegramID})
 	}
 
-	s.newsletter.BroadcastMessage(ctx.(*th.Context), recipients, message)
+	confirmPaymentKb := tu.InlineKeyboard([][]telego.InlineKeyboardButton{
+		tu.InlineKeyboardRow(
+			tu.
+				InlineKeyboardButton("Подтвердить оплату").
+				WithCallbackData("confirm_payment"),
+		),
+	}...)
+
+	s.newsletter.BroadcastMessage(
+		ctx.(*th.Context),
+		recipients,
+		message,
+		confirmPaymentKb,
+	)
 
 	return rowsAffected, nil
 }
