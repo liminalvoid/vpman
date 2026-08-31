@@ -17,11 +17,13 @@ func (n *Newsletter) BroadcastMessage(
 	ctx *th.Context,
 	recipients []telego.ChatID,
 	message string,
+	replyMarkup *telego.ReplyMarkup,
 ) {
 	for _, r := range recipients {
 		n.bot.SendMessage(ctx, &telego.SendMessageParams{
 			ChatID: r,
 			Text: message,
+			ReplyMarkup: *replyMarkup,
 		})	
 	}
 }
