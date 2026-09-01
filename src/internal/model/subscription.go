@@ -19,4 +19,5 @@ type Subscription struct {
 	CreatedAt        time.Time
 	UpdatedAt        *time.Time
 	Quantity         int32
+	PaymentClaimedAt *time.Time
 }
