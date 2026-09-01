@@ -75,6 +75,8 @@ const (
 	StateManageUsersSelect
 	StateManageUsersEditKeysAmount
 	StateManageUsersEnterKeysAmount
+
+	StateConfirmPayment
 )
 
 func NewStore() *Sessions {
