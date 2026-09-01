@@ -15,12 +15,24 @@ import (
 
 var ManageUsersPrefix = fmt.Sprintf("%s:manage_users", AdminHandlerPrefix)
 
-var manageUsersActionsKb = [][]telego.InlineKeyboardButton{
-	tu.InlineKeyboardRow(
-		tu.
-			InlineKeyboardButton("Изменить количество ключей").
-			WithCallbackData(fmt.Sprintf("%s:edit_keys_amount", ManageUsersPrefix)),
-	),
+func buildManageUsersActionsKb(hasConfirmedPayment bool) [][]telego.InlineKeyboardButton {
+	baseKb := [][]telego.InlineKeyboardButton{
+		tu.InlineKeyboardRow(
+			tu.
+				InlineKeyboardButton("Изменить количество ключей").
+				WithCallbackData(fmt.Sprintf("%s:edit_keys_amount", ManageUsersPrefix)),
+		),
+	}
+
+	if hasConfirmedPayment {
+		baseKb = append(baseKb, tu.InlineKeyboardRow(
+			tu.
+				InlineKeyboardButton("Подтвердить оплату").
+				WithCallbackData(fmt.Sprintf("%s:confirm_payment", ManageUsersPrefix)),
+		))
+	}
+
+	return baseKb
 }
 
 func (h *Handlers) HandleManageUsers(
@@ -131,12 +143,13 @@ func (h *Handlers) HandleManageUsers(
 			return fmt.Errorf("retrieving user's subscription via its public ID: %w", err)
 		}
 
+		hasSubmittedPayment := string(subscription.Status) == "pending" && subscription.PaymentClaimedAt != nil
 		response.Text = fmt.Sprintf(
 			"Пользователь %s\n\nЛимит ключей: %d",
 			sess.EditUser.Username,
 			subscription.Quantity,
 		)
-		draftKb = append(draftKb, manageUsersActionsKb...)
+		draftKb = append(draftKb, buildManageUsersActionsKb(hasSubmittedPayment)...)
 	case session.StateManageUsersEditKeysAmount:
 		response.Text = "Введите новое количество ключей"
 		h.sessions.Update(userID, func(s *session.Session) {
