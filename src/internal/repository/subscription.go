@@ -63,7 +63,7 @@ func (r *Subscription) GetByTelegramID(
 	telegramID int64,
 ) (*model.Subscription, error) {
 	const q = `
-		SELECT s.id, s.user_id, s.status, s.current_period_end, s.canceled_at, s.created_at, s.updated_at, s.quantity
+		SELECT s.id, s.user_id, s.status, s.current_period_end, s.canceled_at, s.created_at, s.updated_at, s.quantity, s.payment_claimed_at
 		FROM subscriptions s
 		JOIN users u ON s.user_id = u.id
 		WHERE u.telegram_id = $1`
@@ -80,6 +80,7 @@ func (r *Subscription) GetByTelegramID(
 			&result.CreatedAt,
 			&result.UpdatedAt,
 			&result.Quantity,
+			&result.PaymentClaimedAt,
 		)
 	if err != nil {
 		return nil, fmt.Errorf("retrieving subscription by Telegram ID: %w", err)
@@ -93,7 +94,7 @@ func (r *Subscription) GetByPublicID(
 	publicID uuid.UUID,
 ) (*model.Subscription, error) {
 	const q = `
-		SELECT s.id, s.user_id, s.status, s.current_period_end, s.canceled_at, s.created_at, s.updated_at, s.quantity
+		SELECT s.id, s.user_id, s.status, s.current_period_end, s.canceled_at, s.created_at, s.updated_at, s.quantity, s.payment_claimed_at
 		FROM subscriptions s
 		JOIN users u ON s.user_id = u.id
 		WHERE u.public_id = $1`
@@ -110,6 +111,7 @@ func (r *Subscription) GetByPublicID(
 			&result.CreatedAt,
 			&result.UpdatedAt,
 			&result.Quantity,
+			&result.PaymentClaimedAt,
 		)
 	if err != nil {
 		return nil, fmt.Errorf("retrieving subscription by public ID: %w", err)
