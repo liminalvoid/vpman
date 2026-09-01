@@ -201,10 +201,10 @@ func (r *Subscription) ClaimPayment(
 	telegramID int64,
 ) error {
 	const q = `
-		UPDATE subscriptions
+		UPDATE subscriptions s
 		SET status = $1, updated_at = now(), payment_claimed_at = now()
-		JOIN users u ON s.user_id = u.id
-		WHERE u.telegram_id = $2`
+		FROM users u
+		WHERE s.user_id = u.id AND u.telegram_id = $2`
 	
 	_, err := r.conn.Exec(ctx, q, model.SubscriptionStatusPending, telegramID)
 	if err != nil {
