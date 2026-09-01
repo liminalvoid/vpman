@@ -178,3 +178,15 @@ func (s *SubscriptionService) SetKeysLimit(
 
 	return nil
 }
+
+func (s *SubscriptionService) ClaimPayment(
+	ctx context.Context,
+	telegramID int64,
+) error {
+	err := s.subscriptionRepository.ClaimPayment(ctx, telegramID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
