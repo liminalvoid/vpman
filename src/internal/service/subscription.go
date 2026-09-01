@@ -121,6 +121,7 @@ func (s *SubscriptionService) SetPeriodEnd(
 		recipients = append(recipients, telego.ChatID{ID: *u.TelegramID})
 	}
 
+	// FIXME: Move this into newsletter layer
 	confirmPaymentKb := tu.InlineKeyboard([][]telego.InlineKeyboardButton{
 		tu.InlineKeyboardRow(
 			tu.
