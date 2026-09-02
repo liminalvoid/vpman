@@ -74,6 +74,7 @@ func New(
 		th.And(th.AnyMessage(), h.InState(
 			session.StateManageUsersEnterKeysAmount,
 			session.StateSetPastDueEnterMessage,
+			session.StateSetPastDueEnterAmount,
 		)),
 		th.CommandPrefix(fmt.Sprintf("%s_", handlers.AdminHandlerPrefix)),
 		th.CallbackDataPrefix(fmt.Sprintf("%s:", handlers.AdminHandlerPrefix)),
@@ -93,7 +94,13 @@ func New(
 	admin.Handle(
 		h.HandleSetPastDue,
 		th.Or(
-			th.And(th.AnyMessage(), h.InState(session.StateSetPastDueEnterMessage)),
+			th.And(
+				th.AnyMessage(),
+				h.InState(
+					session.StateSetPastDueEnterMessage,
+					session.StateSetPastDueEnterAmount,
+				),
+			),
 			th.CallbackDataContains(handlers.SetPastDuePrefix),
 		),
 	)

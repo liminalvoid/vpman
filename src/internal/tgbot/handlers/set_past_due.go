@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	"strconv"
 
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
@@ -57,6 +58,18 @@ func (h *Handlers) HandleSetPastDue(
 		case session.StateSetPastDueEnterMessage:
 			h.sessions.Update(userID, func(s *session.Session) {
 				s.SetPastDue.Message = update.Message.Text
+				s.State = session.StateSetPastDueAmount
+			})
+		case session.StateSetPastDueEnterAmount:
+			parsedAmount, err := strconv.Atoi(update.Message.Text)
+			if err != nil {
+				response.Text = "Не удалось распознать сумму\\. Введите ещё раз"
+
+				break
+			}
+
+			h.sessions.Update(userID, func(s *session.Session) {
+				s.SetPastDue.Amount = parsedAmount
 				s.State = session.StateSetPastDuePreview
 			})
 		}
@@ -71,14 +84,16 @@ func (h *Handlers) HandleSetPastDue(
 		h.sessions.Update(userID, func(s *session.Session) {
 			s.State = session.StateSetPastDueEnterMessage
 		})
+	case session.StateSetPastDueAmount:
+		response.Text = "Введи цену"
+		h.sessions.Update(userID, func(s *session.Session) {
+			s.State = session.StateSetPastDueEnterAmount
+		})
 	case session.StateSetPastDuePreview:
 		response.Text = fmt.Sprintf("Текст сообщения\\!\n\n```plain\n%s\n```\n\nПродолжить?", sess.SetPastDue.Message)
 		draftKb = setPastDueKb
-		h.sessions.Update(userID, func(s *session.Session) {
-			s.State = session.StateSetPastDueEnterMessage
-		})
 	case session.StateSetPastDueConfirm:
-		_, err := h.subscriptionService.SetPeriodEnd(ctx, time.Now(), sess.SetPastDue.Message)
+		_, err := h.subscriptionService.SetPeriodEnd(ctx, time.Now(), sess.SetPastDue.Message, sess.SetPastDue.Amount)
 		if err != nil {
 			return fmt.Errorf("trying to set period end: %w", err)
 		}

@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"fmt"
+	"strings"
+	"text/template"
 	"time"
 
 	"vpnmanager/internal/executor"
@@ -98,6 +100,7 @@ func (s *SubscriptionService) SetPeriodEnd(
 	ctx context.Context,
 	endDate time.Time,
 	message string,
+	amount int,
 ) (int64, error) {
 	rowsAffected, err := s.subscriptionRepository.SetEndPeriodForAll(ctx, endDate)
 	if err != nil {
@@ -109,16 +112,44 @@ func (s *SubscriptionService) SetPeriodEnd(
 		return 0, fmt.Errorf("retrieving all users: %w", err)
 	}
 
+	messageTemplate, err := template.New("message").Parse(message)
+	if err != nil {
+		return 0, fmt.Errorf("parsing message template: %w", err)
+	}
+
+	totalKeys := 0
+	for _, u := range users {
+		subscription, err := s.subscriptionRepository.GetByPublicID(ctx, u.PublicID)
+		if err != nil {
+			return 0, err
+		}
+
+		totalKeys += int(subscription.Quantity)
+	}
+
+	pricePerKey := amount / totalKeys
+
 	for _, u := range users {
 		if u.IsAdmin {
 			continue
+		}
+
+		subscription, err := s.subscriptionRepository.GetByPublicID(ctx, u.PublicID)
+		if err != nil {
+			return 0, err
+		}
+
+		var buf strings.Builder
+		err = messageTemplate.Execute(&buf, subscription.Quantity * int32(pricePerKey))
+		if err != nil {
+			return 0, fmt.Errorf("executing message template: %w", err)
 		}
 
 		telegramID := *u.TelegramID
 		s.newsletter.SendPaymentNotification(
 			ctx,
 			telegramID,
-			message,
+			buf.String(),
 		)
 	}
 

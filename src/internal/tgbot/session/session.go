@@ -26,6 +26,7 @@ type EditUserDraft struct {
 
 type SetPastDueDraft struct {
 	Message string
+	Amount int
 }
 
 type WizardState int
@@ -68,6 +69,8 @@ const (
 
 	StateSetPastDue
 	StateSetPastDueEnterMessage
+	StateSetPastDueAmount
+	StateSetPastDueEnterAmount
 	StateSetPastDuePreview
 	StateSetPastDueConfirm
 
