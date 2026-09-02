@@ -11,9 +11,6 @@ import (
 	"vpnmanager/internal/tgbot/newsletter"
 
 	"github.com/google/uuid"
-	"github.com/mymmrac/telego"
-	th "github.com/mymmrac/telego/telegohandler"
-	tu "github.com/mymmrac/telego/telegoutil"
 )
 
 type SubscriptionService struct {
@@ -112,30 +109,18 @@ func (s *SubscriptionService) SetPeriodEnd(
 		return 0, fmt.Errorf("retrieving all users: %w", err)
 	}
 
-	var recipients []telego.ChatID
 	for _, u := range users {
 		if u.IsAdmin {
 			continue
 		}
 
-		recipients = append(recipients, telego.ChatID{ID: *u.TelegramID})
+		telegramID := *u.TelegramID
+		s.newsletter.SendPaymentNotification(
+			ctx,
+			telegramID,
+			message,
+		)
 	}
-
-	// FIXME: Move this into newsletter layer
-	confirmPaymentKb := tu.InlineKeyboard([][]telego.InlineKeyboardButton{
-		tu.InlineKeyboardRow(
-			tu.
-				InlineKeyboardButton("Подтвердить оплату").
-				WithCallbackData("confirm_payment"),
-		),
-	}...)
-
-	s.newsletter.BroadcastMessage(
-		ctx.(*th.Context),
-		recipients,
-		message,
-		confirmPaymentKb,
-	)
 
 	return rowsAffected, nil
 }

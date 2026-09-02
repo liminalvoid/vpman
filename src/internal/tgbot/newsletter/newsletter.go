@@ -1,7 +1,9 @@
 package newsletter
 
 import (
-	th "github.com/mymmrac/telego/telegohandler"
+	"context"
+
+	tu "github.com/mymmrac/telego/telegoutil"
 	"github.com/mymmrac/telego"
 )
 
@@ -13,17 +15,22 @@ func New(bot *telego.Bot) *Newsletter {
 	return &Newsletter{bot}
 }
 
-func (n *Newsletter) BroadcastMessage(
-	ctx *th.Context,
-	recipients []telego.ChatID,
+func (n *Newsletter) SendPaymentNotification(
+	ctx context.Context,
+	recipient int64,
 	message string,
-	replyMarkup *telego.InlineKeyboardMarkup,
 ) {
-	for _, r := range recipients {
-		n.bot.SendMessage(ctx, &telego.SendMessageParams{
-			ChatID: r,
-			Text: message,
-			ReplyMarkup: replyMarkup,
-		})	
-	}
+	confirmPaymentKb := tu.InlineKeyboard([][]telego.InlineKeyboardButton{
+		tu.InlineKeyboardRow(
+			tu.
+				InlineKeyboardButton("Подтвердить оплату").
+				WithCallbackData("confirm_payment"),
+		),
+	}...)
+
+	n.bot.SendMessage(ctx, &telego.SendMessageParams{
+		ChatID: telego.ChatID{ID: recipient},
+		Text: message,
+		ReplyMarkup: confirmPaymentKb,
+	})	
 }
