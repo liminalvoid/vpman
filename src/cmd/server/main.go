@@ -13,6 +13,7 @@ import (
 
 	"vpnmanager/internal/db"
 	"vpnmanager/internal/executor"
+	"vpnmanager/internal/health"
 	"vpnmanager/internal/repository"
 	"vpnmanager/internal/scheduler"
 	"vpnmanager/internal/service"
@@ -106,6 +107,9 @@ func main() {
 		30 * 24 * time.Hour,
 	)
 	go s.Run(ctx)
+
+	h := health.New(":8080", db.Pool())
+	go h.Run(ctx)
 
 	// Start bot polling
 	err = b.Start()
