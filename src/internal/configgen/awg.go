@@ -16,6 +16,49 @@ type Awg struct{}
 //go:embed templates/awg/peer.conf templates/awg/client.conf
 var awgTemplateFS embed.FS
 
+// awgMirroredParams are the [Interface] settings that shape the wire format.
+// They are copied verbatim from the server's config: a client that disagrees on
+// any of them cannot complete a handshake. A param the server doesn't define is
+// left empty and omitted from the generated config.
+var awgMirroredParams = []string{
+	"Jc", "Jmin", "Jmax",
+	"S1", "S2", "S3", "S4",
+	"H1", "H2", "H3", "H4",
+	"HeaderProtectionKey",
+	"ContentPaddingAddition",
+	"RandomTrailers",
+	"DisableCookies",
+}
+
+// awgTimingDefaults are the randomized timers each side applies locally, so they
+// need not match the server. The server's value wins when it defines one,
+// otherwise these defaults are used.
+var awgTimingDefaults = map[string]string{
+	"RekeyAfterTime":       "100-120",
+	"RekeyTimeout":         "3-7",
+	"RejectAfterTime":      "150-180",
+	"KeepaliveTimeout":     "5-15",
+	"MaxHandshakeAttempts": "15-20",
+	"PersistentKeepalive":  "25-35",
+}
+
+// awgServerParamsScript prints "Key=Value" for every recognised tuning param in
+// the [Interface] section. It splits on the first "=" only, so base64 values
+// such as HeaderProtectionKey keep their padding.
+const awgServerParamsScript = `
+/^\[Interface\]/ { f = 1; next }
+/^\[/ { f = 0 }
+f {
+	p = index($0, "=")
+	if (p == 0) next
+	k = substr($0, 1, p - 1)
+	v = substr($0, p + 1)
+	gsub(/^[ \t]+|[ \t]+$/, "", k)
+	gsub(/^[ \t]+|[ \t]+$/, "", v)
+	if (k ~ /^(Jc|Jmin|Jmax|S1|S2|S3|S4|H1|H2|H3|H4|HeaderProtectionKey|ContentPaddingAddition|RandomTrailers|DisableCookies|RekeyAfterTime|RekeyTimeout|RejectAfterTime|KeepaliveTimeout|MaxHandshakeAttempts|PersistentKeepalive)$/) print k "=" v
+}
+`
+
 func (w *Awg) create(
 	ctx context.Context,
 	cli *executor.ContainerExecutor,
@@ -62,20 +105,20 @@ func (w *Awg) create(
 	}
 	serverPort := strings.TrimSpace(output)
 
-	// Obtain the AmneziaWG obfuscation params (Jc, Jmin, Jmax, S1-S4, H1-H4, I1-I5)
-	// from the [Interface] section of the server's config, since `awg show` doesn't
-	// expose them and the client must match the server's values exactly.
-	getObfuscationParamsCmd := []string{
+	// Obtain the AmneziaWG tuning params from the [Interface] section of the
+	// server's config, since `awg show` doesn't expose them and the client must
+	// match the server's values exactly.
+	getServerParamsCmd := []string{
 		"awk",
-		`/^\[Interface\]/{f=1; next} /^\[/{f=0} f && match($0, /^(Jc|Jmin|Jmax|S1|S2|S3|S4|H1|H2|H3|H4|I1|I2|I3|I4|I5)[ \t]*=/) { split($0, kv, "="); k=kv[1]; v=kv[2]; gsub(/^[ \t]+|[ \t]+$/, "", k); gsub(/^[ \t]+|[ \t]+$/, "", v); print k"="v }`,
+		awgServerParamsScript,
 		"/opt/amnezia/awg/awg0.conf",
 	}
-	output, err = cli.Run(ctx, containerID, getObfuscationParamsCmd, []byte{})
+	output, err = cli.Run(ctx, containerID, getServerParamsCmd, []byte{})
 	if err != nil {
-		return "", fmt.Errorf("failed to get obfuscation params: %s", err)
+		return "", fmt.Errorf("failed to get server's tuning params: %s", err)
 	}
 
-	obfuscationParams := make(map[string]string)
+	serverParams := make(map[string]string)
 	for line := range strings.SplitSeq(strings.TrimSpace(output), "\n") {
 		if line == "" {
 			continue
@@ -86,7 +129,7 @@ func (w *Awg) create(
 			continue
 		}
 
-		obfuscationParams[strings.TrimSpace(kv[0])] = strings.TrimSpace(kv[1])
+		serverParams[strings.TrimSpace(kv[0])] = strings.TrimSpace(kv[1])
 	}
 
 	// Get the latest added peer's IP
@@ -153,23 +196,19 @@ func (w *Awg) create(
 		"ClientPresharedKey": presKey,
 		"ServerAddr":         cli.HostAddr,
 		"ServerPort":         serverPort,
-		"Jc":                 obfuscationParams["Jc"],
-		"Jmin":               obfuscationParams["Jmin"],
-		"Jmax":               obfuscationParams["Jmax"],
-		"S1":                 obfuscationParams["S1"],
-		"S2":                 obfuscationParams["S2"],
-		"S3":                 obfuscationParams["S3"],
-		"S4":                 obfuscationParams["S4"],
-		"H1":                 obfuscationParams["H1"],
-		"H2":                 obfuscationParams["H2"],
-		"H3":                 obfuscationParams["H3"],
-		"H4":                 obfuscationParams["H4"],
-		"I1":                 obfuscationParams["I1"],
-		"I2":                 obfuscationParams["I2"],
-		"I3":                 obfuscationParams["I3"],
-		"I4":                 obfuscationParams["I4"],
-		"I5":                 obfuscationParams["I5"],
 	}
+	for _, k := range awgMirroredParams {
+		configData[k] = serverParams[k]
+	}
+	for k, def := range awgTimingDefaults {
+		if v, ok := serverParams[k]; ok {
+			configData[k] = v
+			continue
+		}
+
+		configData[k] = def
+	}
+
 	if err := confTemplate.Execute(&sb, configData); err != nil {
 		return "", fmt.Errorf("failed to build config from template: %s", err)
 	}
