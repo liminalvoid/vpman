@@ -7,28 +7,17 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type Config struct {
-	Username     string
-	Password     string
-	HostAddr     string
-	HostPort     uint16
-	DatabaseName string
-}
-
 type DB struct {
 	pool *pgxpool.Pool
 }
 
-func New(ctx context.Context, cfg *Config) (*DB, error) {
-	connectionStr := fmt.Sprintf(
-		"postgres://%s:%s@%s:%d/%s",
-		cfg.Username,
-		cfg.Password,
-		cfg.HostAddr,
-		cfg.HostPort,
-		cfg.DatabaseName,
-	)
-	dbpool, err := pgxpool.New(ctx, connectionStr)
+// New opens a pool against the given connection string. The string may list
+// several hosts (pg1:5432,pg2:5432,...) together with
+// target_session_attrs=read-write, in which case pgx tries each host on every
+// new connection and keeps only the one accepting writes. That is what lets
+// the bot follow a Patroni failover without a proxy in front of the cluster.
+func New(ctx context.Context, dsn string) (*DB, error) {
+	dbpool, err := pgxpool.New(ctx, dsn)
 	if err != nil {
 		return nil, fmt.Errorf("init DB: %w", err)
 	}

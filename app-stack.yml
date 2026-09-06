@@ -1,8 +1,38 @@
+# The Telegram bot. One replica, free to run on any of the four nodes.
+#
+#   docker stack deploy -c app-stack.yml app
+
 services:
   vpn-manager:
     image: ghcr.io/liminalvoid/vpn-manager:latest
+    hostname: vpn-manager
+    networks:
+      - vpn-net
+    environment:
+      # The image is FROM scratch — no shell to expand these — so the binary
+      # reads the *_FILE paths itself (internal/config).
+      DATABASE_URL_FILE: /run/secrets/database_url
+      TG_TOKEN_FILE: /run/secrets/tg_token
+      HEALTH_ADDR: ":8080"
+    secrets:
+      - database_url
+      - tg_token
+    healthcheck:
+      # Same reason: no curl in a scratch image, so the binary probes itself.
+      test: ["CMD", "/server", "healthcheck"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    # Long polling must drain before the replacement starts, or Telegram
+    # answers the second getUpdates with a 409.
+    stop_grace_period: 30s
     deploy:
+      # Telegram allows exactly one long-polling consumer per token. Never
+      # raise this.
       replicas: 1
+      # No placement constraints on purpose: any node may host it, which is
+      # what lets Swarm reschedule after a node goes down.
       restart_policy:
         condition: any
         delay: 5s
@@ -10,11 +40,22 @@ services:
         window: 30s
       update_config:
         order: stop-first
-      placement:
-        constraints:
-          - node.role != manager
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/healtz"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
+        delay: 10s
+        failure_action: rollback
+      rollback_config:
+        order: stop-first
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 64M
+
+secrets:
+  database_url:
+    external: true
+  tg_token:
+    external: true
+
+networks:
+  vpn-net:
+    external: true

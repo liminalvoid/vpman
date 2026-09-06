@@ -8,9 +8,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/joho/godotenv"
 	"github.com/mymmrac/telego"
 
+	"vpnmanager/internal/config"
 	"vpnmanager/internal/db"
 	"vpnmanager/internal/executor"
 	"vpnmanager/internal/health"
@@ -22,26 +22,23 @@ import (
 )
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "healthcheck" {
+		os.Exit(runHealthcheck())
+	}
+
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
-	err := godotenv.Load(".env.dev")
+	cfg, err := config.Load()
 	if err != nil {
-		fmt.Println("Error loading .env file")
+		fmt.Printf("%s\n", err)
 		os.Exit(1)
 	}
 
 	cr := executor.NewRegistry(executor.NewExecutor)
 	defer cr.Close()
 
-	dbCfg := db.Config{
-		Username:     "postgres",
-		Password:     "postgres",
-		HostAddr:     "localhost",
-		HostPort:     5432,
-		DatabaseName: "vpn",
-	}
-	db, err := db.New(ctx, &dbCfg)
+	db, err := db.New(ctx, cfg.DatabaseURL)
 	if err != nil {
 		fmt.Printf("failed to init DB: %s\n", err)
 		os.Exit(1)
@@ -50,8 +47,11 @@ func main() {
 
 	// Initialize Telegram bot
 	// FIXME: Remove this and think how to handle logs in prod
-	botToken := os.Getenv("TG_TOKEN")
-	tg, err := telego.NewBot(botToken, telego.WithDefaultDebugLogger())
+	tg, err := telego.NewBot(cfg.TelegramToken, telego.WithDefaultDebugLogger())
+	if err != nil {
+		fmt.Printf("failed to create Telegram client: %s\n", err)
+		os.Exit(1)
+	}
 
 	nl := newsletter.New(tg)
 
@@ -102,16 +102,18 @@ func main() {
 	s := scheduler.New(
 		subscriptionService,
 		configService,
-		5 * time.Minute,
+		5*time.Minute,
 		100,
-		30 * 24 * time.Hour,
+		30*24*time.Hour,
 	)
 	go s.Run(ctx)
 
-	h := health.New(":8080", db.Pool())
+	h := health.New(cfg.HealthAddr, db.Pool())
 	go h.Run(ctx)
 
-	// Start bot polling
+	// Start bot polling. Returns when ctx is cancelled (SIGTERM from Swarm),
+	// which is what keeps the long-polling singleton from overlapping with its
+	// replacement during a stop-first rolling update.
 	err = b.Start()
 	if err != nil {
 		fmt.Printf("failed to start Telegram bot: %s\n", err)

@@ -1,0 +1,95 @@
+# Distributed configuration store for Patroni. Three members, one pinned to
+# each manager node, so etcd quorum and Swarm raft quorum fail together
+# instead of in confusing combinations.
+#
+#   docker stack deploy -c deploy/etcd-stack.yml etcd
+
+x-etcd-env: &etcd-env
+  ETCD_DATA_DIR: /etcd-data
+  ETCD_LISTEN_PEER_URLS: http://0.0.0.0:2380
+  ETCD_LISTEN_CLIENT_URLS: http://0.0.0.0:2379
+  ETCD_INITIAL_CLUSTER: etcd1=http://etcd1:2380,etcd2=http://etcd2:2380,etcd3=http://etcd3:2380
+  ETCD_INITIAL_CLUSTER_TOKEN: vpn-etcd
+  # Ignored once a data dir exists, so it is safe to leave at "new".
+  ETCD_INITIAL_CLUSTER_STATE: new
+  ETCD_AUTO_COMPACTION_RETENTION: "1"
+
+x-etcd: &etcd
+  image: quay.io/coreos/etcd:v3.5.17
+  networks:
+    - vpn-net
+  healthcheck:
+    test: ["CMD", "etcdctl", "--endpoints=http://127.0.0.1:2379", "endpoint", "health"]
+    interval: 10s
+    timeout: 5s
+    retries: 5
+    start_period: 30s
+
+x-etcd-deploy: &etcd-deploy
+  replicas: 1
+  # dnsrr, not the default VIP: Patroni and the peers must reach one specific
+  # member, not a load-balanced address that hides which one answered.
+  endpoint_mode: dnsrr
+  restart_policy:
+    condition: any
+    delay: 10s
+  update_config:
+    order: stop-first
+
+services:
+  etcd1:
+    <<: *etcd
+    hostname: etcd1
+    environment:
+      <<: *etcd-env
+      ETCD_NAME: etcd1
+      ETCD_INITIAL_ADVERTISE_PEER_URLS: http://etcd1:2380
+      ETCD_ADVERTISE_CLIENT_URLS: http://etcd1:2379
+    volumes:
+      - etcd1-data:/etcd-data
+    deploy:
+      <<: *etcd-deploy
+      placement:
+        constraints:
+          - node.labels.etcd == 1
+
+  etcd2:
+    <<: *etcd
+    hostname: etcd2
+    environment:
+      <<: *etcd-env
+      ETCD_NAME: etcd2
+      ETCD_INITIAL_ADVERTISE_PEER_URLS: http://etcd2:2380
+      ETCD_ADVERTISE_CLIENT_URLS: http://etcd2:2379
+    volumes:
+      - etcd2-data:/etcd-data
+    deploy:
+      <<: *etcd-deploy
+      placement:
+        constraints:
+          - node.labels.etcd == 2
+
+  etcd3:
+    <<: *etcd
+    hostname: etcd3
+    environment:
+      <<: *etcd-env
+      ETCD_NAME: etcd3
+      ETCD_INITIAL_ADVERTISE_PEER_URLS: http://etcd3:2380
+      ETCD_ADVERTISE_CLIENT_URLS: http://etcd3:2379
+    volumes:
+      - etcd3-data:/etcd-data
+    deploy:
+      <<: *etcd-deploy
+      placement:
+        constraints:
+          - node.labels.etcd == 3
+
+volumes:
+  etcd1-data:
+  etcd2-data:
+  etcd3-data:
+
+networks:
+  vpn-net:
+    external: true

@@ -1,0 +1,67 @@
+# Shared by all four members. Everything node-specific (name, advertised
+# addresses) arrives as PATRONI_* environment variables, which Patroni layers
+# on top of this file.
+scope: vpn
+namespace: /service/
+
+restapi:
+  listen: 0.0.0.0:8008
+  # connect_address <- PATRONI_RESTAPI_CONNECT_ADDRESS
+
+etcd3:
+  hosts:
+    - etcd1:2379
+    - etcd2:2379
+    - etcd3:2379
+  protocol: http
+
+bootstrap:
+  # Applied once, by whichever member wins the initial race. Afterwards this
+  # section is ignored: the live values live in etcd and are edited with
+  # `patronictl edit-config`.
+  dcs:
+    ttl: 30
+    loop_wait: 10
+    retry_timeout: 10
+    maximum_lag_on_failover: 1048576
+    postgresql:
+      use_pg_rewind: true
+      use_slots: true
+      parameters:
+        wal_level: replica
+        hot_standby: "on"
+        wal_log_hints: "on"
+        max_wal_senders: 10
+        max_replication_slots: 10
+        wal_keep_size: 512MB
+        max_connections: 100
+        shared_buffers: 256MB
+
+  initdb:
+    - encoding: UTF8
+    - locale: C.UTF-8
+    - data-checksums
+
+  # The overlay subnet, not 0.0.0.0/0 — see deploy/README.md for why the
+  # network is created with a fixed --subnet.
+  pg_hba:
+    - local all all trust
+    - host all all 10.20.0.0/16 scram-sha-256
+    - host replication replicator 10.20.0.0/16 scram-sha-256
+
+  post_init: /etc/patroni/post_init.sh
+
+postgresql:
+  listen: 0.0.0.0:5432
+  # connect_address <- PATRONI_POSTGRESQL_CONNECT_ADDRESS
+  data_dir: /var/lib/postgresql/data/pgdata
+  bin_dir: /usr/lib/postgresql/17/bin
+  pgpass: /tmp/pgpass
+  parameters:
+    password_encryption: scram-sha-256
+
+tags:
+  nofailover: false
+  noloadbalance: false
+  clonefrom: false
+  nosync: false
