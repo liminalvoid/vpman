@@ -1,5 +1,6 @@
 ansible
-.env*
+.env.dev
+.env.prod
 *.log
 
 # Binaries for programs and plugins
