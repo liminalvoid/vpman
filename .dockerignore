@@ -1,0 +1,7 @@
+db-scheme.*
+*.sql
+.git
+.claude
+.gitignore
+**/.env*
+README.md
