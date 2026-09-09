@@ -18,7 +18,48 @@ Three stacks, deployed in order: `etcd` → `pg` → `app`.
   empty database. Availability comes from the other three members and Patroni
   promoting one of them, never from relocating a member.
 
-## 1. Label the nodes
+## 1. Form the swarm
+
+Two things here can only be set at `docker swarm init`, and both are expensive
+to change afterwards — decide before you run it:
+
+- **`--default-addr-pool`.** Swarm creates an `ingress` network at init whether
+  you publish ports or not, and it defaults to `10.0.0.0/24`, which is exactly
+  where WireGuard meshes tend to live. Pinning the pool moves it out of the
+  way. Changing it later means deleting and recreating `ingress`, which
+  interrupts every published port on the cluster. See "keep four ranges from
+  colliding" in step 3 for the full picture.
+- **`--advertise-addr` / `--listen-addr` / `--data-path-addr`.** Only if the
+  nodes talk over a VPN rather than the public internet. Step 3(b) explains
+  what each controls and why the data-path one matters most; read it first if
+  that is your setup. `docker swarm update` has no such flags, so changing
+  them later means every node leaves and rejoins.
+
+On the first manager:
+
+```sh
+# On a VPN, add: --advertise-addr wg0 --listen-addr wg0 --data-path-addr wg0
+docker swarm init \
+  --default-addr-pool 10.30.0.0/16 \
+  --default-addr-pool-mask-length 24
+
+docker swarm join-token -q manager   # note these down
+docker swarm join-token -q worker
+```
+
+Then on each of the other three nodes:
+
+```sh
+# On a VPN, add the same three flags, and use the manager's WireGuard address.
+docker swarm join \
+  --token <manager-or-worker-token> \
+  <first-manager-addr>:2377
+```
+
+The mesh must be full: every node needs a route to every other node, not just
+to a hub, since any member may stream from any other.
+
+## 2. Label the nodes
 
 ```sh
 docker node update --label-add etcd=1 --label-add pgnode=1 node-1
@@ -27,7 +68,7 @@ docker node update --label-add etcd=3 --label-add pgnode=3 node-3
 docker node update --label-add pgnode=4 node-4
 ```
 
-## 2. Create the overlay network
+## 3. Create the overlay network
 
 Two cases — pick the one that matches your setup.
 
@@ -98,32 +139,10 @@ are not stored as names — and resolution fails if the interface carries more
 than one address of a family (`interface lo has more than one IPv4 address`).
 A single-stack `wg0` is fine; if yours is dual-stack, pass the literal IP.
 
-On the first manager:
-
-```sh
-docker swarm init \
-  --advertise-addr wg0 \
-  --listen-addr wg0 \
-  --data-path-addr wg0
-
-docker swarm join-token -q manager   # note these down
-docker swarm join-token -q worker
-```
-
-Then on each remaining node, pointing at the first manager's *WireGuard*
-address:
-
-```sh
-docker swarm join \
-  --token <manager-or-worker-token> \
-  --advertise-addr wg0 \
-  --listen-addr wg0 \
-  --data-path-addr wg0 \
-  10.8.0.1:2377
-```
-
-The mesh must be full: every node needs a route to every other node, not just
-to a hub, since any member may stream from any other.
+All three go on both commands in step 1 — `swarm init` on the first manager and
+`swarm join` on the other three — and the join must point at the first
+manager's *WireGuard* address (`10.8.0.1:2377`), not its public one. There is
+no way to add them to a running node: see "On an existing cluster" below.
 
 **Bring WireGuard up before dockerd.** If `wg0` does not exist when the daemon
 starts it cannot bind the address it has on record, and Swarm comes up broken
@@ -210,19 +229,14 @@ where WireGuard meshes tend to live.
 | `10.30.0.0/16` | Swarm's own networks, incl. `ingress` | `--default-addr-pool` at `swarm init` |
 | `172.17.0.0/16`, `172.18.0.0/16` | `docker0` and `docker_gwbridge` | Linux defaults; `bip` in `daemon.json` |
 
-Pin Swarm's auto-allocation pool at init, since `ingress` otherwise lands on
-`10.0.0.0/24` on its own:
+`ingress` otherwise lands on `10.0.0.0/24` on its own, which is why step 1
+pins the pool with `--default-addr-pool 10.30.0.0/16
+--default-addr-pool-mask-length 24`. If you have already initialised without
+it, check where `ingress` actually landed before assuming you are clear:
 
 ```sh
-docker swarm init \
-  --advertise-addr wg0 --listen-addr wg0 --data-path-addr wg0 \
-  --default-addr-pool 10.30.0.0/16 \
-  --default-addr-pool-mask-length 24
+docker network inspect ingress --format '{{range .IPAM.Config}}{{.Subnet}}{{end}}'
 ```
-
-This is an init-time flag. Changing it afterwards means deleting and
-recreating the `ingress` network, which interrupts every published port on the
-cluster — so it is much cheaper to get right the first time.
 
 **Why an overlap actually breaks things here.** The VXLAN tunnel endpoints
 *are* the WireGuard addresses: overlay packets get encapsulated and sent to a
@@ -230,7 +244,7 @@ peer's `10.8.0.x`. Inside a container, the overlay subnet is claimed by `eth0`.
 So if the two ranges overlap, traffic aimed at a WireGuard address matches the
 container's own on-link route and is never handed to the tunnel at all.
 
-For this project the sharp edge is `internal/executor/docker.go`, which dials
+For this project the sharp edge is `src/internal/executor/docker.go`, which dials
 `tcp://<server>:<port>` to reach the managed VPN servers. If those servers sit
 on the WireGuard mesh and the overlay overlaps it, the bot will talk to
 Postgres perfectly well while every config-generation call fails — the dial
@@ -242,7 +256,7 @@ rather than `0.0.0.0/0`. If you change the overlay range, change those lines to
 match — and if it overlapped the WireGuard range, those rules would be
 authorising a good deal more than intended.
 
-## 3. Create the secrets
+## 4. Create the secrets
 
 Hex passwords, so nothing needs URL-encoding inside the connection string:
 
@@ -265,7 +279,12 @@ makes it keep only the one accepting writes — so the bot finds the new leader
 by itself, with no pgbouncer or HAProxy in the path. Nothing needs redeploying
 after a failover.
 
-## 4. Build and push the images
+`sslmode=disable` is deliberate: the link is already encrypted underneath — by
+the overlay's IPsec in case (a), by the VPN in case (b) — so Postgres-level TLS
+would only add a second wrapping and a certificate to rotate. If you ever run
+the overlay unencrypted across public links, this is the setting to revisit.
+
+## 5. Build and push the images
 
 Both images must match your VPS architecture. On an Apple Silicon machine that
 means building explicitly for amd64:
@@ -278,13 +297,37 @@ docker buildx build --platform linux/amd64 \
   -t ghcr.io/liminalvoid/vpn-manager:latest --push .
 ```
 
-## 5. Deploy
+## 6. Deploy
+
+The `stack deploy` commands read files by relative path, so run them from
+the repository root on a manager.
+
+First check that the two SQL files `pg-stack.yml` mounts as configs are
+actually there. `.gitignore` excludes `*.sql`, so neither `schema.sql` nor
+`deploy/patroni/bootstrap.sql` is in a fresh clone, and `stack deploy` fails on
+the missing file rather than on anything informative:
+
+```sh
+ls schema.sql deploy/patroni/bootstrap.sql
+```
 
 ```sh
 docker stack deploy -c deploy/etcd-stack.yml etcd
-# wait until all three report healthy before continuing
-docker service ls | grep etcd
+```
 
+The etcd services carry no healthcheck, so `docker service ls` tells you only
+that the tasks are running — not that the three found each other and elected a
+leader. Ask etcd itself before continuing, from node-1:
+
+```sh
+docker exec $(docker ps -qf name=etcd_etcd1) \
+  etcdctl --endpoints=http://etcd1:2379,http://etcd2:2379,http://etcd3:2379 \
+  endpoint health
+```
+
+All three endpoints must report `is healthy`. Then:
+
+```sh
 docker stack deploy -c deploy/pg-stack.yml pg
 # first boot: one member bootstraps, the other three clone from it
 docker exec $(docker ps -qf name=pg_pg1) \
