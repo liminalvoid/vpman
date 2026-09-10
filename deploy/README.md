@@ -1,5 +1,8 @@
 # Deploying on Swarm
 
+> [!CAUTION]
+> The content of this readme was fully generated with LLM. Proceed with caution.
+
 Four VPS: three managers, one worker.
 
 | Node    | Swarm role | Labels                | Runs                |
