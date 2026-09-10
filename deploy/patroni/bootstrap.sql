@@ -16,14 +16,3 @@ WHERE NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = :'app_db')
 \c :"app_db"
 
 SET ROLE :"app_user";
-
-SELECT NOT EXISTS (
-	SELECT 1 FROM pg_class
-	WHERE relname = 'protocols' AND relnamespace = 'public'::regnamespace
-) AS need_schema \gset
-
-\if :need_schema
-\i /etc/patroni/schema.sql
-\else
-\echo 'schema already present, skipping'
-\endif

@@ -22,8 +22,6 @@ x-patroni: &patroni
       mode: 0555
     - source: patroni_bootstrap_sql
       target: /etc/patroni/bootstrap.sql
-    - source: app_schema_sql
-      target: /etc/patroni/schema.sql
   secrets:
     - pg_superuser_password
     - pg_replication_password
@@ -128,9 +126,6 @@ configs:
   patroni_bootstrap_sql:
     file: ./patroni/bootstrap.sql
     name: patroni_bootstrap_sql_v1
-  app_schema_sql:
-    file: ../schema.sql
-    name: app_schema_sql_v1
 
 secrets:
   pg_superuser_password:
