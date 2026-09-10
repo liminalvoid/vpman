@@ -45,6 +45,11 @@ func main() {
 	}
 	defer db.Close()
 
+	if err := db.Migrate(ctx); err != nil {
+		fmt.Printf("failed to migrate DB: %s\n", err)
+		os.Exit(1)
+	}
+
 	// Initialize Telegram bot
 	// FIXME: Remove this and think how to handle logs in prod
 	tg, err := telego.NewBot(cfg.TelegramToken, telego.WithDefaultDebugLogger())
