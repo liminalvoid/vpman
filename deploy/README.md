@@ -346,7 +346,8 @@ through replication — do not run it on them by hand.
 Expected steady state:
 
 ```
-+ Cluster: vpn -------+---------+-----------+----+-----------+
++ Cluster: vpn
++--------+------+---------+-----------+----+-----------+
 | Member | Host | Role    | State     | TL | Lag in MB |
 +--------+------+---------+-----------+----+-----------+
 | pg1    | pg1  | Leader  | running   |  1 |           |
