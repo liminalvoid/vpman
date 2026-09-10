@@ -1,10 +1,10 @@
 package db
 
 import (
+	"context"
 	"embed"
 	"fmt"
 	"io/fs"
-	"context"
 
 	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"
