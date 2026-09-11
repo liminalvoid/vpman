@@ -13,7 +13,7 @@ services:
       # reads the *_FILE paths itself (internal/config).
       DATABASE_URL_FILE: /run/secrets/database_url
       TG_TOKEN_FILE: /run/secrets/tg_token
-      ADMIN_TELEGRAM_ID: /run/secrets/admin_telegram_id
+      ADMIN_TELEGRAM_ID_FILE: /run/secrets/admin_telegram_id
       HEALTH_ADDR: ":8080"
     secrets:
       - database_url
