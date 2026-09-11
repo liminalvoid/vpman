@@ -43,10 +43,10 @@ func Load() (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(adminID)
 	if cfg.AdminTelegramID, err = strconv.ParseInt(adminID, 10, 64); err != nil {
 		return nil, fmt.Errorf("config; ADMIN_TELEGRAM_ID must be an integer: %w", err)
 	}
+	os.Setenv("ADMIN_TELEGRAM_ID", strconv.FormatInt(cfg.AdminTelegramID, 10))
 
 	return cfg, nil
 }
