@@ -18,6 +18,7 @@ services:
     secrets:
       - database_url
       - tg_token
+      - admin_telegram_id
     healthcheck:
       # Same reason: no curl in a scratch image, so the binary probes itself.
       test: ["CMD", "/server", "healthcheck"]
