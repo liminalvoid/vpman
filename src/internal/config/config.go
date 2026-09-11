@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/joho/godotenv"
@@ -18,9 +19,10 @@ import (
 // The file-based paths matter because the production image is FROM scratch:
 // there is no shell to expand secrets into the environment for us.
 type Config struct {
-	TelegramToken string
-	DatabaseURL   string
-	HealthAddr    string
+	TelegramToken   string
+	DatabaseURL     string
+	HealthAddr      string
+	AdminTelegramID int64
 }
 
 func Load() (*Config, error) {
@@ -34,6 +36,14 @@ func Load() (*Config, error) {
 		return nil, err
 	}
 	if cfg.DatabaseURL, err = require("DATABASE_URL"); err != nil {
+		return nil, err
+	}
+
+	adminID, err := require("ADMIN_TELEGRAM_ID")
+	if err != nil {
+		return nil, err
+	}
+	if cfg.AdminTelegramID, err = strconv.ParseInt(adminID, 10, 64); err != nil {
 		return nil, err
 	}
 
