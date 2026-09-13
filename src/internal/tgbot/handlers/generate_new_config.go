@@ -245,9 +245,9 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 
 		response.Text = fmt.Sprintf(
 			"Название: %s\nПротокол: %s\nЛокация: %s\n\nСоздать ключ?",
-			sess.Create.Name,
-			sess.Create.Protocol,
-			sess.Create.Server.Location,
+			escapeMarkdownV2(sess.Create.Name),
+			escapeMarkdownV2(sess.Create.Protocol),
+			escapeMarkdownV2(sess.Create.Server.Location),
 		)
 		draftKb = submitActionKb
 	case session.StateCreateConfigConfirm:
@@ -265,7 +265,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 				response.Text = "Не удалось создать конфиг: превышен допустимый лимит ключей"
 			} else {
 				// TODO: Remove error sent to the user
-				response.Text = fmt.Sprintf("Не удалось создать конфиг: %s", err)
+				response.Text = escapeMarkdownV2(fmt.Sprintf("Не удалось создать конфиг: %s", err))
 			}
 
 			draftKb = finalMenuKb
@@ -291,10 +291,9 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 	response.ReplyMarkup = buildKbWithExitButton(draftKb...)
 	message = message.WithReplyMarkup(response.ReplyMarkup)
 
-	h.bot.SendMessage(
-		ctx,
-		message,
-	)
+	if _, err := h.bot.SendMessage(ctx, message); err != nil {
+		return fmt.Errorf("sending message: %w", err)
+	}
 
 	return nil
 }

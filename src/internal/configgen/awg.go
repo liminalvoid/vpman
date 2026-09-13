@@ -132,10 +132,11 @@ func (w *Awg) create(
 		serverParams[strings.TrimSpace(kv[0])] = strings.TrimSpace(kv[1])
 	}
 
-	// Get the latest added peer's IP
+	// Get the latest added peer's IP. A server without peers yet has no
+	// AllowedIPs, so fall back to the interface's own address.
 	getLatestPeerAddrCmd := []string{
 		"awk",
-		`/\[Peer\]/{ip=""} /AllowedIPs/{ip=$0} END{sub(/.*= */,"",ip); sub(/\/.*/,"",ip); printf "%s", ip}`,
+		`/^\[/{s=$0} s=="[Interface]" && /^[ \t]*Address/{addr=$0} s=="[Peer]" && /^[ \t]*AllowedIPs/{ip=$0} END{if(ip=="")ip=addr; sub(/.*= */,"",ip); sub(/[\/,].*/,"",ip); printf "%s", ip}`,
 		"/opt/amnezia/awg/awg0.conf",
 	}
 	output, err = cli.Run(ctx, containerID, getLatestPeerAddrCmd, []byte{})
@@ -143,7 +144,7 @@ func (w *Awg) create(
 		return "", fmt.Errorf("failed to get latest peer's IP: %s", err)
 	}
 
-	latestPeerAddr, err := netip.ParseAddr(output)
+	latestPeerAddr, err := netip.ParseAddr(strings.TrimSpace(output))
 	if err != nil {
 		return "", fmt.Errorf("failed to parse latest peer's IP: %s", err)
 	}

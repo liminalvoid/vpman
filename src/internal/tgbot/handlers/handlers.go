@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"slices"
+	"strings"
 
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
@@ -29,6 +30,18 @@ type Handlers struct {
 }
 
 const AdminHandlerPrefix = "admin"
+
+var markdownV2Escaper = strings.NewReplacer(
+	`\`, `\\`, "_", `\_`, "*", `\*`, "[", `\[`, "]", `\]`, "(", `\(`, ")", `\)`,
+	"~", `\~`, "`", "\\`", ">", `\>`, "#", `\#`, "+", `\+`, "-", `\-`, "=", `\=`,
+	"|", `\|`, "{", `\{`, "}", `\}`, ".", `\.`, "!", `\!`,
+)
+
+// escapeMarkdownV2 escapes every character Telegram reserves in MarkdownV2,
+// so arbitrary text (user input, error messages) can be sent as plain text.
+func escapeMarkdownV2(s string) string {
+	return markdownV2Escaper.Replace(s)
+}
 
 func buildKbWithExitButton(rows ...[]telego.InlineKeyboardButton) *telego.InlineKeyboardMarkup {
 	exitButton := [][]telego.InlineKeyboardButton{
