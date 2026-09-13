@@ -153,7 +153,8 @@ func (w *Awg) create(
 		return "", fmt.Errorf("failed to add prefix to parsed IP: %s", err)
 	}
 
-	// Add peer to interface config
+	// Add peer to interface config. preshared-key takes a file path, not the
+	// key itself, so the key is fed through stdin.
 	createNewPeerCmd := []string{
 		"awg",
 		"set",
@@ -161,13 +162,13 @@ func (w *Awg) create(
 		"peer",
 		pubKey,
 		"preshared-key",
-		presKey,
+		"/dev/stdin",
 		"allowed-ips",
 		newPeerAddr.String(),
 		"persistent-keepalive",
 		"25",
 	}
-	output, err = cli.Run(ctx, containerID, createNewPeerCmd, []byte{})
+	output, err = cli.Run(ctx, containerID, createNewPeerCmd, []byte(presKey+"\n"))
 	if err != nil {
 		return "", fmt.Errorf("failed to create new peer: %s", err)
 	}
