@@ -95,7 +95,7 @@ func (s *ConfigService) CreateConfig(
 	}
 
 	cg := configgen.New(p, ce)
-	resultCfg, err := cg.Create(ctx, containerID)
+	resultCfg, err := cg.Create(ctx, containerID, server.PublicAddress)
 	if err != nil {
 		return "", fmt.Errorf("creating config: %w", err)
 	}

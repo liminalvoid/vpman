@@ -19,7 +19,7 @@ var wgTemplateFS embed.FS
 func (w *Wg) create(
 	ctx context.Context,
 	cli *executor.ContainerExecutor,
-	containerID string,
+	containerID, serverPublicAddr string,
 ) (string, error) {
 	// Read templates
 	peerConfTemplate, err := template.ParseFS(wgTemplateFS, "templates/wg/peer.conf")
@@ -118,7 +118,7 @@ func (w *Wg) create(
 		"ClientPrivKey":      privKey,
 		"ServerPubKey":       serverPubKey,
 		"ClientPresharedKey": presKey,
-		"ServerAddr":         cli.HostAddr,
+		"ServerAddr":         serverPublicAddr,
 		"ServerPort":         serverPort,
 	}
 	if err := confTemplate.Execute(&sb, configData); err != nil {

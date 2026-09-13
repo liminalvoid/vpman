@@ -62,7 +62,7 @@ f {
 func (w *Awg) create(
 	ctx context.Context,
 	cli *executor.ContainerExecutor,
-	containerID string,
+	containerID, serverPublicAddr string,
 ) (string, error) {
 	// Read templates
 	peerConfTemplate, err := template.ParseFS(awgTemplateFS, "templates/awg/peer.conf")
@@ -196,7 +196,7 @@ func (w *Awg) create(
 		"ClientPrivKey":      privKey,
 		"ServerPubKey":       serverPubKey,
 		"ClientPresharedKey": presKey,
-		"ServerAddr":         cli.HostAddr,
+		"ServerAddr":         serverPublicAddr,
 		"ServerPort":         serverPort,
 	}
 	for _, k := range awgMirroredParams {
