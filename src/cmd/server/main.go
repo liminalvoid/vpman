@@ -122,7 +122,7 @@ func main() {
 	)
 	go s.Run(ctx)
 
-	h := health.New(cfg.HealthAddr, db.Pool())
+	h := health.New(log.With("component", "health"), cfg.HealthAddr, db.Pool())
 	go h.Run(ctx)
 
 	err = b.Start()
