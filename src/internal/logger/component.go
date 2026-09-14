@@ -17,7 +17,7 @@ func (h *componentHandler) Handle(ctx context.Context, r slog.Record) error {
 	if h.component != "" {
 		prefix := fmt.Sprintf("[%s]", h.component)
 		if h.color {
-			prefix = fmt.Sprintf("\033[36m%s\033]0m", h.component)
+			prefix = fmt.Sprintf("\033[36m%s\033[0m", prefix)
 		}
 
 		r.Message = fmt.Sprintf("%s %s", prefix, r.Message)
