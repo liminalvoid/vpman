@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+	"log/slog"
 
 	"github.com/mymmrac/telego"
 
@@ -17,6 +18,7 @@ import (
 	"vpnmanager/internal/repository"
 	"vpnmanager/internal/scheduler"
 	"vpnmanager/internal/service"
+	"vpnmanager/internal/logger"
 	"vpnmanager/internal/tgbot"
 	"vpnmanager/internal/tgbot/newsletter"
 )
@@ -50,9 +52,14 @@ func main() {
 		os.Exit(1)
 	}
 
+	log := logger.New(cfg.LogLevel, cfg.LogFormat)
+	slog.SetDefault(log)
+
 	// Initialize Telegram bot
-	// FIXME: Remove this and think how to handle logs in prod
-	tg, err := telego.NewBot(cfg.TelegramToken, telego.WithDefaultDebugLogger())
+	tg, err := telego.NewBot(
+		cfg.TelegramToken,
+		telego.WithLogger(logger.NewTelego(log, cfg.TelegramToken)),
+	)
 	if err != nil {
 		fmt.Printf("failed to create Telegram client: %s\n", err)
 		os.Exit(1)
