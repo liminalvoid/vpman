@@ -32,5 +32,7 @@ func (s *AccessCodeService) Create(
 		return fmt.Errorf("creating access code: %w", err)
 	}
 
+	s.log.InfoContext(ctx, "successful code creation", "code", code)
+
 	return nil
 }
