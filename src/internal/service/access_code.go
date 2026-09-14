@@ -13,7 +13,7 @@ type AccessCodeService struct {
 	accessCodeRepository *repository.AccessCode
 }
 
-func NewAccessCodeService(
+func NewAccessCode(
 	log *slog.Logger,
 	accessCodeRepository *repository.AccessCode,
 ) *AccessCodeService {
