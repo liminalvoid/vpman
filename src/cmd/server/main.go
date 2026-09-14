@@ -65,6 +65,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Initialize newsletter service for sending notifications
 	nl := newsletter.New(log.With("component", "newsletter"), tg)
 
 	// Initialize repos
