@@ -9,20 +9,13 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// Config holds everything the process needs to boot. Values are resolved from,
-// in order of precedence:
-//
-//  1. <KEY>_FILE  — path to a file holding the value (Docker secret style)
-//  2. <KEY>       — a plain environment variable
-//  3. /run/secrets/<key lowercased> — the default Swarm secret mount
-//
-// The file-based paths matter because the production image is FROM scratch:
-// there is no shell to expand secrets into the environment for us.
 type Config struct {
 	TelegramToken   string
 	DatabaseURL     string
 	HealthAddr      string
 	AdminTelegramID int64
+	LogLevel        string
+	LogFormat       string
 }
 
 func Load() (*Config, error) {
@@ -36,6 +29,12 @@ func Load() (*Config, error) {
 		return nil, err
 	}
 	if cfg.DatabaseURL, err = require("DATABASE_URL"); err != nil {
+		return nil, err
+	}
+	if cfg.LogLevel, err = require("LOG_LEVEL"); err != nil {
+		return nil, err
+	}
+	if cfg.LogFormat, err = require("LOG_FORMAT"); err != nil {
 		return nil, err
 	}
 
