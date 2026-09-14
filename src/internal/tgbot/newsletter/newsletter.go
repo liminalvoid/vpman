@@ -2,17 +2,19 @@ package newsletter
 
 import (
 	"context"
+	"log/slog"
 
-	tu "github.com/mymmrac/telego/telegoutil"
 	"github.com/mymmrac/telego"
+	tu "github.com/mymmrac/telego/telegoutil"
 )
 
 type Newsletter struct {
+	log *slog.Logger
 	bot *telego.Bot
 }
 
-func New(bot *telego.Bot) *Newsletter {
-	return &Newsletter{bot}
+func New(log *slog.Logger, bot *telego.Bot) *Newsletter {
+	return &Newsletter{log, bot}
 }
 
 func (n *Newsletter) SendPaymentNotification(
@@ -28,9 +30,16 @@ func (n *Newsletter) SendPaymentNotification(
 		),
 	}...)
 
+	n.log.DebugContext(
+		ctx,
+		"sent payment notification",
+		"message",
+		message,
+	)
+
 	n.bot.SendMessage(ctx, &telego.SendMessageParams{
-		ChatID: telego.ChatID{ID: recipient},
-		Text: message,
+		ChatID:      telego.ChatID{ID: recipient},
+		Text:        message,
 		ReplyMarkup: confirmPaymentKb,
-	})	
+	})
 }

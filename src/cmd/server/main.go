@@ -65,7 +65,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	nl := newsletter.New(tg)
+	nl := newsletter.New(log.With("component", "newsletter"), tg)
 
 	// Initialize repos
 	configRepo := repository.NewConfig(db.Pool())
