@@ -152,6 +152,14 @@ func (s *ConfigService) CreateConfig(
 		}
 	}
 
+	s.log.InfoContext(
+		ctx,
+		"config successfully created",
+		"protocol", protocol,
+		"format", format,
+		"addr", ipAddr,
+	)
+
 	return resultCfg, nil
 }
 
@@ -163,6 +171,12 @@ func (s *ConfigService) UpdateConfigName(
 	if err != nil {
 		return fmt.Errorf("updating config's %q name: %w", publicID, err)
 	}
+
+	s.log.InfoContext(
+		ctx,
+		"config's name updated",
+		"config_id", publicID,
+	)
 
 	return nil
 }
@@ -209,6 +223,12 @@ func (s *ConfigService) RevokeConfig(
 		return fmt.Errorf("deleting config %q from DB: %w", config.PublicID, err)
 	}
 
+	s.log.InfoContext(
+		ctx,
+		"config successfully revoked",
+		"config_id", config.PublicID.String(),
+	)
+
 	return nil
 }
 
@@ -253,6 +273,12 @@ func (s *ConfigService) SuspendConfig(
 	if err != nil {
 		return fmt.Errorf("marking config %q as suspended: %w", config.PublicID, err)
 	}
+
+	s.log.InfoContext(
+		ctx,
+		"config successfully suspended",
+		"config_id", config.PublicID.String(),
+	)
 
 	return nil
 }
