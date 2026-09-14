@@ -6,14 +6,39 @@ import (
 	"log/slog"
 	"os"
 	"strings"
+	"path/filepath"
 )
+
+func formatLogEntry(groups []string, a slog.Attr) slog.Attr {
+	if len(groups) > 0 {
+		return a
+	}
+
+	switch a.Key {
+	case slog.TimeKey:
+		return slog.String(a.Key, a.Value.Time().Format("15:04:05.000"))
+	case slog.SourceKey:
+		src := a.Value.Any().(*slog.Source)
+
+		return slog.String(
+			a.Key,
+			fmt.Sprintf("%s:%d", filepath.Base(src.File), src.Line),
+		)
+	}
+
+	return a
+}
 
 func New(level, format string) *slog.Logger {
 	var lvl slog.Level
 	if err := lvl.UnmarshalText([]byte(level)); err != nil {
 		lvl = slog.LevelInfo
 	}
-	opts := &slog.HandlerOptions{Level: lvl}
+	opts := &slog.HandlerOptions{
+		Level: lvl,
+		AddSource: lvl == slog.LevelDebug,
+		ReplaceAttr: formatLogEntry,
+	}
 
 	var h slog.Handler
 	if format == "json" {
