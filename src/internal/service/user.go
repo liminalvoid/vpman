@@ -4,23 +4,37 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"vpnmanager/internal/model"
 	"vpnmanager/internal/repository"
 )
 
+type userRepository interface {
+	CreateWithAccessCode(ctx context.Context, telegramID int64, code string) (*model.User, error)
+	FindByTelegramID(ctx context.Context, telegramID int64) (*model.User, error)
+	ListAll(ctx context.Context) ([]model.User, error)
+}
+
+type subscriptionRepository interface {
+	Create(ctx context.Context, userID int64, quantity int) (*model.Subscription, error)
+}
+
 type UserService struct {
-	userRepository         *repository.User
-	subscriptionRepository *repository.Subscription
+	log           *slog.Logger
+	users         userRepository
+	subscriptions subscriptionRepository
 }
 
 func NewUser(
-	userRepository *repository.User,
-	subscriptionRepository *repository.Subscription,
+	log *slog.Logger,
+	users userRepository,
+	subs subscriptionRepository,
 ) *UserService {
 	return &UserService{
-		userRepository,
-		subscriptionRepository,
+		log: log,
+		users: users,
+		subscriptions: subs,
 	}
 }
 
@@ -29,12 +43,12 @@ func (s *UserService) CreateWithAccessCode(
 	telegramID int64,
 	code string,
 ) error {
-	user, err := s.userRepository.CreateWithAccessCode(ctx, telegramID, code)
+	user, err := s.users.CreateWithAccessCode(ctx, telegramID, code)
 	if err != nil {
 		return fmt.Errorf("marking code as used: %w", err)
 	}
 
-	_, err = s.subscriptionRepository.Create(ctx, user.ID, 5)
+	_, err = s.subscriptions.Create(ctx, user.ID, 5)
 	if err != nil {
 		return fmt.Errorf("creating subscription for new user: %w", err)
 	}
@@ -43,7 +57,7 @@ func (s *UserService) CreateWithAccessCode(
 }
 
 func (s *UserService) ListAll(ctx context.Context) ([]model.User, error) {
-	users, err := s.userRepository.ListAll(ctx)
+	users, err := s.users.ListAll(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("retrieving users: %w", err)
 	}
@@ -55,7 +69,7 @@ func (s *UserService) GetByTelegramID(
 	ctx context.Context,
 	userID int64,
 ) (*model.User, error) {
-	user, err := s.userRepository.FindByTelegramID(ctx, userID)
+	user, err := s.users.FindByTelegramID(ctx, userID)
 	if errors.Is(err, repository.ErrUserNotExist) {
 		return nil, err
 	} else if err != nil {

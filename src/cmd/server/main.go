@@ -69,42 +69,19 @@ func main() {
 	nl := newsletter.New(log.With("component", "newsletter"), tg)
 
 	// Initialize repos
-	configRepo := repository.NewConfig(db.Pool())
-	protocolRepo := repository.NewProtocol(db.Pool())
-	serverRepo := repository.NewServer(db.Pool())
-	userRepo := repository.NewUser(db.Pool())
-	subscriptionRepo := repository.NewSubscription(db.Pool())
-	accessCodeRepo := repository.NewAccessCode(db.Pool())
+	repos := repository.New(db.Pool())
 
 	// Initialize services
-	configService := service.NewConfig(
-		configRepo,
-		protocolRepo,
-		userRepo,
-		subscriptionRepo,
-		serverRepo,
-		cr,
-	)
-	serverService := service.NewServer(serverRepo, cr)
-	userService := service.NewUser(userRepo, subscriptionRepo)
-	accessCodeService := service.NewAccessCodeService(accessCodeRepo)
-	subscriptionService := service.NewSubscription(
-		cr,
-		nl,
-		subscriptionRepo,
-		userRepo,
-		configRepo,
-		serverRepo,
-	)
+	services := service.New(log, repos, cr, nl)
 
 	b, err := tgbot.New(
 		ctx,
 		tg,
-		configService,
-		serverService,
-		userService,
-		accessCodeService,
-		subscriptionService,
+		services.Config,
+		services.Server,
+		services.User,
+		services.AccessCode,
+		services.Subscription,
 	)
 	if err != nil {
 		fmt.Printf("failed to create Telegram bot: %s\n", err)
@@ -114,8 +91,8 @@ func main() {
 
 	s := scheduler.New(
 		log.With("component", "scheduler"),
-		subscriptionService,
-		configService,
+		services.Subscription,
+		services.Config,
 		5*time.Minute,
 		100,
 		30*24*time.Hour,
