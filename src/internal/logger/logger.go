@@ -46,13 +46,16 @@ func New(level, format string) *slog.Logger {
 	case "json":
 		h = slog.NewJSONHandler(os.Stdout, opts)
 	case "pretty":
-		h = tint.NewTextHandler(os.Stdout, &tint.Options{
-			Level: lvl,
-			TimeFormat: time.Kitchen,
-			ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
-				return a
-			},
-		})
+		h = &componentHandler{
+			Handler: tint.NewTextHandler(os.Stdout, &tint.Options{
+				Level: lvl,
+				TimeFormat: time.Kitchen,
+				ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+					return a
+				},
+			}),
+			color: true,
+		}
 	default:
 		h = slog.NewTextHandler(os.Stdout, opts)
 	}
