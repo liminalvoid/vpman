@@ -123,9 +123,6 @@ func main() {
 	h := health.New(cfg.HealthAddr, db.Pool())
 	go h.Run(ctx)
 
-	// Start bot polling. Returns when ctx is cancelled (SIGTERM from Swarm),
-	// which is what keeps the long-polling singleton from overlapping with its
-	// replacement during a stop-first rolling update.
 	err = b.Start()
 	if err != nil {
 		fmt.Printf("failed to start Telegram bot: %s\n", err)
