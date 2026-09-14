@@ -26,6 +26,7 @@ func New(
 		AccessCode: NewAccessCodeService(log.With("component", "service.access_code"), repos.AccessCode),
 		Config: NewConfig(
 			log.With("component", "service.config"),
+			repos.Config,
 			repos.Protocol,
 			repos.User,
 			repos.Subscription,

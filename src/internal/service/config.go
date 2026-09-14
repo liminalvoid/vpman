@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 )
 
 type ConfigService struct {
+	log                    *slog.Logger
 	configRepository       *repository.Config
 	protocolRepository     *repository.Protocol
 	userRepository         *repository.User
@@ -23,6 +25,7 @@ type ConfigService struct {
 }
 
 func NewConfig(
+	log *slog.Logger,
 	configRepository *repository.Config,
 	protocolRepository *repository.Protocol,
 	userRepository *repository.User,
@@ -31,6 +34,7 @@ func NewConfig(
 	containerRegistry *executor.Registry,
 ) *ConfigService {
 	return &ConfigService{
+		log,
 		configRepository,
 		protocolRepository,
 		userRepository,

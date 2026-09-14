@@ -10,26 +10,16 @@ import (
 	"vpnmanager/internal/repository"
 )
 
-type userRepository interface {
-	CreateWithAccessCode(ctx context.Context, telegramID int64, code string) (*model.User, error)
-	FindByTelegramID(ctx context.Context, telegramID int64) (*model.User, error)
-	ListAll(ctx context.Context) ([]model.User, error)
-}
-
-type subscriptionRepository interface {
-	Create(ctx context.Context, userID int64, quantity int) (*model.Subscription, error)
-}
-
 type UserService struct {
 	log           *slog.Logger
-	users         userRepository
-	subscriptions subscriptionRepository
+	users         *repository.User
+	subscriptions *repository.Subscription
 }
 
 func NewUser(
 	log *slog.Logger,
-	users userRepository,
-	subs subscriptionRepository,
+	users *repository.User,
+	subs *repository.Subscription,
 ) *UserService {
 	return &UserService{
 		log: log,

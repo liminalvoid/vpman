@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"vpnmanager/internal/executor"
 	"vpnmanager/internal/model"
@@ -10,12 +11,17 @@ import (
 )
 
 type ServerService struct {
+	log               *slog.Logger
 	serverRepository  *repository.Server
 	containerRegistry *executor.Registry
 }
 
-func NewServer(sr *repository.Server, cr *executor.Registry) *ServerService {
-	return &ServerService{serverRepository: sr, containerRegistry: cr}
+func NewServer(
+	log *slog.Logger,
+	serverRepository *repository.Server,
+	containerRegistry *executor.Registry,
+) *ServerService {
+	return &ServerService{log, serverRepository, containerRegistry}
 }
 
 func (s *ServerService) ListAll(ctx context.Context) ([]model.Server, error) {

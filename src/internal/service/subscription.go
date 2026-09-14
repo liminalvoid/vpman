@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 	"text/template"
 	"time"
@@ -16,6 +17,7 @@ import (
 )
 
 type SubscriptionService struct {
+	log                    *slog.Logger
 	containerRegistry      *executor.Registry
 	newsletter             *newsletter.Newsletter
 	subscriptionRepository *repository.Subscription
@@ -25,6 +27,7 @@ type SubscriptionService struct {
 }
 
 func NewSubscription(
+	log *slog.Logger,
 	containerRegistry *executor.Registry,
 	newsletter *newsletter.Newsletter,
 	subscriptionRepository *repository.Subscription,
@@ -33,6 +36,7 @@ func NewSubscription(
 	serverRepository *repository.Server,
 ) *SubscriptionService {
 	return &SubscriptionService{
+		log,
 		containerRegistry,
 		newsletter,
 		subscriptionRepository,
@@ -140,7 +144,7 @@ func (s *SubscriptionService) SetPeriodEnd(
 		}
 
 		var buf strings.Builder
-		err = messageTemplate.Execute(&buf, subscription.Quantity * int32(pricePerKey))
+		err = messageTemplate.Execute(&buf, subscription.Quantity*int32(pricePerKey))
 		if err != nil {
 			return 0, fmt.Errorf("executing message template: %w", err)
 		}
