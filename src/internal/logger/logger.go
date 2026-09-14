@@ -5,29 +5,12 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"strings"
 	"path/filepath"
+	"strings"
+	"time"
+
+	"github.com/lmittmann/tint"
 )
-
-func formatLogEntry(groups []string, a slog.Attr) slog.Attr {
-	if len(groups) > 0 {
-		return a
-	}
-
-	switch a.Key {
-	case slog.TimeKey:
-		return slog.String(a.Key, a.Value.Time().Format("15:04:05.000"))
-	case slog.SourceKey:
-		src := a.Value.Any().(*slog.Source)
-
-		return slog.String(
-			a.Key,
-			fmt.Sprintf("%s:%d", filepath.Base(src.File), src.Line),
-		)
-	}
-
-	return a
-}
 
 func New(level, format string) *slog.Logger {
 	var lvl slog.Level
@@ -37,13 +20,40 @@ func New(level, format string) *slog.Logger {
 	opts := &slog.HandlerOptions{
 		Level: lvl,
 		AddSource: lvl == slog.LevelDebug,
-		ReplaceAttr: formatLogEntry,
+		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+			if len(groups) > 0 {
+				return a
+			}
+
+			switch a.Key {
+			case slog.TimeKey:
+				return slog.String(a.Key, a.Value.Time().Format("15:04:05.000"))
+			case slog.SourceKey:
+				src := a.Value.Any().(*slog.Source)
+
+				return slog.String(
+					a.Key,
+					fmt.Sprintf("%s:%d", filepath.Base(src.File), src.Line),
+				)
+			}
+
+			return a
+		},
 	}
 
 	var h slog.Handler
-	if format == "json" {
+	switch format {
+	case "json":
 		h = slog.NewJSONHandler(os.Stdout, opts)
-	} else {
+	case "pretty":
+		h = tint.NewTextHandler(os.Stdout, &tint.Options{
+			Level: lvl,
+			TimeFormat: time.Kitchen,
+			ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+				return a
+			},
+		})
+	default:
 		h = slog.NewTextHandler(os.Stdout, opts)
 	}
 
@@ -73,3 +83,5 @@ func (t *Telego) Debugf(format string, args ...any) {
 func (t *Telego) Errorf(format string, args ...any) {
 	t.log.Error(t.redactor.Replace(fmt.Sprintf(format, args...)))
 }
+
+
