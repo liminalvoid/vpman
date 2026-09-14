@@ -113,6 +113,7 @@ func main() {
 	defer func() { b.Stop() }()
 
 	s := scheduler.New(
+		log.With("component", "scheduler"),
 		subscriptionService,
 		configService,
 		5*time.Minute,
