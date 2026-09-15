@@ -61,6 +61,12 @@ func (s *SubscriptionService) AddSubscription(
 		return fmt.Errorf("creating subscription: %w", err)
 	}
 
+	s.log.InfoContext(
+		ctx,
+		"subscription successfully created",
+		"keys_limit", configQuantity,
+	)
+
 	return nil
 }
 
@@ -157,6 +163,12 @@ func (s *SubscriptionService) SetPeriodEnd(
 		)
 	}
 
+	s.log.InfoContext(
+		ctx,
+		"end period has been set",
+		"end_period", endDate,
+	)
+
 	return rowsAffected, nil
 }
 
@@ -197,6 +209,13 @@ func (s *SubscriptionService) SetKeysLimit(
 		}
 	}
 
+	s.log.InfoContext(
+		ctx,
+		"successfully set keys limit",
+		"for", userPublicID,
+		"new_limit", limit,
+	)
+
 	return nil
 }
 
@@ -208,6 +227,11 @@ func (s *SubscriptionService) ClaimPayment(
 	if err != nil {
 		return err
 	}
+
+	s.log.InfoContext(
+		ctx,
+		"payment has been claimed",
+	)
 
 	return nil
 }
