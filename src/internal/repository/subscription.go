@@ -146,7 +146,7 @@ func (r *Subscription) ChangeKeysLimitCount(
 	count int,
 	userID int64,
 ) (int64, error) {
-	const q =`
+	const q = `
 		UPDATE subscriptions
 		SET quantity = $1
 		WHERE user_id = $2`
@@ -167,7 +167,7 @@ func (r *Subscription) SetEndPeriodForAll(
 		UPDATE subscriptions
 		SET current_period_end = $1, updated_at = now()
 		WHERE status = $2`
-	
+
 	tag, err := r.conn.Exec(
 		ctx,
 		q,
@@ -181,20 +181,58 @@ func (r *Subscription) SetEndPeriodForAll(
 	return tag.RowsAffected(), nil
 }
 
-func (r *Subscription) SetPastDue(
+func (r *Subscription) SetPastDueAndSuspendConfigs(
 	ctx context.Context,
-) (int64, error) {
+) ([]model.ConfigListView, error) {
 	const q = `
-		UPDATE subscriptions
-		SET status = 'past_due', updated_at = now()
-		WHERE now() > current_period_end AND status = $1`
+		WITH past_due AS (
+			UPDATE subscriptions
+			SET status = $1, updated_at = now()
+			WHERE now() > current_period_end AND status = $2
+			RETURNING id
+		)
+		UPDATE configs c
+		SET status = $3
+		FROM past_due pd, protocols p, servers s
+		WHERE c.subscription_id = pd.id
+		AND c.protocol_id = p.id
+		AND c.server_id = s.id
+		AND c.status = $4
+		RETURNING c.id, c.public_id, c.name, c.ip_address, p.name, s.location, s.public_id, c.status, c.created_at`
 
-	tag, err := r.conn.Exec(ctx, q, model.ConfigStatusActive)
+	rows, err := r.conn.Query(
+		ctx,
+		q,
+		model.SubscriptionStatusPastDue,
+		model.SubscriptionStatusActive,
+		model.ConfigStatusSuspended,
+		model.ConfigStatusActive,
+	)
 	if err != nil {
-		return 0, fmt.Errorf("setting past due status: %w", err)
+		return nil, fmt.Errorf("setting past due status: %w", err)
 	}
 
-	return tag.RowsAffected(), nil
+	var configs []model.ConfigListView
+	for rows.Next() {
+		var c model.ConfigListView
+		if err := rows.Scan(
+			&c.ID,
+			&c.PublicID,
+			&c.Name,
+			&c.IPAddress,
+			&c.Protocol,
+			&c.Location,
+			&c.ServerPublicID,
+			&c.Status,
+			&c.CreatedAt,
+		); err != nil {
+			return nil, fmt.Errorf("scanning config list view: %w", err)
+		}
+
+		configs = append(configs, c)
+	}
+
+	return configs, nil
 }
 
 func (r *Subscription) ClaimPayment(
@@ -206,7 +244,7 @@ func (r *Subscription) ClaimPayment(
 		SET status = $1, updated_at = now(), payment_claimed_at = now()
 		FROM users u
 		WHERE s.user_id = u.id AND u.telegram_id = $2`
-	
+
 	_, err := r.conn.Exec(ctx, q, model.SubscriptionStatusPending, telegramID)
 	if err != nil {
 		return fmt.Errorf("claiming payment: %w", err)
@@ -222,7 +260,7 @@ func (r *Subscription) DeleteStale(
 	const q = `
 		DELETE FROM subscriptions
 		WHERE now() > current_period_end + $1`
-	
+
 	tag, err := r.conn.Exec(ctx, q, period)
 	if err != nil {
 		return 0, fmt.Errorf("retrieving configs from stale subscriptions: %w", err)
