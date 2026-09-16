@@ -11,6 +11,7 @@ import (
 	"vpnmanager/internal/executor"
 	"vpnmanager/internal/model"
 	"vpnmanager/internal/repository"
+	"vpnmanager/internal/configgen"
 	"vpnmanager/internal/tgbot/newsletter"
 
 	"github.com/google/uuid"
@@ -182,7 +183,55 @@ func (s *SubscriptionService) SetPastDue(
 		return 0, err
 	}
 
-	return int64(len(configs)), nil
+	servers, err := s.serverRepository.ListAll(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("requesting servers: %w", err)
+	}
+
+	serverAddrMap := make(map[string]string, 0)
+	for _, svr := range servers {
+		if _, ok := serverAddrMap[svr.PublicID.String()]; !ok {
+			serverAddrMap[svr.PublicID.String()] = svr.InternalAddress
+		}
+	}
+
+	var suspendedCount int64
+	for _, c := range configs {
+		privateAddr, ok := serverAddrMap[c.ServerPublicID.String()]
+		if !ok {
+			continue
+		}
+
+		ex, err := s.containerRegistry.GetOrCreate(ctx, &executor.Config{
+			Name:     c.ServerPublicID.String(),
+			User:     "root",
+			HostAddr: privateAddr,
+			HostPort: "2375",
+		})
+		if err != nil {
+			return 0, fmt.Errorf("retrieving container %q: %w", c.ServerPublicID, err)
+		}
+
+		ce, ok := ex.(*executor.ContainerExecutor)
+		if !ok {
+			return 0, fmt.Errorf("unexpected executor type %T", ex)
+		}
+
+		p, err := configgen.GetProtocol(c.Protocol)
+		if err != nil {
+			return 0, fmt.Errorf("retrieving protocol %q: %w", c.Protocol, err)
+		}
+		cg := configgen.New(p, ce)
+
+		err = cg.Suspend(ctx, c.Protocol, c.IPAddress)
+		if err != nil {
+			return 0, fmt.Errorf("suspending protocol with IP address %q: %w", c.IPAddress, err)
+		}
+
+		suspendedCount += 1
+	}
+
+	return suspendedCount, nil
 }
 
 func (s *SubscriptionService) SetKeysLimit(
