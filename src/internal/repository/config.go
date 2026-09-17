@@ -139,6 +139,55 @@ func (r *Config) ListStaleConfigs(
 	return out, rows.Err()
 }
 
+func (r *Config) ListActivePastDue(
+	ctx context.Context,
+	batch int,
+) ([]model.ConfigListView, error) {
+	const q = `
+		SELECT c.id, c.public_id, c.name, c.ip_address, p.name, s.location, s.public_id, c.status, c.created_at
+		FROM configs c
+		JOIN protocols p ON c.protocol_id = p.id
+		JOIN servers s ON c.server_id = s.id
+		JOIN subscriptions sb ON c.subscription_id = sb.id
+		WHERE sb.status = $1 AND c.status = $2
+		ORDER BY c.id
+		LIMIT $3`
+
+	rows, err := r.conn.Query(
+		ctx,
+		q,
+		model.SubscriptionStatusPastDue,
+		model.ConfigStatusActive,
+		batch,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("retrieving active configs from past due subscriptions: %w", err)
+	}
+	defer rows.Close()
+
+	var out []model.ConfigListView
+	for rows.Next() {
+		var c model.ConfigListView
+		if err := rows.Scan(
+			&c.ID,
+			&c.PublicID,
+			&c.Name,
+			&c.IPAddress,
+			&c.Protocol,
+			&c.Location,
+			&c.ServerPublicID,
+			&c.Status,
+			&c.CreatedAt,
+		); err != nil {
+			return nil, fmt.Errorf("scanning config list view: %w", err)
+		}
+
+		out = append(out, c)
+	}
+
+	return out, rows.Err()
+}
+
 func (r *Config) UpdateName(
 	ctx context.Context,
 	publicID, name string,

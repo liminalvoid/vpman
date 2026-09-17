@@ -226,11 +226,11 @@ func (w *Awg) revoke(
 ) error {
 	const script = `set -e
 allowed="%s/32"
-conf="/config/wg_confs/wg0.conf"
+conf="/opt/amnezia/awg/awg0.conf"
 
-pubkey=$(wg show wg0 allowed-ips | awk -v ip="$allowed" '$2 == ip {print $1; exit}')
+pubkey=$(awg show awg0 allowed-ips | awk -v ip="$allowed" '$2 == ip {print $1; exit}')
 if [ -n "$pubkey" ]; then
-	wg set wg0 peer "$pubkey" remove
+	awg set awg0 peer "$pubkey" remove
 fi
 
 awk -v ip="$allowed" '
@@ -238,9 +238,9 @@ awk -v ip="$allowed" '
 		if (n > 0 && !drop) { for (i = 0; i < n; i++) print buf[i] }
 		n = 0; drop = 0
 	}
-	/^\[/ { flush() }
+	/^#?\[/ { flush() }
 	{ buf[n++] = $0 }
-	$1 == "AllowedIPs" && $3 == ip { drop = 1 }
+	$0 ~ /AllowedIPs/ && $NF == ip { drop = 1 }
 	END { flush() }
 ' "$conf" > "$conf.tmp"
 cat "$conf.tmp" > "$conf"
@@ -266,11 +266,11 @@ func (w *Awg) suspend(
 ) error {
 	const script = `set -e
 allowed="%s/32"
-conf="/config/wg_confs/wg0.conf"
+conf="/opt/amnezia/awg/awg0.conf"
 
-pubkey=$(wg show wg0 allowed-ips | awk -v ip="$allowed" '$2 == ip {print $1; exit}')
+pubkey=$(awg show awg0 allowed-ips | awk -v ip="$allowed" '$2 == ip {print $1; exit}')
 if [ -n "$pubkey" ]; then
-	wg set wg0 peer "$pubkey" remove
+	awg set awg0 peer "$pubkey" remove
 fi
 
 awk -v ip="$allowed" '
@@ -308,7 +308,7 @@ func (w *Awg) resume(
 ) error {
 	const script = `set -e
 allowed="%s/32"
-conf="/config/wg_confs/wg0.conf"
+conf="/opt/amnezia/awg/awg0.conf"
 
 awk -v ip="$allowed" '
 	function flush(  i) {
@@ -332,9 +332,9 @@ set -- $(awk -v ip="$allowed" '
 [ -n "$1" ] || { echo "no peer for $allowed" >&2; exit 1; }
 
 if [ -n "$2" ]; then
-	printf '%%s\n' "$2" | wg set wg0 peer "$1" preshared-key /dev/stdin allowed-ips "$allowed"
+	printf '%%s\n' "$2" | awg set awg0 peer "$1" preshared-key /dev/stdin allowed-ips "$allowed"
 else
-	wg set wg0 peer "$1" allowed-ips "$allowed"
+	awg set awg0 peer "$1" allowed-ips "$allowed"
 fi
 `
 

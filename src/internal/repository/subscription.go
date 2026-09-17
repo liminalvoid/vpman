@@ -181,58 +181,23 @@ func (r *Subscription) SetEndPeriodForAll(
 	return tag.RowsAffected(), nil
 }
 
-func (r *Subscription) SetPastDueAndSuspendConfigs(
-	ctx context.Context,
-) ([]model.ConfigListView, error) {
+func (r *Subscription) MarkPastDue(ctx context.Context) (int64, error) {
 	const q = `
-		WITH past_due AS (
-			UPDATE subscriptions
-			SET status = $1, updated_at = now()
-			WHERE now() > current_period_end AND status = $2
-			RETURNING id
-		)
-		UPDATE configs c
-		SET status = $3
-		FROM past_due pd, protocols p, servers s
-		WHERE c.subscription_id = pd.id
-		AND c.protocol_id = p.id
-		AND c.server_id = s.id
-		AND c.status = $4
-		RETURNING c.id, c.public_id, c.name, c.ip_address, p.name, s.location, s.public_id, c.status, c.created_at`
+		UPDATE subscriptions
+		SET status = $1, updated_at = now()
+		WHERE now() > current_period_end AND status = $2`
 
-	rows, err := r.conn.Query(
+	tag, err := r.conn.Exec(
 		ctx,
 		q,
 		model.SubscriptionStatusPastDue,
 		model.SubscriptionStatusActive,
-		model.ConfigStatusSuspended,
-		model.ConfigStatusActive,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("setting past due status: %w", err)
+		return 0, fmt.Errorf("setting past due status: %w", err)
 	}
 
-	var configs []model.ConfigListView
-	for rows.Next() {
-		var c model.ConfigListView
-		if err := rows.Scan(
-			&c.ID,
-			&c.PublicID,
-			&c.Name,
-			&c.IPAddress,
-			&c.Protocol,
-			&c.Location,
-			&c.ServerPublicID,
-			&c.Status,
-			&c.CreatedAt,
-		); err != nil {
-			return nil, fmt.Errorf("scanning config list view: %w", err)
-		}
-
-		configs = append(configs, c)
-	}
-
-	return configs, nil
+	return tag.RowsAffected(), nil
 }
 
 func (r *Subscription) ClaimPayment(

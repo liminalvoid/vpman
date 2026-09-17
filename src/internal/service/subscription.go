@@ -178,9 +178,23 @@ func (s *SubscriptionService) SetPastDue(
 	period time.Duration,
 	batch int,
 ) (int64, error) {
-	configs, err := s.subscriptionRepository.SetPastDueAndSuspendConfigs(ctx)
+	pastDueCount, err := s.subscriptionRepository.MarkPastDue(ctx)
 	if err != nil {
 		return 0, err
+	}
+	if pastDueCount > 0 {
+		s.log.InfoContext(ctx, "subscriptions marked as past due", "count", pastDueCount)
+	}
+
+	// Configs are selected by state rather than by the subscriptions updated
+	// above, so ones that failed to suspend on a previous sweep are retried.
+	configs, err := s.configRepository.ListActivePastDue(ctx, batch)
+	if err != nil {
+		return 0, fmt.Errorf("retrieving configs to suspend: %w", err)
+	}
+
+	if len(configs) == 0 {
+		return 0, nil
 	}
 
 	servers, err := s.serverRepository.ListAll(ctx)
@@ -199,6 +213,7 @@ func (s *SubscriptionService) SetPastDue(
 	for _, c := range configs {
 		privateAddr, ok := serverAddrMap[c.ServerPublicID.String()]
 		if !ok {
+			s.log.WarnContext(ctx, "server not found for config", "config_id", c.PublicID, "server_id", c.ServerPublicID)
 			continue
 		}
 
@@ -209,23 +224,34 @@ func (s *SubscriptionService) SetPastDue(
 			HostPort: "2375",
 		})
 		if err != nil {
-			return 0, fmt.Errorf("retrieving container %q: %w", c.ServerPublicID, err)
+			s.log.ErrorContext(ctx, "retrieving executor", "server_id", c.ServerPublicID, "err", err)
+			continue
 		}
 
 		ce, ok := ex.(*executor.ContainerExecutor)
 		if !ok {
-			return 0, fmt.Errorf("unexpected executor type %T", ex)
+			return suspendedCount, fmt.Errorf("unexpected executor type %T", ex)
 		}
 
 		p, err := configgen.GetProtocol(c.Protocol)
 		if err != nil {
-			return 0, fmt.Errorf("retrieving protocol %q: %w", c.Protocol, err)
+			s.log.ErrorContext(ctx, "retrieving protocol", "config_id", c.PublicID, "protocol", c.Protocol, "err", err)
+			continue
 		}
 		cg := configgen.New(p, ce)
 
+		// Suspend on the server first: the config is only marked suspended once
+		// it is actually disabled, otherwise it stays eligible for a retry.
 		err = cg.Suspend(ctx, c.Protocol, c.IPAddress)
 		if err != nil {
-			return 0, fmt.Errorf("suspending protocol with IP address %q: %w", c.IPAddress, err)
+			s.log.ErrorContext(ctx, "suspending config on server", "config_id", c.PublicID, "ip", c.IPAddress, "err", err)
+			continue
+		}
+
+		_, err = s.configRepository.MarkSuspended(ctx, c.PublicID.String())
+		if err != nil {
+			s.log.ErrorContext(ctx, "marking config as suspended", "config_id", c.PublicID, "err", err)
+			continue
 		}
 
 		suspendedCount += 1

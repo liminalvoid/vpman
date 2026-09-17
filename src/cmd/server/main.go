@@ -93,9 +93,9 @@ func main() {
 		log.With("component", "scheduler"),
 		services.Subscription,
 		services.Config,
-		5*time.Minute,
+		1*time.Minute,
 		100,
-		30*24*time.Hour,
+		1*time.Minute,
 	)
 	go s.Run(ctx)
 

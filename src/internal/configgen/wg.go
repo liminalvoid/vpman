@@ -148,9 +148,9 @@ awk -v ip="$allowed" '
 		if (n > 0 && !drop) { for (i = 0; i < n; i++) print buf[i] }
 		n = 0; drop = 0
 	}
-	/^\[/ { flush() }
+	/^#?\[/ { flush() }
 	{ buf[n++] = $0 }
-	$1 == "AllowedIPs" && $3 == ip { drop = 1 }
+	$0 ~ /AllowedIPs/ && $NF == ip { drop = 1 }
 	END { flush() }
 ' "$conf" > "$conf.tmp"
 cat "$conf.tmp" > "$conf"
