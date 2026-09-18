@@ -3,11 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
-	"log/slog"
 
 	"github.com/mymmrac/telego"
 
@@ -15,10 +15,10 @@ import (
 	"vpnmanager/internal/db"
 	"vpnmanager/internal/executor"
 	"vpnmanager/internal/health"
+	"vpnmanager/internal/logger"
 	"vpnmanager/internal/repository"
 	"vpnmanager/internal/scheduler"
 	"vpnmanager/internal/service"
-	"vpnmanager/internal/logger"
 	"vpnmanager/internal/tgbot"
 	"vpnmanager/internal/tgbot/newsletter"
 )
@@ -89,8 +89,13 @@ func main() {
 	}
 	defer func() { b.Stop() }()
 
+	scheduled := map[string]scheduler.Scheduled{
+		"past_due":     services.Subscription.SetPastDue,
+		"remove_stale": services.Config.RemoveStale,
+	}
 	s := scheduler.New(
 		log.With("component", "scheduler"),
+		scheduled,
 		services.Subscription,
 		services.Config,
 		1*time.Minute,

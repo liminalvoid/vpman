@@ -8,8 +8,11 @@ import (
 	"vpnmanager/internal/service"
 )
 
+type Scheduled func(context.Context, time.Duration, int) (int64, error)
+
 type Scheduler struct {
 	log                 *slog.Logger
+	scheduled           map[string]Scheduled
 	subscriptionService *service.SubscriptionService
 	configService       *service.ConfigService
 	interval            time.Duration
@@ -19,6 +22,7 @@ type Scheduler struct {
 
 func New(
 	log *slog.Logger,
+	scheduled map[string]Scheduled,
 	subscriptionService *service.SubscriptionService,
 	configService *service.ConfigService,
 	interval time.Duration,
@@ -27,6 +31,7 @@ func New(
 ) *Scheduler {
 	return &Scheduler{
 		log,
+		scheduled,
 		subscriptionService,
 		configService,
 		interval,
@@ -53,26 +58,23 @@ func (s *Scheduler) tick(ctx context.Context) {
 	ctx, cancel := context.WithTimeout(ctx, s.interval*5)
 	defer cancel()
 
-	// Order matters: configs are suspended before stale ones are removed.
-	sweeps := []struct {
-		name string
-		fn   func(context.Context, time.Duration, int) (int64, error)
-	}{
-		{"past_due", s.subscriptionService.SetPastDue},
-		{"remove_stale", s.configService.RemoveStale},
-	}
-
-	for _, sweep := range sweeps {
-		affectedEntities, err := sweep.fn(ctx, s.endPeriod, s.batch)
+	for name, sweep := range s.scheduled {
+		affectedEntities, err := sweep(ctx, s.endPeriod, s.batch)
 		if err != nil {
-			s.log.ErrorContext(ctx, "sweep failed", "func_name", sweep.name, "err", err)
+			s.log.ErrorContext(
+				ctx,
+				"sweep failed",
+				"func_name", name,
+				"err", err,
+			)
+
 			continue
 		}
 
 		s.log.DebugContext(
 			ctx,
 			"successful sweep",
-			"func_name", sweep.name,
+			"func_name", name,
 			"affected_entities", affectedEntities,
 		)
 	}
