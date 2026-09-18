@@ -213,7 +213,13 @@ func (s *SubscriptionService) SetPastDue(
 	for _, c := range configs {
 		privateAddr, ok := serverAddrMap[c.ServerPublicID.String()]
 		if !ok {
-			s.log.WarnContext(ctx, "server not found for config", "config_id", c.PublicID, "server_id", c.ServerPublicID)
+			s.log.WarnContext(
+				ctx,
+				"server not found for config",
+				"config_id", c.PublicID,
+				"server_id", c.ServerPublicID,
+			)
+
 			continue
 		}
 
