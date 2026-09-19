@@ -98,9 +98,9 @@ func main() {
 		scheduled,
 		services.Subscription,
 		services.Config,
-		1*time.Minute,
+		5*time.Minute,
 		100,
-		1*time.Minute,
+		30*24*time.Hour,
 	)
 	go s.Run(ctx)
 
