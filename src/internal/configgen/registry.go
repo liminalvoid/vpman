@@ -26,21 +26,6 @@ func New(p Protocol, ce *executor.ContainerExecutor) *ConfigGenerator {
 	}
 }
 
-func (cg *ConfigGenerator) SetProtocol(p Protocol) {
-	cg.protocol = p
-}
-
-func (cg *ConfigGenerator) GetProtocol() (string, error) {
-	switch cg.protocol {
-	case &Awg{}:
-		return "awg", nil
-	case &Wg{}:
-		return "wg", nil
-	}
-
-	return "", fmt.Errorf("failed to map protocol")
-}
-
 func (cg *ConfigGenerator) Create(ctx context.Context, containerID, serverPublicAddr string) (string, error) {
 	cfg, err := cg.protocol.create(ctx, cg.executor, containerID, serverPublicAddr)
 	if err != nil {
