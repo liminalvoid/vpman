@@ -44,14 +44,6 @@ func NewConfig(
 	}
 }
 
-type LimitError struct {
-	limit int
-}
-
-func (e *LimitError) Error() string {
-	return fmt.Sprintf("config limit of %d is exceeded", e.limit)
-}
-
 func (s *ConfigService) CreateConfig(
 	ctx context.Context,
 	ownerID int64,
@@ -69,7 +61,7 @@ func (s *ConfigService) CreateConfig(
 	}
 
 	if len(configs) == int(subscription.Quantity) {
-		return "", &LimitError{limit: int(subscription.Quantity)}
+		return "", &model.ErrSubscriptionLimitExceeded{Limit: int(subscription.Quantity)}
 	}
 
 	// TODO: Add revert of transaction and revocation of config on failure

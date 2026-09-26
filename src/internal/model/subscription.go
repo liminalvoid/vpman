@@ -1,6 +1,9 @@
 package model
 
-import "time"
+import (
+	"time"
+	"fmt"
+)
 
 type SubscriptionStatus string
 
@@ -20,4 +23,12 @@ type Subscription struct {
 	UpdatedAt        *time.Time
 	Quantity         int32
 	PaymentClaimedAt *time.Time
+}
+
+type ErrSubscriptionLimitExceeded struct {
+	Limit int
+}
+
+func (e *ErrSubscriptionLimitExceeded) Error() string {
+	return fmt.Sprintf("limit of %d is exceeded", e.Limit)
 }
