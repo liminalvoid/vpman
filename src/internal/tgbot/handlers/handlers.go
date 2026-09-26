@@ -9,6 +9,7 @@ import (
 	th "github.com/mymmrac/telego/telegohandler"
 	tu "github.com/mymmrac/telego/telegoutil"
 
+	"vpnmanager/internal/repository"
 	"vpnmanager/internal/service"
 	"vpnmanager/internal/tgbot/session"
 )
@@ -20,13 +21,13 @@ type Response struct {
 }
 
 type Handlers struct {
-	bot                 *telego.Bot
-	sessions            *session.Sessions
-	configService       *service.ConfigService
-	serverService       *service.ServerService
-	accessCodeService   *service.AccessCodeService
-	subscriptionService *service.SubscriptionService
-	userService         *service.UserService
+	bot                  *telego.Bot
+	sessions             *session.Sessions
+	configService        *service.ConfigService
+	serverService        *service.ServerService
+	subscriptionService  *service.SubscriptionService
+	userService          *service.UserService
+	accessCodeRepository *repository.AccessCode
 }
 
 const AdminHandlerPrefix = "admin"
@@ -62,18 +63,18 @@ func NewHandlers(
 	sess *session.Sessions,
 	ps *service.ConfigService,
 	ss *service.ServerService,
-	acs *service.AccessCodeService,
 	sbs *service.SubscriptionService,
 	us *service.UserService,
+	acr *repository.AccessCode,
 ) *Handlers {
 	return &Handlers{
-		bot:                 bot,
-		sessions:            sess,
-		configService:       ps,
-		serverService:       ss,
-		accessCodeService:   acs,
-		subscriptionService: sbs,
-		userService:         us,
+		bot:                  bot,
+		sessions:             sess,
+		configService:        ps,
+		serverService:        ss,
+		subscriptionService:  sbs,
+		userService:          us,
+		accessCodeRepository: acr,
 	}
 }
 

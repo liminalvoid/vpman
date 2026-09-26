@@ -7,7 +7,7 @@ import (
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
 
-	"vpnmanager/internal/repository"
+	"vpnmanager/internal/model"
 	"vpnmanager/internal/service"
 	"vpnmanager/internal/tgbot/session"
 )
@@ -15,7 +15,6 @@ import (
 func IsAuthenticated(
 	bot *telego.Bot,
 	userService *service.UserService,
-	accessCodeService *service.AccessCodeService,
 	sessions *session.Sessions,
 ) func(ctx *th.Context, update telego.Update) error {
 	return func(ctx *th.Context, update telego.Update) error {
@@ -40,13 +39,13 @@ func IsAuthenticated(
 		)
 
 		user, err := userService.GetByTelegramID(ctx, userID)
-		if errors.Is(err, repository.ErrUserNotExist) {
+		if errors.Is(err, model.ErrUserNotFound) {
 			if accessCode == "" || len(accessCode) > 8 {
 				return ctx.Next(update)
 			}
 
 			err := userService.CreateWithAccessCode(ctx, userID, accessCode)
-			if errors.Is(err, repository.ErrNoAccessCode) {
+			if errors.Is(err, model.ErrAccessCodeNotFound) {
 				return fmt.Errorf("no such access code %s: %w", accessCode, err)
 			} else if err != nil {
 				return fmt.Errorf("removing access code and creating user: %w", err)

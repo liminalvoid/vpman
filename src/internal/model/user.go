@@ -1,6 +1,8 @@
 package model
 
 import (
+	"errors"
+
 	"github.com/google/uuid"
 )
 
@@ -12,3 +14,7 @@ type User struct {
 	PasswordHash *string
 	IsAdmin      bool
 }
+
+var (
+	ErrUserNotFound = errors.New("user not found")
+)

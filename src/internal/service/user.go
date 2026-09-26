@@ -60,7 +60,7 @@ func (s *UserService) GetByTelegramID(
 	userID int64,
 ) (*model.User, error) {
 	user, err := s.users.FindByTelegramID(ctx, userID)
-	if errors.Is(err, repository.ErrUserNotExist) {
+	if errors.Is(err, model.ErrUserNotFound) {
 		return nil, err
 	} else if err != nil {
 		return nil, fmt.Errorf("retrieving user by Telegram ID: %w", err)

@@ -14,8 +14,6 @@ type User struct {
 	conn conn
 }
 
-var ErrUserNotExist = errors.New("user doesn't exist")
-
 func NewUser(conn conn) *User { return &User{conn: conn} }
 
 func (r *User) Create(ctx context.Context, user *model.User) error {
@@ -28,8 +26,6 @@ func (r *User) Create(ctx context.Context, user *model.User) error {
 		QueryRow(ctx, q, user.Username, user.TelegramID, user.PasswordHash).
 		Scan(&user.ID, &user.PublicID, &user.Username)
 }
-
-var ErrNoAccessCode = errors.New("code doesn't exist")
 
 func (r *User) CreateWithAccessCode(
 	ctx context.Context,
@@ -50,7 +46,7 @@ func (r *User) CreateWithAccessCode(
 		QueryRow(ctx, q, code, telegramID).
 		Scan(&user.ID, &user.PublicID, &user.TelegramID)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, ErrNoAccessCode
+		return nil, model.ErrAccessCodeNotFound
 	}
 
 	return &user, err
@@ -66,7 +62,7 @@ func (r *User) FindByTelegramID(ctx context.Context, telegramID int64) (*model.U
 		QueryRow(ctx, q, telegramID).
 		Scan(&user.ID, &user.PublicID, &user.TelegramID, &user.IsAdmin)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, ErrUserNotExist
+		return nil, model.ErrUserNotFound
 	} else if err != nil {
 		return nil, fmt.Errorf("looking for user: %w", err)
 	}
