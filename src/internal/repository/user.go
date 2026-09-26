@@ -14,8 +14,6 @@ type User struct {
 	conn conn
 }
 
-var ErrUserNotExist = errors.New("user doesn't exist")
-
 func NewUser(conn conn) *User { return &User{conn: conn} }
 
 func (r *User) Create(ctx context.Context, user *model.User) error {
@@ -66,7 +64,7 @@ func (r *User) FindByTelegramID(ctx context.Context, telegramID int64) (*model.U
 		QueryRow(ctx, q, telegramID).
 		Scan(&user.ID, &user.PublicID, &user.TelegramID, &user.IsAdmin)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, ErrUserNotExist
+		return nil, model.ErrUserNotFound
 	} else if err != nil {
 		return nil, fmt.Errorf("looking for user: %w", err)
 	}
