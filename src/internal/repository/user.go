@@ -27,8 +27,6 @@ func (r *User) Create(ctx context.Context, user *model.User) error {
 		Scan(&user.ID, &user.PublicID, &user.Username)
 }
 
-var ErrNoAccessCode = errors.New("code doesn't exist")
-
 func (r *User) CreateWithAccessCode(
 	ctx context.Context,
 	telegramID int64,
@@ -48,7 +46,7 @@ func (r *User) CreateWithAccessCode(
 		QueryRow(ctx, q, code, telegramID).
 		Scan(&user.ID, &user.PublicID, &user.TelegramID)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, ErrNoAccessCode
+		return nil, model.ErrAccessCodeNotFound
 	}
 
 	return &user, err
