@@ -80,8 +80,8 @@ func main() {
 		services.Config,
 		services.Server,
 		services.User,
-		services.AccessCode,
 		services.Subscription,
+		repos.AccessCode,
 	)
 	if err != nil {
 		fmt.Printf("failed to create Telegram bot: %s\n", err)

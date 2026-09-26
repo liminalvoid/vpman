@@ -48,7 +48,7 @@ func (h *Handlers) HandleGenerateAccessCode(
 				return fmt.Errorf("trying generate invite code: %w", err)
 			}
 
-			err = h.accessCodeService.Create(ctx, accessCode)
+			_, err = h.accessCodeRepository.Create(ctx, accessCode)
 			if err != nil {
 				return fmt.Errorf("creating access code: %w", err)
 			}

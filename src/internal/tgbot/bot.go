@@ -7,6 +7,7 @@ import (
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
 
+	"vpnmanager/internal/repository"
 	"vpnmanager/internal/service"
 	"vpnmanager/internal/tgbot/handlers"
 	"vpnmanager/internal/tgbot/middleware"
@@ -14,7 +15,7 @@ import (
 )
 
 type Bot struct {
-	handler    *th.BotHandler
+	handler *th.BotHandler
 }
 
 func New(
@@ -23,8 +24,8 @@ func New(
 	cs *service.ConfigService,
 	ss *service.ServerService,
 	us *service.UserService,
-	acs *service.AccessCodeService,
 	sbs *service.SubscriptionService,
+	acr *repository.AccessCode,
 ) (*Bot, error) {
 	updates, _ := tg.UpdatesViaLongPolling(ctx, nil)
 
@@ -35,13 +36,13 @@ func New(
 		sessions,
 		cs,
 		ss,
-		acs,
 		sbs,
 		us,
+		acr,
 	)
 
 	bh.Use(th.PanicRecovery())
-	bh.Use(middleware.IsAuthenticated(tg, us, acs, sessions))
+	bh.Use(middleware.IsAuthenticated(tg, us, sessions))
 
 	bh.Handle(
 		h.HandleStart,

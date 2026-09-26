@@ -15,7 +15,6 @@ import (
 func IsAuthenticated(
 	bot *telego.Bot,
 	userService *service.UserService,
-	accessCodeService *service.AccessCodeService,
 	sessions *session.Sessions,
 ) func(ctx *th.Context, update telego.Update) error {
 	return func(ctx *th.Context, update telego.Update) error {

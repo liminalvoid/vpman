@@ -9,7 +9,6 @@ import (
 )
 
 type Services struct {
-	AccessCode   *AccessCodeService
 	Config       *ConfigService
 	Server       *ServerService
 	Subscription *SubscriptionService
@@ -23,7 +22,6 @@ func New(
 	nl *newsletter.Newsletter,
 ) *Services {
 	return &Services{
-		AccessCode: NewAccessCode(log.With("component", "service.access_code"), repos.AccessCode),
 		Config: NewConfig(
 			log.With("component", "service.config"),
 			repos.Config,
