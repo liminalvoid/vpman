@@ -9,7 +9,7 @@ import (
 	th "github.com/mymmrac/telego/telegohandler"
 	tu "github.com/mymmrac/telego/telegoutil"
 
-	"vpnmanager/internal/service"
+	"vpnmanager/internal/model"
 	"vpnmanager/internal/tgbot/session"
 )
 
@@ -261,7 +261,7 @@ func (h *Handlers) HandleNewConfig(ctx *th.Context, update telego.Update) error 
 			sess.Create.Format,
 		)
 		if err != nil {
-			if _, ok := errors.AsType[*service.LimitError](err); ok {
+			if _, ok := errors.AsType[*model.SubscriptionLimitError](err); ok {
 				response.Text = "Не удалось создать конфиг: превышен допустимый лимит ключей"
 			} else {
 				// TODO: Remove error sent to the user

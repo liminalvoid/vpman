@@ -7,6 +7,7 @@ import (
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
 
+	"vpnmanager/internal/model"
 	"vpnmanager/internal/repository"
 	"vpnmanager/internal/service"
 	"vpnmanager/internal/tgbot/session"
@@ -39,7 +40,7 @@ func IsAuthenticated(
 		)
 
 		user, err := userService.GetByTelegramID(ctx, userID)
-		if errors.Is(err, repository.ErrUserNotExist) {
+		if errors.Is(err, model.ErrUserNotFound) {
 			if accessCode == "" || len(accessCode) > 8 {
 				return ctx.Next(update)
 			}
