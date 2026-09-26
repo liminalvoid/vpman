@@ -61,7 +61,7 @@ func (s *ConfigService) CreateConfig(
 	}
 
 	if len(configs) == int(subscription.Quantity) {
-		return "", &model.ErrSubscriptionLimitExceeded{Limit: int(subscription.Quantity)}
+		return "", &model.SubscriptionLimitError{Limit: int(subscription.Quantity)}
 	}
 
 	// TODO: Add revert of transaction and revocation of config on failure

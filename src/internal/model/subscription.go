@@ -25,10 +25,10 @@ type Subscription struct {
 	PaymentClaimedAt *time.Time
 }
 
-type ErrSubscriptionLimitExceeded struct {
+type SubscriptionLimitError struct {
 	Limit int
 }
 
-func (e *ErrSubscriptionLimitExceeded) Error() string {
+func (e *SubscriptionLimitError) Error() string {
 	return fmt.Sprintf("limit of %d is exceeded", e.Limit)
 }
