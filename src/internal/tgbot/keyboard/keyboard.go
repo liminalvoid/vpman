@@ -4,16 +4,16 @@ import (
 	"github.com/mymmrac/telego"
 )
 
-func paginate(
-	keyboard []telego.InlineKeyboardButton,
+func Paginate(
+	keyboard [][]telego.InlineKeyboardButton,
 	amountPerPage int,
 	currentPage int,
-) []telego.InlineKeyboardButton {
+) [][]telego.InlineKeyboardButton {
 	if currentPage * amountPerPage > len(keyboard) {
-		return []telego.InlineKeyboardButton{}
+		return [][]telego.InlineKeyboardButton{}
 	}
 
-	currPos := currentPage * amountPerPage + 1
+	currPos := currentPage * amountPerPage
 	stop := currPos + amountPerPage
 
 	return keyboard[currPos:stop]

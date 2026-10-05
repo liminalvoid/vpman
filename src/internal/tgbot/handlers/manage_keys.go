@@ -8,6 +8,7 @@ import (
 	th "github.com/mymmrac/telego/telegohandler"
 	tu "github.com/mymmrac/telego/telegoutil"
 
+	"vpnmanager/internal/tgbot/keyboard"
 	"vpnmanager/internal/tgbot/session"
 )
 
@@ -114,7 +115,7 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 		}
 
 		response.Text = "Текущие ключи"
-		draftKb = keysKbButtons
+		draftKb = keyboard.Paginate(keysKbButtons, 5, 0)
 		h.sessions.Update(userID, func(s *session.Session) {
 			s.State = session.StateEditConfigSelect
 		})
