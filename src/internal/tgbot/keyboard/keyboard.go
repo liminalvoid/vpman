@@ -7,6 +7,8 @@ import (
 	tu "github.com/mymmrac/telego/telegoutil"
 )
 
+var RowsPerPage = 5
+
 func BuildKbWithPagination(
 	keyboard [][]telego.InlineKeyboardButton,
 	prefix string,

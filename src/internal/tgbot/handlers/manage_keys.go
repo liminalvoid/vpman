@@ -42,7 +42,6 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 	var draftKb [][]telego.InlineKeyboardButton
 	response := Response{}
 	currentPage := 0
-	keysPerPage := 5
 
 	switch {
 	case update.CallbackQuery != nil:
@@ -128,8 +127,8 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 			)
 		}
 
-		response.Text = fmt.Sprintf("Текущие ключи\n\nСтраница: %d/%d", currentPage + 1, len(keysKbButtons) / keysPerPage)
-		draftKb = keyboard.BuildKbWithPagination(keysKbButtons, ManageKeysPrefix, keysPerPage, currentPage)
+		response.Text = fmt.Sprintf("Текущие ключи\n\nСтраница: %d/%d", currentPage + 1, len(keysKbButtons) / keyboard.RowsPerPage)
+		draftKb = keyboard.BuildKbWithPagination(keysKbButtons, ManageKeysPrefix, keyboard.RowsPerPage, currentPage)
 		h.sessions.Update(userID, func(s *session.Session) {
 			s.State = session.StateEditConfigSelect
 		})
