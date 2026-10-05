@@ -147,7 +147,11 @@ func (h *Handlers) HandleManageUsers(
 			))
 		}
 
-		response.Text = fmt.Sprintf("Доступные пользователи\n\nСтраница %d/%d", currentPage, len(draftKb) / keyboard.RowsPerPage)
+		response.Text = fmt.Sprintf(
+			"Доступные пользователи\n\nСтраница %d/%d",
+			currentPage + 1,
+			keyboard.GetTotalPages(len(draftKb), keyboard.RowsPerPage),
+		)
 		draftKb = keyboard.BuildKbWithPagination(draftKb, ManageUsersPrefix, keyboard.RowsPerPage, currentPage)
 		h.sessions.Update(userID, func(s *session.Session) {
 			s.State = session.StateManageUsersEditKeysAmount

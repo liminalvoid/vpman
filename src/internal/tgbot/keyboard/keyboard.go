@@ -7,7 +7,7 @@ import (
 	tu "github.com/mymmrac/telego/telegoutil"
 )
 
-var RowsPerPage = 5
+const RowsPerPage = 5
 
 func BuildKbWithPagination(
 	keyboard [][]telego.InlineKeyboardButton,
@@ -38,4 +38,11 @@ func BuildKbWithPagination(
 	}
 
 	return resultKb
+}
+
+func GetTotalPages(amount, rowsPerPage int) int {
+	if amount <= 0 || rowsPerPage <= 0 {
+		return 1
+	}
+	return (amount + rowsPerPage - 1) / rowsPerPage
 }

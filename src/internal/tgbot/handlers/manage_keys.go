@@ -127,7 +127,11 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 			)
 		}
 
-		response.Text = fmt.Sprintf("Текущие ключи\n\nСтраница: %d/%d", currentPage + 1, len(keysKbButtons) / keyboard.RowsPerPage)
+		response.Text = fmt.Sprintf(
+			"Текущие ключи\n\nСтраница: %d/%d",
+			currentPage + 1,
+			keyboard.GetTotalPages(len(keysKbButtons), keyboard.RowsPerPage),
+		)
 		draftKb = keyboard.BuildKbWithPagination(keysKbButtons, ManageKeysPrefix, keyboard.RowsPerPage, currentPage)
 		h.sessions.Update(userID, func(s *session.Session) {
 			s.State = session.StateEditConfigSelect
