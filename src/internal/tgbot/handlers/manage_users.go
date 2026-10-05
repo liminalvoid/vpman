@@ -10,6 +10,7 @@ import (
 	th "github.com/mymmrac/telego/telegohandler"
 	tu "github.com/mymmrac/telego/telegoutil"
 
+	"vpnmanager/internal/tgbot/keyboard"
 	"vpnmanager/internal/tgbot/session"
 )
 
@@ -41,6 +42,8 @@ func (h *Handlers) HandleManageUsers(
 ) error {
 	var response Response
 	var userID int64
+	currentPage := 0
+
 	switch {
 	case update.CallbackQuery != nil:
 		userID = update.CallbackQuery.From.ID
@@ -69,6 +72,17 @@ func (h *Handlers) HandleManageUsers(
 		case callbackData == ":edit_keys_amount":
 			h.sessions.Update(userID, func(s *session.Session) {
 				s.State = session.StateManageUsersEditKeysAmount
+			})
+		case strings.Contains(callbackData, ":page-"):
+			amountStr := strings.ReplaceAll(callbackData, fmt.Sprintf("%s:page-", ManageUsersPrefix), "")
+			amount, err := strconv.Atoi(amountStr)
+			if err != nil {
+				return err
+			}
+			currentPage = amount
+
+			h.sessions.Update(userID, func(s *session.Session) {
+				s.State = session.StateManageUsers
 			})
 		}
 	case update.Message != nil:
@@ -133,7 +147,12 @@ func (h *Handlers) HandleManageUsers(
 			))
 		}
 
-		response.Text = "Доступные пользователи"
+		response.Text = fmt.Sprintf(
+			"Доступные пользователи\n\nСтраница %d/%d",
+			currentPage + 1,
+			keyboard.GetTotalPages(len(draftKb), keyboard.RowsPerPage),
+		)
+		draftKb = keyboard.BuildKbWithPagination(draftKb, ManageUsersPrefix, keyboard.RowsPerPage, currentPage)
 		h.sessions.Update(userID, func(s *session.Session) {
 			s.State = session.StateManageUsersEditKeysAmount
 		})
