@@ -1,20 +1,39 @@
 package keyboard
 
 import (
+	"fmt"
+
 	"github.com/mymmrac/telego"
+	tu "github.com/mymmrac/telego/telegoutil"
 )
 
-func Paginate(
+func BuildKbWithPagination(
 	keyboard [][]telego.InlineKeyboardButton,
+	prefix string,
 	amountPerPage int,
 	currentPage int,
 ) [][]telego.InlineKeyboardButton {
-	if currentPage * amountPerPage > len(keyboard) {
-		return [][]telego.InlineKeyboardButton{}
-	}
+	nextBtn := tu.InlineKeyboardRow(
+		tu.
+			InlineKeyboardButton("Далее ➡️").
+			WithCallbackData(fmt.Sprintf("%s:page-%d", prefix, currentPage+1)),
+	)
+	backBtn := tu.InlineKeyboardRow(
+		tu.
+			InlineKeyboardButton("Назад ⬅️").
+			WithCallbackData(fmt.Sprintf("%s:page-%d", prefix, currentPage-1)),
+	)
 
 	currPos := currentPage * amountPerPage
-	stop := currPos + amountPerPage
+	stop := min(currPos + amountPerPage, len(keyboard))
 
-	return keyboard[currPos:stop]
+	resultKb := keyboard[currPos:stop]
+	if stop < len(keyboard) {
+		resultKb = append(resultKb, nextBtn)
+	}
+	if currPos > 0 {
+		resultKb = append(resultKb, backBtn)
+	}
+
+	return resultKb
 }
