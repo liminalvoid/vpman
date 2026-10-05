@@ -43,7 +43,6 @@ func (h *Handlers) HandleManageUsers(
 	var response Response
 	var userID int64
 	currentPage := 0
-	keysPerPage := 5
 
 	switch {
 	case update.CallbackQuery != nil:
@@ -148,8 +147,8 @@ func (h *Handlers) HandleManageUsers(
 			))
 		}
 
-		response.Text = "Доступные пользователи"
-		draftKb = keyboard.BuildKbWithPagination(draftKb, ManageUsersPrefix, keysPerPage, currentPage)
+		response.Text = fmt.Sprintf("Доступные пользователи\n\nСтраница %d/%d", currentPage, len(draftKb) / keyboard.RowsPerPage)
+		draftKb = keyboard.BuildKbWithPagination(draftKb, ManageUsersPrefix, keyboard.RowsPerPage, currentPage)
 		h.sessions.Update(userID, func(s *session.Session) {
 			s.State = session.StateManageUsersEditKeysAmount
 		})
