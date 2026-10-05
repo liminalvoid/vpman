@@ -75,7 +75,7 @@ func (h *Handlers) HandleManageUsers(
 				s.State = session.StateManageUsersEditKeysAmount
 			})
 		case strings.Contains(callbackData, ":page-"):
-			amountStr := strings.ReplaceAll(callbackData, fmt.Sprintf("%s:page-", ManageKeysPrefix), "")
+			amountStr := strings.ReplaceAll(callbackData, fmt.Sprintf("%s:page-", ManageUsersPrefix), "")
 			amount, err := strconv.Atoi(amountStr)
 			if err != nil {
 				return err
