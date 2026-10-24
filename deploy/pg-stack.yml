@@ -1,4 +1,4 @@
-# Four Patroni-managed Postgres members: one leader, three streaming replicas,
+# Five Patroni-managed Postgres members: one leader, four streaming replicas,
 # one per VPS. Patroni holds the leader lock in etcd and promotes a replica on
 # its own when the leader's node disappears.
 #
@@ -8,7 +8,7 @@
 # lives in a node-local volume, so a member must never be rescheduled onto a
 # different node — it would come up against an empty data directory and clone
 # itself from scratch. If a node is gone, its member stays down until the node
-# is back. Availability comes from the other three, not from moving this one.
+# is back. Availability comes from the other four, not from moving this one.
 
 x-patroni: &patroni
   image: ghcr.io/liminalvoid/patroni-pg17:latest
@@ -108,18 +108,34 @@ services:
         constraints:
           - node.labels.pgnode == 4
 
+  pg5:
+    <<: *patroni
+    hostname: pg5
+    environment:
+      PATRONI_NAME: pg5
+      PATRONI_RESTAPI_CONNECT_ADDRESS: pg5:8008
+      PATRONI_POSTGRESQL_CONNECT_ADDRESS: pg5:5432
+    volumes:
+      - pg5-data:/var/lib/postgresql/data
+    deploy:
+      <<: *patroni-deploy
+      placement:
+        constraints:
+          - node.labels.pgnode == 5
+
 volumes:
   pg1-data:
   pg2-data:
   pg3-data:
   pg4-data:
+  pg5-data:
 
 # Swarm configs are immutable. To change one of these files, bump the _vN
 # suffix and redeploy — Docker will not update a config in place.
 configs:
   patroni_yml:
     file: ./patroni/patroni.yml
-    name: patroni_yml_v1
+    name: patroni_yml_v2
   patroni_post_init:
     file: ./patroni/post_init.sh
     name: patroni_post_init_v1
