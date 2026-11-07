@@ -24,3 +24,4 @@ go.work
 
 # Do not share my precious settings
 .claude
+.env
