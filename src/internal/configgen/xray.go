@@ -26,8 +26,8 @@ type Xray struct{}
 var xrayTemplateFS embed.FS
 
 const (
-	xrayConfigPath    = "/opt/xray/server.json"
-	xrayStagingPath   = "/opt/xray/server.staging.json"
+	xrayConfigPath    = "/opt/xray/config.json"
+	xrayStagingPath   = "/opt/xray/config.staging.json"
 	xraySuspendedPath = "/opt/xray/suspended.json"
 
 	xrayVisionFlow         = "xtls-rprx-vision"
