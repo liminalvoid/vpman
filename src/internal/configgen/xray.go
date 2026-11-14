@@ -31,7 +31,7 @@ const (
 	xraySuspendedPath = "/opt/xray/suspended.json"
 
 	xrayVisionFlow         = "xtls-rprx-vision"
-	xrayDefaultFingerprint = "chrome"
+	xrayDefaultFingerprint = "firefox"
 
 	// xrayEmailBytes is sized so the hex-encoded email fits the 15-char
 	// configs.ip_address column, which stores the client's identifier.
@@ -485,8 +485,10 @@ func parseReality(inbound map[string]any) (*xrayReality, error) {
 		return nil, errors.New("inbound has no port")
 	}
 
+	// "raw" is Xray-core's newer config name for "tcp"; share links (and the
+	// client apps parsing them) only know "tcp".
 	network, _ := stream["network"].(string)
-	if network == "" {
+	if network == "" || network == "raw" {
 		network = "tcp"
 	}
 

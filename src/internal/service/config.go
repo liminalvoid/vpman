@@ -120,9 +120,19 @@ func (s *ConfigService) CreateConfig(
 		return "", fmt.Errorf("writing config info to DB: %w", err)
 	}
 
-	// Xray configs are vless:// links, which AmneziaVPN imports as-is.
-	if _, isXray := p.(*configgen.Xray); format == "amnezia" && !isXray {
-		resultCfg, err = lib.CompressConfigForAmnezia([]byte(resultCfg), 8)
+	if format == "amnezia" {
+		data := []byte(resultCfg)
+
+		// AmneziaVPN keys carry Xray as its native container config, not as
+		// a bare vless:// link.
+		if _, isXray := p.(*configgen.Xray); isXray {
+			data, err = configgen.XrayLinkToAmnezia(resultCfg, name)
+			if err != nil {
+				return "", fmt.Errorf("converting config for AmneziaVPN: %w", err)
+			}
+		}
+
+		resultCfg, err = lib.CompressConfigForAmnezia(data, 8)
 		if err != nil {
 			return "", fmt.Errorf("compressing config: %w", err)
 		}
