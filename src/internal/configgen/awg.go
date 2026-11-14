@@ -63,15 +63,15 @@ func (w *Awg) create(
 	ctx context.Context,
 	cli *executor.ContainerExecutor,
 	containerID, serverPublicAddr string,
-) (string, error) {
+) (string, string, error) {
 	// Read templates
 	peerConfTemplate, err := template.ParseFS(awgTemplateFS, "templates/awg/peer.conf")
 	if err != nil {
-		return "", fmt.Errorf("failed to parse peer's config template: %s", err)
+		return "", "", fmt.Errorf("failed to parse peer's config template: %s", err)
 	}
 	confTemplate, err := template.ParseFS(awgTemplateFS, "templates/awg/client.conf")
 	if err != nil {
-		return "", fmt.Errorf("failed to parse client's config template: %s", err)
+		return "", "", fmt.Errorf("failed to parse client's config template: %s", err)
 	}
 
 	// Generate keys
@@ -81,12 +81,12 @@ func (w *Awg) create(
 	}
 	output, err := cli.Run(ctx, containerID, keysGenerationCmd, []byte{})
 	if err != nil {
-		return "", fmt.Errorf("failed keys generation: %s", err)
+		return "", "", fmt.Errorf("failed keys generation: %s", err)
 	}
 
 	keys := strings.SplitN(strings.TrimSpace(output), "|", 3)
 	if len(keys) != 3 {
-		return "", fmt.Errorf("unexpected keys generation output: %q", output)
+		return "", "", fmt.Errorf("unexpected keys generation output: %q", output)
 	}
 	privKey, pubKey, presKey := keys[0], keys[1], keys[2]
 
@@ -94,14 +94,14 @@ func (w *Awg) create(
 	getServerPubKeyCmd := []string{"awg", "show", "awg0", "public-key"}
 	output, err = cli.Run(ctx, containerID, getServerPubKeyCmd, []byte{})
 	if err != nil {
-		return "", fmt.Errorf("failed to get server's public key: %s", err)
+		return "", "", fmt.Errorf("failed to get server's public key: %s", err)
 	}
 	serverPubKey := strings.TrimSpace(output)
 
 	getServerPortCmd := []string{"awg", "show", "awg0", "listen-port"}
 	output, err = cli.Run(ctx, containerID, getServerPortCmd, []byte{})
 	if err != nil {
-		return "", fmt.Errorf("failed to get server's port: %s", err)
+		return "", "", fmt.Errorf("failed to get server's port: %s", err)
 	}
 	serverPort := strings.TrimSpace(output)
 
@@ -115,7 +115,7 @@ func (w *Awg) create(
 	}
 	output, err = cli.Run(ctx, containerID, getServerParamsCmd, []byte{})
 	if err != nil {
-		return "", fmt.Errorf("failed to get server's tuning params: %s", err)
+		return "", "", fmt.Errorf("failed to get server's tuning params: %s", err)
 	}
 
 	serverParams := make(map[string]string)
@@ -141,16 +141,16 @@ func (w *Awg) create(
 	}
 	output, err = cli.Run(ctx, containerID, getLatestPeerAddrCmd, []byte{})
 	if err != nil {
-		return "", fmt.Errorf("failed to get latest peer's IP: %s", err)
+		return "", "", fmt.Errorf("failed to get latest peer's IP: %s", err)
 	}
 
 	latestPeerAddr, err := netip.ParseAddr(strings.TrimSpace(output))
 	if err != nil {
-		return "", fmt.Errorf("failed to parse latest peer's IP: %s", err)
+		return "", "", fmt.Errorf("failed to parse latest peer's IP: %s", err)
 	}
 	newPeerAddr, err := latestPeerAddr.Next().Prefix(32)
 	if err != nil {
-		return "", fmt.Errorf("failed to add prefix to parsed IP: %s", err)
+		return "", "", fmt.Errorf("failed to add prefix to parsed IP: %s", err)
 	}
 
 	// Add peer to interface config. preshared-key takes a file path, not the
@@ -170,7 +170,7 @@ func (w *Awg) create(
 	}
 	output, err = cli.Run(ctx, containerID, createNewPeerCmd, []byte(presKey+"\n"))
 	if err != nil {
-		return "", fmt.Errorf("failed to create new peer: %s", err)
+		return "", "", fmt.Errorf("failed to create new peer: %s", err)
 	}
 
 	var sb strings.Builder
@@ -180,13 +180,13 @@ func (w *Awg) create(
 		"ClientAddr":    newPeerAddr.String(),
 	}
 	if err := peerConfTemplate.Execute(&sb, peerData); err != nil {
-		return "", fmt.Errorf("failed to build peer config from template: %s", err)
+		return "", "", fmt.Errorf("failed to build peer config from template: %s", err)
 	}
 
 	writePeerCmd := []string{"tee", "-a", "/opt/amnezia/awg/awg0.conf"}
 	_, err = cli.Run(ctx, containerID, writePeerCmd, []byte(sb.String()))
 	if err != nil {
-		return "", fmt.Errorf("failed to write peer to server's config: %s", err)
+		return "", "", fmt.Errorf("failed to write peer to server's config: %s", err)
 	}
 
 	sb.Reset()
@@ -212,10 +212,10 @@ func (w *Awg) create(
 	}
 
 	if err := confTemplate.Execute(&sb, configData); err != nil {
-		return "", fmt.Errorf("failed to build config from template: %s", err)
+		return "", "", fmt.Errorf("failed to build config from template: %s", err)
 	}
 
-	return sb.String(), nil
+	return sb.String(), newPeerAddr.Addr().String(), nil
 }
 
 func (w *Awg) revoke(

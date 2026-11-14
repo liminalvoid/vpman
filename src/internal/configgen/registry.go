@@ -8,7 +8,9 @@ import (
 )
 
 type Protocol interface {
-	create(ctx context.Context, cli *executor.ContainerExecutor, containerID, serverPublicAddr string) (string, error)
+	// create returns the client's config and the identifier the server knows
+	// the client by: its tunnel IP for WireGuard, its email tag for Xray.
+	create(ctx context.Context, cli *executor.ContainerExecutor, containerID, serverPublicAddr string) (string, string, error)
 	revoke(ctx context.Context, cli *executor.ContainerExecutor, containerID string, addr string) error
 	suspend(ctx context.Context, cli *executor.ContainerExecutor, containerID string, addr string) error
 	resume(ctx context.Context, cli *executor.ContainerExecutor, containerID string, addr string) error
@@ -26,13 +28,13 @@ func New(p Protocol, ce *executor.ContainerExecutor) *ConfigGenerator {
 	}
 }
 
-func (cg *ConfigGenerator) Create(ctx context.Context, containerID, serverPublicAddr string) (string, error) {
-	cfg, err := cg.protocol.create(ctx, cg.executor, containerID, serverPublicAddr)
+func (cg *ConfigGenerator) Create(ctx context.Context, containerID, serverPublicAddr string) (string, string, error) {
+	cfg, id, err := cg.protocol.create(ctx, cg.executor, containerID, serverPublicAddr)
 	if err != nil {
-		return "", fmt.Errorf("creating config: %w", err)
+		return "", "", fmt.Errorf("creating config: %w", err)
 	}
 
-	return cfg, nil
+	return cfg, id, nil
 }
 
 func (cg *ConfigGenerator) Revoke(ctx context.Context, containerID string, addr string) error {

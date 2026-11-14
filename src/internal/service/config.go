@@ -91,26 +91,9 @@ func (s *ConfigService) CreateConfig(
 	}
 
 	cg := configgen.New(p, ce)
-	resultCfg, err := cg.Create(ctx, containerID, server.PublicAddress)
+	resultCfg, ipAddr, err := cg.Create(ctx, containerID, server.PublicAddress)
 	if err != nil {
 		return "", fmt.Errorf("creating config: %w", err)
-	}
-
-	var ipAddr string
-	switch p.(type) {
-	case *configgen.Awg, *configgen.Wg:
-		lookupStr := "Address = "
-		ipAddrIdx := strings.Index(resultCfg, lookupStr)
-		if ipAddrIdx == -1 {
-			return "", fmt.Errorf("can't find config's IP address")
-		}
-		ipAddrIdx += len(lookupStr)
-		ipAddr = resultCfg[ipAddrIdx:]
-		bitmaskIdx := strings.Index(ipAddr, "/32")
-		if bitmaskIdx == -1 {
-			return "", fmt.Errorf("can't find EOL to extract IP address")
-		}
-		ipAddr = ipAddr[:bitmaskIdx]
 	}
 
 	protocolStruct := model.Protocol{
@@ -137,7 +120,8 @@ func (s *ConfigService) CreateConfig(
 		return "", fmt.Errorf("writing config info to DB: %w", err)
 	}
 
-	if format == "amnezia" {
+	// Xray configs are vless:// links, which AmneziaVPN imports as-is.
+	if _, isXray := p.(*configgen.Xray); format == "amnezia" && !isXray {
 		resultCfg, err = lib.CompressConfigForAmnezia([]byte(resultCfg), 8)
 		if err != nil {
 			return "", fmt.Errorf("compressing config: %w", err)

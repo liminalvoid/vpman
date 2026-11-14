@@ -1,0 +1,7 @@
+{
+  "id": "{{.ClientID}}",
+  "email": "{{.Email}}"
+  {{- with .Flow}},
+  "flow": "{{.}}"
+  {{- end}}
+}
