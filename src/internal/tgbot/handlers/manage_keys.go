@@ -2,12 +2,14 @@ package handlers
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
 	tu "github.com/mymmrac/telego/telegoutil"
 
+	"vpnmanager/internal/tgbot/keyboard"
 	"vpnmanager/internal/tgbot/session"
 )
 
@@ -39,6 +41,7 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 
 	var draftKb [][]telego.InlineKeyboardButton
 	response := Response{}
+	currentPage := 0
 
 	switch {
 	case update.CallbackQuery != nil:
@@ -67,10 +70,21 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 			h.sessions.Update(userID, func(s *session.Session) {
 				s.State = session.StateEditConfigSelect
 			})
+		case strings.Contains(callbackData, fmt.Sprintf("%s:page-", ManageKeysPrefix)):
+			amountStr := strings.ReplaceAll(callbackData, fmt.Sprintf("%s:page-", ManageKeysPrefix), "")
+			amount, err := strconv.Atoi(amountStr)
+			if err != nil {
+				return err
+			}
+			currentPage = amount
+
+			h.sessions.Update(userID, func(s *session.Session) {
+				s.State = session.StateEditConfig
+			})
 		}
 	case update.Message != nil:
 		response.ChatID = update.Message.Chat.ChatID()
-		
+
 		sess := h.sessions.Get(userID)
 		switch sess.State {
 		case session.StateEditConfigEnterName:
@@ -113,8 +127,12 @@ func (h *Handlers) HandleManageKeys(ctx *th.Context, update telego.Update) error
 			)
 		}
 
-		response.Text = "Текущие ключи"
-		draftKb = keysKbButtons
+		response.Text = fmt.Sprintf(
+			"Текущие ключи\n\nСтраница: %d/%d",
+			currentPage + 1,
+			keyboard.GetTotalPages(len(keysKbButtons), keyboard.RowsPerPage),
+		)
+		draftKb = keyboard.BuildKbWithPagination(keysKbButtons, ManageKeysPrefix, keyboard.RowsPerPage, currentPage)
 		h.sessions.Update(userID, func(s *session.Session) {
 			s.State = session.StateEditConfigSelect
 		})

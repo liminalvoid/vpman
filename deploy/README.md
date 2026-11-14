@@ -3,14 +3,21 @@
 > [!CAUTION]
 > The content of this readme was fully generated with LLM. Proceed with caution.
 
-Four VPS: three managers, one worker.
+Five VPS, all managers.
 
 | Node    | Swarm role | Labels                | Runs                |
 |---------|------------|-----------------------|---------------------|
 | node-1  | manager    | `etcd=1`, `pgnode=1`  | etcd1, pg1, maybe the bot |
 | node-2  | manager    | `etcd=2`, `pgnode=2`  | etcd2, pg2, maybe the bot |
 | node-3  | manager    | `etcd=3`, `pgnode=3`  | etcd3, pg3, maybe the bot |
-| node-4  | worker     | `pgnode=4`            | pg4, maybe the bot  |
+| node-4  | manager    | `etcd=4`, `pgnode=4`  | etcd4, pg4, maybe the bot |
+| node-5  | manager    | `etcd=5`, `pgnode=5`  | etcd5, pg5, maybe the bot |
+
+Five is the smallest size that survives losing **two** nodes: Swarm raft and
+etcd both need a majority, which is 3 of 5. Four nodes would buy nothing over
+three, since a majority of 4 is also 3 and it still survives only one loss.
+Keep the manager count and the etcd member count odd and equal, so the two
+quorums fail together instead of in confusing combinations.
 
 Three stacks, deployed in order: `etcd` → `pg` → `app`.
 
@@ -18,7 +25,7 @@ Three stacks, deployed in order: `etcd` → `pg` → `app`.
   restart it on any node when its current node goes down.
 - **Postgres does not float.** Each member is pinned to one node by label. Its
   data is in a node-local volume, so moving the task would only produce an
-  empty database. Availability comes from the other three members and Patroni
+  empty database. Availability comes from the other four members and Patroni
   promoting one of them, never from relocating a member.
 
 ## 1. Form the swarm
@@ -46,16 +53,15 @@ docker swarm init \
   --default-addr-pool 10.30.0.0/16 \
   --default-addr-pool-mask-length 24
 
-docker swarm join-token -q manager   # note these down
-docker swarm join-token -q worker
+docker swarm join-token -q manager   # note this down
 ```
 
-Then on each of the other three nodes:
+Then on each of the other four nodes:
 
 ```sh
 # On a VPN, add the same three flags, and use the manager's WireGuard address.
 docker swarm join \
-  --token <manager-or-worker-token> \
+  --token <manager-token> \
   <first-manager-addr>:2377
 ```
 
@@ -68,7 +74,8 @@ to a hub, since any member may stream from any other.
 docker node update --label-add etcd=1 --label-add pgnode=1 node-1
 docker node update --label-add etcd=2 --label-add pgnode=2 node-2
 docker node update --label-add etcd=3 --label-add pgnode=3 node-3
-docker node update --label-add pgnode=4 node-4
+docker node update --label-add etcd=4 --label-add pgnode=4 node-4
+docker node update --label-add etcd=5 --label-add pgnode=5 node-5
 ```
 
 ## 3. Create the overlay network
@@ -143,7 +150,7 @@ than one address of a family (`interface lo has more than one IPv4 address`).
 A single-stack `wg0` is fine; if yours is dual-stack, pass the literal IP.
 
 All three go on both commands in step 1 — `swarm init` on the first manager and
-`swarm join` on the other three — and the join must point at the first
+`swarm join` on the other four — and the join must point at the first
 manager's *WireGuard* address (`10.8.0.1:2377`), not its public one. There is
 no way to add them to a running node: see "On an existing cluster" below.
 
@@ -162,7 +169,7 @@ Because the address was resolved and persisted at init time, on reboot the
 daemon tries to bind a literal `10.8.0.x` that exists only while the tunnel is
 up. Without the ordering above, a boot that starts dockerd first fails with
 `bind: cannot assign requested address`, and Swarm on that node does not come
-up — its pinned Patroni member stays down with it. `docker.service` usually
+up — its pinned etcd and Patroni members stay down with it. `docker.service` usually
 carries `Restart=always`, so it may retry into a working state once WireGuard
 appears, but it can equally exhaust its start limit and stay down; it is not
 something to rely on.
@@ -179,8 +186,8 @@ systemctl cat wg-quick@wg0    | grep -E '^(After|Wants|Before)='
 
 This matters most in exactly the situation you least want it: a provider-wide
 power or maintenance event reboots several nodes at once, and the race fires on
-all of them simultaneously. Lose two of three managers that way and the cluster
-sits read-only until someone intervenes.
+all of them simultaneously. Lose three of five managers that way and the
+cluster sits read-only until someone intervenes.
 
 If WireGuard is configured through `systemd-networkd` (a `.netdev` + `.network`
 pair) rather than `wg-quick`, the interface is created during network setup and
@@ -192,10 +199,10 @@ nodes.
 
 **On an existing cluster these cannot be changed in place.** `docker swarm
 update` has no such flags; each node must leave and rejoin. Since the public
-and WireGuard addresses coexist, this rolls without downtime: do the worker
-first, then the managers one at a time — `docker node demote` → `docker swarm
-leave` → `docker node rm` (from a surviving manager) → rejoin with the flags
-above → `docker node promote` — never dropping below 2 of 3 managers.
+and WireGuard addresses coexist, this rolls without downtime: do the managers
+one at a time — `docker node demote` → `docker swarm leave` → `docker node rm`
+(from a surviving manager) → rejoin with the flags above → `docker node
+promote` — so at least 4 of 5 managers stay up throughout.
 
 If the cluster holds nothing precious yet, re-initialising is faster and less
 error-prone. That does **not** destroy the database: the Postgres volumes are
@@ -270,7 +277,7 @@ printf '%s' "$(openssl rand -hex 24)" | docker secret create pg_superuser_passwo
 printf '%s' "$(openssl rand -hex 24)" | docker secret create pg_replication_password -
 printf '%s' "$PGAPP"                  | docker secret create pg_app_password -
 
-printf '%s' "postgres://vpn:${PGAPP}@pg1:5432,pg2:5432,pg3:5432,pg4:5432/vpn?target_session_attrs=read-write&connect_timeout=5&sslmode=disable" \
+printf '%s' "postgres://vpn:${PGAPP}@pg1:5432,pg2:5432,pg3:5432,pg4:5432,pg5:5432/vpn?target_session_attrs=read-write&connect_timeout=5&sslmode=disable" \
   | docker secret create database_url -
 
 printf '%s' '<telegram-bot-token>' | docker secret create tg_token -
@@ -319,20 +326,20 @@ docker stack deploy -c deploy/etcd-stack.yml etcd
 ```
 
 The etcd services carry no healthcheck, so `docker service ls` tells you only
-that the tasks are running — not that the three found each other and elected a
+that the tasks are running — not that the five found each other and elected a
 leader. Ask etcd itself before continuing, from node-1:
 
 ```sh
 docker exec $(docker ps -qf name=etcd_etcd1) \
-  etcdctl --endpoints=http://etcd1:2379,http://etcd2:2379,http://etcd3:2379 \
+  etcdctl --endpoints=http://etcd1:2379,http://etcd2:2379,http://etcd3:2379,http://etcd4:2379,http://etcd5:2379 \
   endpoint health
 ```
 
-All three endpoints must report `is healthy`. Then:
+All five endpoints must report `is healthy`. Then:
 
 ```sh
 docker stack deploy -c deploy/pg-stack.yml pg
-# first boot: one member bootstraps, the other three clone from it
+# first boot: one member bootstraps, the other four clone from it
 docker exec $(docker ps -qf name=pg_pg1) \
   patronictl -c /etc/patroni/patroni.yml list
 
@@ -340,7 +347,7 @@ docker stack deploy -c app-stack.yml app
 ```
 
 Whichever member wins the initial race runs `post_init.sh`, which creates the
-`vpn` role and database and loads `schema.sql`. The other three get all of it
+`vpn` role and database and loads `schema.sql`. The other four get all of it
 through replication — do not run it on them by hand.
 
 Expected steady state:
@@ -354,6 +361,7 @@ Expected steady state:
 | pg2    | pg2  | Replica | streaming |  1 |         0 |
 | pg3    | pg3  | Replica | streaming |  1 |         0 |
 | pg4    | pg4  | Replica | streaming |  1 |         0 |
+| pg5    | pg5  | Replica | streaming |  1 |         0 |
 +--------+------+---------+-----------+----+-----------+
 ```
 
@@ -362,17 +370,18 @@ Expected steady state:
 | Failure | Result |
 |---|---|
 | Node hosting the bot dies | Swarm marks the node down and starts the single replica elsewhere. Roughly 15–30s. |
-| Node hosting a Postgres *replica* dies | Nothing. Three members remain; the member returns and catches up on its own when the node does. |
+| Node hosting a Postgres *replica* dies | Nothing. Four members remain; the member returns and catches up on its own when the node does. |
 | Node hosting the Postgres *leader* dies | Patroni promotes a replica once the leader lock expires (`ttl: 30`). Measured at ~18s in testing. The bot's pool reconnects and lands on the new leader. |
-| Two of the three managers die | Everything freezes. See below. |
+| Any two nodes die | Same as above, one row per role they held. Swarm and etcd both keep 3 of 5, so quorum holds. |
+| Three of the five managers die | Everything freezes. See below. |
 
-**The two-manager limit is the real ceiling of a 4-node cluster.** Swarm raft
-needs 2 of 3 managers for quorum, and so does etcd. Lose two and Swarm can no
+**Three lost managers is the real ceiling of a 5-node cluster.** Swarm raft
+needs 3 of 5 managers for quorum, and so does etcd. Lose three and Swarm can no
 longer schedule anything *and* Patroni, unable to renew the leader lock, will
 demote the leader to read-only rather than risk split-brain. The database stays
 readable, the bot stops being able to write, and nothing recovers until a
-manager comes back. Adding a 5th node as a manager would let you survive two
-losses; with four nodes this is the trade you are making.
+manager comes back. Surviving three losses takes seven managers and seven etcd
+members; adding a 6th node would not help, for the same reason four did not.
 
 ## Operations
 
@@ -395,7 +404,7 @@ redeploy; Docker will not update a config in place.
 ## Two things this setup does not give you
 
 **Replicas are not backups.** They are synchronous with your mistakes: a
-`DROP TABLE` or a bad migration reaches all four members in milliseconds. If
+`DROP TABLE` or a bad migration reaches all five members in milliseconds. If
 the data matters, add WAL archiving to off-cluster storage (pgBackRest or
 `wal-g`) — that is what gives you point-in-time recovery.
 

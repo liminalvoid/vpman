@@ -92,6 +92,17 @@ func (ce *ContainerExecutor) Run(
 	return stdoutBuf.String(), nil
 }
 
+// Restart restarts the container, for services that read their config only at
+// startup.
+func (ce *ContainerExecutor) Restart(ctx context.Context, containerID string) error {
+	_, err := ce.cli.ContainerRestart(ctx, containerID, client.ContainerRestartOptions{})
+	if err != nil {
+		return fmt.Errorf("restarting container %q: %w", containerID, err)
+	}
+
+	return nil
+}
+
 func (ce *ContainerExecutor) Close() error {
 	return ce.cli.Close()
 }
