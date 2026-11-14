@@ -26,9 +26,9 @@ type Xray struct{}
 var xrayTemplateFS embed.FS
 
 const (
-	xrayConfigPath    = "/opt/amnezia/xray/server.json"
-	xrayStagingPath   = "/opt/amnezia/xray/server.staging.json"
-	xraySuspendedPath = "/opt/amnezia/xray/suspended.json"
+	xrayConfigPath    = "/opt/xray/server.json"
+	xrayStagingPath   = "/opt/xray/server.staging.json"
+	xraySuspendedPath = "/opt/xray/suspended.json"
 
 	xrayVisionFlow         = "xtls-rprx-vision"
 	xrayDefaultFingerprint = "chrome"
