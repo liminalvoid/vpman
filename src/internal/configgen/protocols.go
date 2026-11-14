@@ -8,6 +8,7 @@ var protocols = map[string]Protocol{
 	"awg": &Awg{},
 	"wg": &Wg{},
 	"wireguard": &Wg{},
+	"xray": &Xray{},
 }
 
 func ListProtocols() map[string]Protocol {

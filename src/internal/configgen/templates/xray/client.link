@@ -1,0 +1,3 @@
+vless://{{.ClientID}}@{{.Endpoint}}?type={{urlquery .Network}}&encryption=none&security=reality
+{{- with .Flow}}&flow={{urlquery .}}{{end -}}
+&sni={{urlquery .ServerName}}&fp={{urlquery .Fingerprint}}&pbk={{urlquery .PublicKey}}&sid={{urlquery .ShortID}}#{{urlquery .Remark}}
