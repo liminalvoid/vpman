@@ -15,26 +15,30 @@ func BuildKbWithPagination(
 	amountPerPage int,
 	currentPage int,
 ) [][]telego.InlineKeyboardButton {
-	nextBtn := tu.InlineKeyboardRow(
-		tu.
-			InlineKeyboardButton("Далее ➡️").
-			WithCallbackData(fmt.Sprintf("%s:page-%d", prefix, currentPage+1)),
-	)
-	backBtn := tu.InlineKeyboardRow(
-		tu.
-			InlineKeyboardButton("Назад ⬅️").
-			WithCallbackData(fmt.Sprintf("%s:page-%d", prefix, currentPage-1)),
-	)
-
 	currPos := currentPage * amountPerPage
 	stop := min(currPos + amountPerPage, len(keyboard))
 
 	resultKb := keyboard[currPos:stop]
-	if stop < len(keyboard) {
-		resultKb = append(resultKb, nextBtn)
-	}
+
+	var navRow []telego.InlineKeyboardButton
 	if currPos > 0 {
-		resultKb = append(resultKb, backBtn)
+		navRow = append(
+			navRow,
+			tu.
+				InlineKeyboardButton("⬅️ Назад").
+				WithCallbackData(fmt.Sprintf("%s:page-%d", prefix, currentPage-1)),
+		)
+	}
+	if stop < len(keyboard) {
+		navRow = append(
+			navRow,
+			tu.
+				InlineKeyboardButton("Далее ➡️").
+				WithCallbackData(fmt.Sprintf("%s:page-%d", prefix, currentPage+1)),
+		)
+	}
+	if len(navRow) > 0 {
+		resultKb = append(resultKb, navRow)
 	}
 
 	return resultKb
